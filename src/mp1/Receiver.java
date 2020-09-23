@@ -1,5 +1,8 @@
 package mp1;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.net.*;
 import java.util.logging.Logger;
@@ -8,7 +11,7 @@ public class Receiver {
     private String ipAddress;
     private int port;
     private DatagramSocket socket;
-    private byte[] buffer = new byte[1024];
+    private byte[] buffer = new byte[2048];
     private Mode mode;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
@@ -49,8 +52,11 @@ public class Receiver {
             }
             InetAddress senderAddress = receivedPacket.getAddress();
             int senderPort = receivedPacket.getPort();
-            String msg = toData(buffer, receivedPacket.getLength());
+            String msg = readBytes(buffer, receivedPacket.getLength());
             logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
+            JSONObject obj = new JSONObject(msg);
+            JSONArray list = obj.getJSONArray("key1");
+            System.out.println(list.get(0));
         }
     }
 
@@ -62,7 +68,7 @@ public class Receiver {
     /*
      * turn bytes into string
      */
-    private String toData(byte[] packet, int length) {
+    private String readBytes(byte[] packet, int length) {
         if (packet == null) {
             return null;
         }

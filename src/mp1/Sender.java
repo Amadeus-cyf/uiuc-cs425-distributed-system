@@ -1,8 +1,11 @@
 package mp1;
 
+import mp1.model.Member;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.net.*;
-import java.util.Scanner;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class Sender {
@@ -16,8 +19,14 @@ public class Sender {
         Sender sender = new Sender("localhost", 6000, "localhost", 5000);
         Scanner scanner = new Scanner(System.in);
         while(true) {
-            String msg = scanner.nextLine();
-            sender.send(msg);
+            String line = scanner.nextLine();
+            Map<String, List<Member>> map = new HashMap<>();
+            List<Member> members = new ArrayList<>();
+            for (int i = 0; i < 10; i++) {
+                members.add(new Member("localhost", 3000 + i));
+            }
+            map.put("key1", members);
+            sender.send(new JSONObject(map));
         }
     }
 
@@ -47,8 +56,11 @@ public class Sender {
     /*
      * send message to the target ip address and port
      */
-    public void send(String msg) {
-        byte[] buffer = msg.getBytes();
+    public void send(JSONObject msg) {
+        if (msg == null) {
+            return;
+        }
+        byte[] buffer = msg.toString().getBytes();
         try {
             InetAddress targetAddress = InetAddress.getByName(targetIpAddress);
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, targetAddress, targetPort);
