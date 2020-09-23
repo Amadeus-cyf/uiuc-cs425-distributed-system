@@ -5,17 +5,17 @@ import mp1.Mode;
 import java.sql.Timestamp;
 
 public class AllToAllHeartBeat extends HeartBeat {
-    private String message;
+    private String senderId;
     private Timestamp timestamp;
 
-    public AllToAllHeartBeat(Mode mode, String message) {
+    public AllToAllHeartBeat(Mode mode, String senderId) {
         super(mode);
-        this.message = message;
+        this.senderId = senderId;
         this.timestamp = new Timestamp(System.currentTimeMillis());
     }
 
-    public String getMessage() {
-        return message;
+    public String getSenderId() {
+        return senderId;
     }
 
     public Timestamp getTimestamp() {

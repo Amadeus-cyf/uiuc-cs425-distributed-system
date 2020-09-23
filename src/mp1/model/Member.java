@@ -20,6 +20,7 @@ public class Member {
         this.port = port;
         this.timestamp = new Timestamp(System.currentTimeMillis());
         this.status = Status.WORKING;
+        this.id = createId();
     }
 
     public String getIpAddress() {
@@ -38,7 +39,17 @@ public class Member {
         return this.timestamp;
     }
 
-    public void updateTimestamp() {
-        this.timestamp = new Timestamp(System.currentTimeMillis());
+    public void updateTimestamp(Timestamp timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    private String createId() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(this.ipAddress);
+        sb.append("_");
+        sb.append(port);
+        sb.append("_");
+        sb.append(this.timestamp.toString());
+        return sb.toString();
     }
 }

@@ -1,10 +1,13 @@
 package mp1;
 
+import mp1.model.Member;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.*;
+import java.sql.Timestamp;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class Receiver {
@@ -13,6 +16,7 @@ public class Receiver {
     private DatagramSocket socket;
     private byte[] buffer = new byte[2048];
     private Mode mode;
+    private List<Member> membershipList;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
     public static void main(String[] args) {
@@ -78,9 +82,27 @@ public class Receiver {
     }
 
     /*
-    * TODO: update membership  list
+    * update membership  list based on the heartbeat received
      */
-    private void updateMembershipList() {
-
+    private void updateMembershipAllToAll(String ipAddress, int port, Timestamp timestamp) {
+        boolean isInMembershipList = false;
+        for (int i = 0; i < membershipList.size(); i++) {
+            Member member = membershipList.get(i);
+            if (member.getPort() == port && member.getIpAddress().equals(ipAddress)) {
+                if (member.getStatus().equals(Status.WORKING)) {
+                    if (timestamp.after(member.getTimestamp())) {
+                        synchronized (membershipList.get(i)) {
+                            member.updateTimestamp(timestamp);
+                        }
+                    }
+                    isInMembershipList = true;
+                    break;
+                }
+            }
+        }
+        // this is a new server joining the system
+        if (!isInMembershipList) {
+            membershipList.add(new Member(ipAddress, port));
+        }
     }
 }
