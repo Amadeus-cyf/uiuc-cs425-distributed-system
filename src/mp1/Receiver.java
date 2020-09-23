@@ -56,14 +56,12 @@ public class Receiver {
             logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
             JSONObject obj = new JSONObject(msg);
             JSONArray list = obj.getJSONArray("key1");
-            System.out.println(list.get(0));
         }
     }
 
     public void disconnect() {
         socket.close();
     }
-
 
     /*
      * turn bytes into string

@@ -1,7 +1,7 @@
 package mp1;
 
-public enum Status {
-    WORKING,
-    FAIL,
-    SUSPEND,
+public class Status {
+    public static final String WORKING = "WORKING";
+    public static final String FAIL = "FAIL";
+    public static final String SUSPEND = "SUSPEND";
 }

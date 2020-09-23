@@ -11,7 +11,7 @@ public class Member {
 
     private int port;
 
-    private Status status;
+    private String status;
 
     private Timestamp timestamp;
 
@@ -30,7 +30,7 @@ public class Member {
         return this.port;
     }
 
-    public Status getStatus() {
+    public String getStatus() {
         return this.status;
     }
 
