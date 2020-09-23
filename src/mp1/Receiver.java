@@ -1,3 +1,5 @@
+package mp1;
+
 import java.io.IOException;
 import java.net.*;
 import java.util.logging.Logger;
@@ -48,7 +50,7 @@ public class Receiver {
             InetAddress senderAddress = receivedPacket.getAddress();
             int senderPort = receivedPacket.getPort();
             String msg = toData(buffer, receivedPacket.getLength());
-            logger.warning("Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
+            logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
         }
     }
 
