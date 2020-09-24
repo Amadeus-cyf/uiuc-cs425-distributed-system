@@ -5,6 +5,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.*;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -12,31 +13,13 @@ public class Sender {
     private DatagramSocket socket;
     private String ipAddress;
     private int port;
-    private String targetIpAddress;
-    private int targetPort;
+    private final List<Member> membershipList;
 
-    public static void main(String[] args) {
-        Sender sender = new Sender("localhost", 6000, "localhost", 5000);
-        Scanner scanner = new Scanner(System.in);
-        while(true) {
-            String line = scanner.nextLine();
-            Map<String, List<Member>> map = new HashMap<>();
-            List<Member> members = new ArrayList<>();
-            for (int i = 0; i < 10; i++) {
-                members.add(new Member("localhost", 3000 + i));
-            }
-            map.put("key1", members);
-            sender.send(new JSONObject(map));
-        }
-    }
-
-    public Sender(String ipAddress, int port, String targetIpAddress, int targetPort) {
+    public Sender(String ipAddress, int port, List<Member> membershipList) {
         this.ipAddress = ipAddress;
         this.port = port;
-        this.targetIpAddress = targetIpAddress;
-        this.targetPort = targetPort;
+        this.membershipList = membershipList;
         bind();
-
     }
 
     /*
@@ -53,10 +36,14 @@ public class Sender {
         }
     }
 
+    public void sendAllToAll() {
+
+    }
+
     /*
      * send message to the target ip address and port
      */
-    public void send(JSONObject msg) {
+    public void send(JSONObject msg, String targetIpAddress, int targetPort) {
         if (msg == null) {
             return;
         }

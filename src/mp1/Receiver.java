@@ -11,22 +11,20 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class Receiver {
+    private String id;
     private String ipAddress;
     private int port;
     private DatagramSocket socket;
     private byte[] buffer = new byte[2048];
-    private Mode mode;
-    private List<Member> membershipList;
+    private volatile String mode;
+    private final List<Member> membershipList;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
-    public static void main(String[] args) {
-        Receiver receiver = new Receiver("localhost", 5000);
-        receiver.start();
-    }
-
-    public Receiver(String ipAddress, int port) {
+    public Receiver(String id, String ipAddress, int port, List<Member> membershipList) {
+        this.id = id;
         this.ipAddress = ipAddress;
         this.port = port;
+        this.membershipList = membershipList;
         bind();
     }
 
@@ -58,13 +56,56 @@ public class Receiver {
             int senderPort = receivedPacket.getPort();
             String msg = readBytes(buffer, receivedPacket.getLength());
             logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
-            JSONObject obj = new JSONObject(msg);
-            JSONArray list = obj.getJSONArray("key1");
+            receiveAllToAll(msg);
         }
     }
 
-    public void disconnect() {
-        socket.close();
+    private void receiveAllToAll(String msg) {
+        JSONObject jsonObject = new JSONObject(msg);
+        String senderId = jsonObject.getString("id");
+        String timestampStr = jsonObject.getString("timestamp");
+        Timestamp timestamp = Timestamp.valueOf(timestampStr);
+        String senderMode = jsonObject.getString("mode");
+        if (this.mode.equals(senderMode)) {
+            updateMembershipAllToAll(senderId, timestamp);
+        }
+    }
+
+    /*
+     * init the membership list received from the introducer
+     * used only when the server joins the system
+     */
+    public void receiveAndInitMembership(String msg) {
+        JSONArray jsonArray = new JSONArray(msg);
+        for (int i = 0; i < jsonArray.length(); i++) {
+            JSONObject jsonObject = new JSONObject(jsonArray.get(i).toString());
+            String id = jsonObject.getString("id");
+            Timestamp timestamp = Timestamp.valueOf(jsonObject.getString("timestamp"));
+            synchronized (this.membershipList) {
+                this.membershipList.add(new Member(id, timestamp));
+            }
+        }
+    }
+
+    /*
+    * In all to all mode, update membership  ist based on the heartbeat received
+     */
+    private void updateMembershipAllToAll(String id, Timestamp timestamp) {
+        boolean isInMembershipList = false;
+        for (int i = 0; i < membershipList.size(); i++) {
+            Member member = membershipList.get(i);
+            if (member.getId().equals(id) && member.getStatus().equals(Status.WORKING) && timestamp.after(member.getTimestamp())) {
+                synchronized (membershipList.get(i)) {
+                    member.updateTimestamp(timestamp);
+                }
+                isInMembershipList = true;
+                break;
+            }
+        }
+        // this is a new server joining the system
+        if (!isInMembershipList) {
+            membershipList.add(new Member(id, timestamp));
+        }
     }
 
     /*
@@ -81,28 +122,7 @@ public class Receiver {
         return sb.toString();
     }
 
-    /*
-    * update membership  list based on the heartbeat received
-     */
-    private void updateMembershipAllToAll(String ipAddress, int port, Timestamp timestamp) {
-        boolean isInMembershipList = false;
-        for (int i = 0; i < membershipList.size(); i++) {
-            Member member = membershipList.get(i);
-            if (member.getPort() == port && member.getIpAddress().equals(ipAddress)) {
-                if (member.getStatus().equals(Status.WORKING)) {
-                    if (timestamp.after(member.getTimestamp())) {
-                        synchronized (membershipList.get(i)) {
-                            member.updateTimestamp(timestamp);
-                        }
-                    }
-                    isInMembershipList = true;
-                    break;
-                }
-            }
-        }
-        // this is a new server joining the system
-        if (!isInMembershipList) {
-            membershipList.add(new Member(ipAddress, port));
-        }
+    public void disconnect() {
+        socket.close();
     }
 }

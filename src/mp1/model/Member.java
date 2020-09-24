@@ -7,32 +7,22 @@ import java.sql.Timestamp;
 public class Member {
     private String id;
 
-    private String ipAddress;
-
-    private int port;
-
     private String status;
 
     private Timestamp timestamp;
 
-    public Member(String ipAddress, int port) {
-        this.ipAddress = ipAddress;
-        this.port = port;
-        this.timestamp = new Timestamp(System.currentTimeMillis());
+    public Member(String id, Timestamp timestamp) {
+        this.timestamp = timestamp;
         this.status = Status.WORKING;
-        this.id = createId();
-    }
-
-    public String getIpAddress() {
-        return this.ipAddress;
-    }
-
-    public int getPort() {
-        return this.port;
+        this.id = id;
     }
 
     public String getStatus() {
         return this.status;
+    }
+
+    public void setStatue(String status) {
+        this.status = status;
     }
 
     public Timestamp getTimestamp() {
@@ -43,13 +33,7 @@ public class Member {
         this.timestamp = timestamp;
     }
 
-    private String createId() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.ipAddress);
-        sb.append("_");
-        sb.append(port);
-        sb.append("_");
-        sb.append(this.timestamp.toString());
-        return sb.toString();
+    public String getId() {
+        return this.id;
     }
 }

@@ -1,11 +1,13 @@
 package mp1.model;
 
-import mp1.Mode;
+import org.json.JSONObject;
 
-public class HeartBeat {
-    Mode mode;
+public abstract class HeartBeat {
+    String mode;
 
-    protected HeartBeat(Mode mode) {
+    protected HeartBeat(String mode) {
         this.mode = mode;
     }
+
+    public abstract JSONObject toJSON();
 }
