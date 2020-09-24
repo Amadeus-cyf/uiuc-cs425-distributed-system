@@ -29,4 +29,5 @@ public class AllToAllHeartBeat extends HeartBeat {
         jsonObject.put("mode", this.mode);
         return jsonObject;
     }
- }
+
+}
