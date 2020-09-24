@@ -20,28 +20,13 @@ public class Receiver {
     private final List<Member> membershipList;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
-    public Receiver(String id, String ipAddress, int port, List<Member> membershipList) {
+    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, String mode, DatagramSocket socket) {
         this.id = id;
         this.ipAddress = ipAddress;
         this.port = port;
         this.membershipList = membershipList;
-        bind();
-    }
-
-    /*
-     * Bind to the socket to the ip address and the port
-     */
-    private void bind() {
-        try {
-            InetAddress address = InetAddress.getByName(ipAddress);
-            socket = new DatagramSocket(port, address);
-        } catch (SocketException exception) {
-            // TODO: log exception
-            System.out.println(exception);
-        } catch (UnknownHostException exception) {
-            // TODO: log exception
-            System.out.println(exception);
-        }
+        this.mode = mode;
+        this.socket = socket;
     }
 
     public void start() {
@@ -55,7 +40,7 @@ public class Receiver {
             InetAddress senderAddress = receivedPacket.getAddress();
             int senderPort = receivedPacket.getPort();
             String msg = readBytes(buffer, receivedPacket.getLength());
-            logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
+            //logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
             receiveAllToAll(msg);
         }
     }
