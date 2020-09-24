@@ -1,6 +1,6 @@
 package mp1.model;
 
-import mp1.Mode;
+import org.json.JSONObject;
 
 import java.sql.Timestamp;
 
@@ -8,10 +8,10 @@ public class AllToAllHeartBeat extends HeartBeat {
     private String senderId;
     private Timestamp timestamp;
 
-    public AllToAllHeartBeat(Mode mode, String senderId) {
+    public AllToAllHeartBeat(String mode, String senderId, Timestamp timestamp) {
         super(mode);
         this.senderId = senderId;
-        this.timestamp = new Timestamp(System.currentTimeMillis());
+        this.timestamp = timestamp;
     }
 
     public String getSenderId() {
@@ -21,4 +21,13 @@ public class AllToAllHeartBeat extends HeartBeat {
     public Timestamp getTimestamp() {
         return timestamp;
     }
- }
+
+    public JSONObject toJSON() {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("id", senderId);
+        jsonObject.put("timestamp", timestamp.toString());
+        jsonObject.put("mode", this.mode);
+        return jsonObject;
+    }
+
+}

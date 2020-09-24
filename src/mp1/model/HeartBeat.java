@@ -1,11 +1,9 @@
 package mp1.model;
 
-import mp1.Mode;
-
 public class HeartBeat {
-    Mode mode;
+    String mode;
 
-    protected HeartBeat(Mode mode) {
+    protected HeartBeat(String mode) {
         this.mode = mode;
     }
 }

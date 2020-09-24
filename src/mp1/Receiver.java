@@ -1,7 +1,6 @@
 package mp1;
 
 import mp1.model.Member;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -59,7 +58,7 @@ public class Receiver {
             String msg = readBytes(buffer, receivedPacket.getLength());
             logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
             JSONObject obj = new JSONObject(msg);
-            JSONArray list = obj.getJSONArray("key1");
+//            JSONArray list = obj.getJSONArray("key1");
         }
     }
 
@@ -88,7 +87,8 @@ public class Receiver {
         boolean isInMembershipList = false;
         for (int i = 0; i < membershipList.size(); i++) {
             Member member = membershipList.get(i);
-            if (member.getPort() == port && member.getIpAddress().equals(ipAddress)) {
+            String[] mem_info = member.getId().split("_");
+            if (Integer.parseInt(mem_info[1]) == port && mem_info[0].equals(ipAddress)) {
                 if (member.getStatus().equals(Status.WORKING)) {
                     if (timestamp.after(member.getTimestamp())) {
                         synchronized (membershipList.get(i)) {
@@ -102,7 +102,8 @@ public class Receiver {
         }
         // this is a new server joining the system
         if (!isInMembershipList) {
-            membershipList.add(new Member(ipAddress, port));
+            Timestamp d = new Timestamp(System.currentTimeMillis());
+            membershipList.add(new Member(ipAddress, d));
         }
     }
 }
