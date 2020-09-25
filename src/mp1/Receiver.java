@@ -37,7 +37,7 @@ public class Receiver {
             String msg = readBytes(buffer, receivedPacket.getLength());
             InetAddress senderAddress =  receivedPacket.getAddress();
             int senderPort = receivedPacket.getPort();
-            logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
+            logger.warning("mp1.Receiver: Re" + senderAddress + ":" + senderPort + " sends " + msg);
             receive(msg);
         }
     }
@@ -69,6 +69,7 @@ public class Receiver {
      * handle all to all heartbeats
      */
     private void receiveAllToAll(JSONObject msg) {
+        logger.warning("receiveAllToAllt" + msg);
         String senderId = msg.getString("id");
         String timestampStr = msg.getString("timestamp");
         Timestamp timestamp = Timestamp.valueOf(timestampStr);
@@ -88,11 +89,13 @@ public class Receiver {
         }
         String[] senderInfo = senderId.split("_");
         if (senderInfo.length == 3) {
+            logger.warning("receiveJoinRequest" + request);
             String targetIpAddress = senderInfo[0];
             int targetPort = Integer.parseInt(senderInfo[1]);
             Timestamp joinTimeStamp = Timestamp.valueOf(senderInfo[2]);
             this.membershipList.add(new Member(senderId, joinTimeStamp));
-            HeartBeat heartBeat = new GossipHeartBeat(this.mode,this.membershipList);
+            HeartBeat heartBeat = new GossipHeartBeat(Mode.AGREE_JOIN,this.membershipList);
+            logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
         }
     }
@@ -106,6 +109,7 @@ public class Receiver {
             return;
         }
         JSONArray jsonArray = msg.getJSONArray("membership");
+        logger.warning("receiveAndInitMembership" + msg);
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject memberJson = new JSONObject(jsonArray.get(i).toString());
             String id = memberJson.getString("id");

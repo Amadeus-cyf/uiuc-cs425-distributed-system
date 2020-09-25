@@ -2,10 +2,12 @@ package mp1;
 
 import mp1.model.AllToAllHeartBeat;
 import mp1.model.GossipHeartBeat;
+import mp1.model.JoinSystemHeartBeat;
 import mp1.model.Member;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class Sender {
     private UdpSocket socket;
@@ -14,6 +16,7 @@ public class Sender {
     private List<Member> membershipList;
     private String id;
     private String mode;
+    static Logger logger = Logger.getLogger(Sender.class.getName());
 
     public Sender(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket) {
         this.ipAddress = ipAddress;
@@ -22,7 +25,7 @@ public class Sender {
         this.id = id;
         this.socket = socket;
     }
-    
+
     public void sendAllToAll() {
         for (Member member : membershipList){
             Timestamp curTime = new Timestamp(System.currentTimeMillis());
@@ -36,6 +39,7 @@ public class Sender {
             AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id, curTime);
             String[] idInfo = member.getId().split("_"); // ipaddr_port_timestamp
             if (idInfo.length == 3) {
+                logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
                 this.socket.send(all2all.toJSON(), idInfo[0], Integer.parseInt(idInfo[1]));
             }
         }
@@ -43,7 +47,14 @@ public class Sender {
 
     public void sendMembership(String targetIpAddress, int targetPort) {
         GossipHeartBeat gossipHeartBeat = new GossipHeartBeat(this.mode, this.membershipList);
+        logger.warning("sendMembership: sends " + gossipHeartBeat.toJSON() + "to" + targetIpAddress + ":" + targetPort);
         this.socket.send(gossipHeartBeat.toJSON(), targetIpAddress, targetPort);
+    }
+
+    public void sendJoinRequest() {
+        JoinSystemHeartBeat joinSystemHeartBeat = new JoinSystemHeartBeat(this.mode, this.id);
+        logger.warning("sendJoinRequest: sends " + joinSystemHeartBeat.toJSON() + "to Introducer");
+        this.socket.send(joinSystemHeartBeat.toJSON(), Introducer.IP_ADDRESS, Introducer.PORT);
     }
 
     public void disconnect() {

@@ -7,23 +7,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class BaseServer {
-    protected final String id;
+
     protected String ipAddress;
     protected int port;
     protected UdpSocket socket;
-    protected Timestamp startingTime;
     protected List<Member> membershipList;
+    protected Timestamp startingTime;
+    protected String id;
 
     protected BaseServer(String ipAddress, int port) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.socket = new UdpSocket(ipAddress, port);
         this.membershipList = new ArrayList<>();
-        this.startingTime = new Timestamp(System.currentTimeMillis());
-        this.id = createId();
     }
 
-    private String createId() {
+    protected String createId() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.ipAddress);
         sb.append("_");

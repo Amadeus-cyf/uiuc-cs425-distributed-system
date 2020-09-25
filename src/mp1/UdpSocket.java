@@ -44,7 +44,7 @@ public class UdpSocket {
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, targetAddress, targetPort);
             this.socket.send(packet);
             Logger logger = Logger.getLogger(Sender.class.getName());
-            logger.warning("SENDER: " + this.ipAddress+":"+ this.port + " sends to " +  targetIpAddress+":"+ targetPort + " message: " + msg);
+//            logger.warning("SENDER: " + this.ipAddress+":"+ this.port + " sends to " +  targetIpAddress+":"+ targetPort + " message: " + msg);
         } catch (UnknownHostException exception) {
             // TODO: Log the exception
         } catch (IOException exception) {

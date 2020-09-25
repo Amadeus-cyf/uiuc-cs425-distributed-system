@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 
 public class TimeoutChecker implements Runnable {
     private final List<Member> membershipList;
-    private final long MAX_TIME_LIMIT = 5000;
+    private final long MAX_TIME_LIMIT = 500000;
     private volatile String mode;
     static Logger logger = Logger.getLogger(TimeoutChecker.class.getName());
 
@@ -23,7 +23,7 @@ public class TimeoutChecker implements Runnable {
     public void run() {
         while (true) {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100000);
             } catch (Exception e) {
 
             }
