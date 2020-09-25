@@ -11,6 +11,7 @@ public class JoinSystemHeartBeat extends HeartBeat {
         this.senderId = senderId;
     }
 
+    @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("msgType", this.msgType);

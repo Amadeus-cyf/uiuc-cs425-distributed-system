@@ -1,8 +1,6 @@
 package mp1;
 
-import mp1.model.GossipHeartBeat;
-import mp1.model.HeartBeat;
-import mp1.model.Member;
+import mp1.model.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -69,12 +67,10 @@ public class Receiver {
     private void receiveAllToAll(JSONObject msg) {
         logger.warning("receiveAllToAllt" + msg);
         String senderId = msg.getString("id");
-        String timestampStr = msg.getString("timestamp");
         String senderMode = msg.getString("mode");
         // thread race condition, mode could be null if a heartbeat before a introducer response reaches
         if (this.mode == null || this.mode.equals(senderMode)) {
-            Timestamp timestamp = Timestamp.valueOf(timestampStr);
-            updateMembershipAllToAll(senderId, timestamp);
+            updateMembershipAllToAll(senderId);
         }
     }
 
@@ -97,9 +93,8 @@ public class Receiver {
             logger.warning("receiveJoinRequest" + request);
             String targetIpAddress = senderInfo[0];
             int targetPort = Integer.parseInt(senderInfo[1]);
-            Timestamp joinTimeStamp = Timestamp.valueOf(senderInfo[2]);
-            this.membershipList.add(new Member(senderId, joinTimeStamp));
-            HeartBeat heartBeat = new GossipHeartBeat(this.mode, this.membershipList);
+            this.membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis())));
+            HeartBeat heartBeat = new AgreeJoinHeartBeat(this.mode, this.membershipList);
             logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
         }
@@ -114,15 +109,16 @@ public class Receiver {
             return;
         }
         JSONArray jsonArray = msg.getJSONArray("membership");
+        if (jsonArray == null) {
+            return;
+        }
         logger.warning("receiveAndInitMembership" + msg);
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject memberJson = new JSONObject(jsonArray.get(i).toString());
             String id = memberJson.getString("id");
-            String timestampStr = memberJson.getString("timestamp");
-            if (id != null && timestampStr != null && !isMemberExists(id)) {
-                Timestamp timestamp = Timestamp.valueOf(memberJson.getString("timestamp"));
+            if (id != null && !isMemberExists(id)) {
                 synchronized (this.membershipList) {
-                    this.membershipList.add(new Member(id, timestamp));
+                    this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis())));
                 }
             }
         }
@@ -131,13 +127,13 @@ public class Receiver {
     /*
     * In all to all mode, update membership  ist based on the heartbeat received
      */
-    private void updateMembershipAllToAll(String id, Timestamp timestamp) {
+    private void updateMembershipAllToAll(String id) {
         boolean isInMembershipList = false;
         for (int i = 0; i < membershipList.size(); i++) {
             Member member = membershipList.get(i);
-            if (member.getId().equals(id) && timestamp.after(member.getTimestamp())) {
+            if (member.getId().equals(id)) {
                 synchronized (membershipList.get(i)) {
-                    member.updateTimestamp(timestamp);
+                    member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
                 }
                 isInMembershipList = true;
                 break;
@@ -145,7 +141,9 @@ public class Receiver {
         }
         // this is a new server joining the system
         if (!isInMembershipList) {
-            membershipList.add(new Member(id, timestamp));
+            synchronized (this.membershipList) {
+                membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis())));
+            }
         }
     }
 

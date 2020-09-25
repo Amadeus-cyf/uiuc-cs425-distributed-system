@@ -30,14 +30,14 @@ public class Sender {
     public void sendAllToAll() {
         for (Member member : membershipList){
             Timestamp curTime = new Timestamp(System.currentTimeMillis());
-            if(member.getId().equals(this.id) && member.getStatus().equals(Status.WORKING)) {
+            if(member.getId().equals(this.id)) {
                 member.updateTimestamp(curTime);
                 continue;
             }
             if (member.getStatus().equals(Status.FAIL)) {
                 continue;
             }
-            AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id, curTime);
+            AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id);
             String[] idInfo = member.getId().split("_"); // ipaddr_port_timestamp
             if (idInfo.length == 3) {
                 logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
