@@ -21,18 +21,22 @@ public class TimeoutChecker implements Runnable {
      * iterate over
      */
     public void run() {
-        for (Member member : membershipList) {
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            logger.warning("CHECKER   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
-            if (timestamp.getTime() - member.getTimestamp().getTime() > MAX_TIME_LIMIT)  {
-                member.setStatue(Status.FAIL);
-                logger.warning("TIMEOUT: SERVER - " + member.getId());
-            }
-        }
-        try {
-            Thread.sleep(1000);
-        } catch (Exception e) {
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (Exception e) {
 
+            }
+            for (Member member : membershipList) {
+                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                logger.warning("CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
+                if ((timestamp.getTime() - member.getTimestamp().getTime()) > MAX_TIME_LIMIT)  {
+                    member.setStatue(Status.FAIL);
+                    logger.warning("TIMEOUT: SERVER - " + member.getId());
+                } else if (member.getStatus().equals(Status.FAIL)) {
+                    member.setStatue(Status.WORKING);
+                }
+            }
         }
     }
 }

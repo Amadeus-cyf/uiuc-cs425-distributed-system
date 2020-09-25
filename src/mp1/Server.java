@@ -2,8 +2,6 @@ package mp1;
 
 import mp1.model.Member;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -18,12 +16,7 @@ public class Server extends BaseServer {
 
 
     public Server(String ipAddress, int port) {
-        this.ipAddress = ipAddress;
-        this.port = port;
-        this.membershipList = new ArrayList<>();
-        this.startingTime = new Timestamp(System.currentTimeMillis());
-        this.id = createId();
-        bind();
+        super(ipAddress, port);
         this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
         this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
 

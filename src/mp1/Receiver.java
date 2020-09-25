@@ -1,10 +1,11 @@
 package mp1;
 
+import mp1.model.GossipHeartBeat;
+import mp1.model.HeartBeat;
 import mp1.model.Member;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.net.*;
 import java.sql.Timestamp;
 import java.util.List;
@@ -14,13 +15,13 @@ public class Receiver {
     private String id;
     private String ipAddress;
     private int port;
-    private DatagramSocket socket;
+    private UdpSocket socket;
     private byte[] buffer = new byte[2048];
     private volatile String mode;
     private final List<Member> membershipList;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
-    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, String mode, DatagramSocket socket) {
+    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket) {
         this.id = id;
         this.ipAddress = ipAddress;
         this.port = port;
@@ -32,27 +33,67 @@ public class Receiver {
     public void start() {
         while (true) {
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
-            try {
-                socket.receive(receivedPacket);
-            } catch(IOException exception) {
-                // TODO: log exception
-            }
-            InetAddress senderAddress = receivedPacket.getAddress();
-            int senderPort = receivedPacket.getPort();
+            this.socket.receive(receivedPacket);
             String msg = readBytes(buffer, receivedPacket.getLength());
-            //logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
-            receiveAllToAll(msg);
+            InetAddress senderAddress =  receivedPacket.getAddress();
+            int senderPort = receivedPacket.getPort();
+            logger.warning("mp1.Receiver: " + senderAddress + ":" + senderPort + " sends " + msg);
+            receive(msg);
         }
     }
 
-    private void receiveAllToAll(String msg) {
-        JSONObject jsonObject = new JSONObject(msg);
-        String senderId = jsonObject.getString("id");
-        String timestampStr = jsonObject.getString("timestamp");
+    /*
+     * handle received message in different modes
+     */
+    private void receive(String msg) {
+        JSONObject msgJson = new JSONObject(msg);
+        String senderMode = msgJson.getString("mode");
+        if (senderMode.equals(Mode.JOIN) || senderMode.equals(Mode.AGREE_JOIN) || this.mode.equals(senderMode)) {
+            switch(senderMode) {
+                case(Mode.ALL_TO_ALL):
+                    receiveAllToAll(msgJson);
+                    break;
+                case(Mode.JOIN):
+                    receiveJoinRequest(msgJson);
+                    break;
+                case(Mode.AGREE_JOIN):
+                    receiveAndInitMembership(msgJson);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    /*
+     * handle all to all heartbeats
+     */
+    private void receiveAllToAll(JSONObject msg) {
+        String senderId = msg.getString("id");
+        String timestampStr = msg.getString("timestamp");
         Timestamp timestamp = Timestamp.valueOf(timestampStr);
-        String senderMode = jsonObject.getString("mode");
-        if (this.mode.equals(senderMode)) {
-            updateMembershipAllToAll(senderId, timestamp);
+        updateMembershipAllToAll(senderId, timestamp);
+    }
+
+    /*
+     * handle message request for joining the system
+     */
+    private void receiveJoinRequest(JSONObject request) {
+        if (!this.ipAddress.equals(Introducer.IP_ADDRESS) || this.port != Introducer.PORT) {
+            return;
+        }
+        String senderId = request.getString("id");
+        if (senderId == null || isMemberExists(senderId)) {
+            return;
+        }
+        String[] senderInfo = senderId.split("_");
+        if (senderInfo.length == 3) {
+            String targetIpAddress = senderInfo[0];
+            int targetPort = Integer.parseInt(senderInfo[1]);
+            Timestamp joinTimeStamp = Timestamp.valueOf(senderInfo[2]);
+            this.membershipList.add(new Member(senderId, joinTimeStamp));
+            HeartBeat heartBeat = new GossipHeartBeat(this.mode,this.membershipList);
+            this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
         }
     }
 
@@ -60,14 +101,20 @@ public class Receiver {
      * init the membership list received from the introducer
      * used only when the server joins the system
      */
-    public void receiveAndInitMembership(String msg) {
-        JSONArray jsonArray = new JSONArray(msg);
+    private void receiveAndInitMembership(JSONObject msg) {
+        if (msg.getJSONArray("membership") == null) {
+            return;
+        }
+        JSONArray jsonArray = msg.getJSONArray("membership");
         for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject jsonObject = new JSONObject(jsonArray.get(i).toString());
-            String id = jsonObject.getString("id");
-            Timestamp timestamp = Timestamp.valueOf(jsonObject.getString("timestamp"));
-            synchronized (this.membershipList) {
-                this.membershipList.add(new Member(id, timestamp));
+            JSONObject memberJson = new JSONObject(jsonArray.get(i).toString());
+            String id = memberJson.getString("id");
+            String timestampStr = memberJson.getString("timestamp");
+            if (id != null && timestampStr != null) {
+                Timestamp timestamp = Timestamp.valueOf(memberJson.getString("timestamp"));
+                synchronized (this.membershipList) {
+                    this.membershipList.add(new Member(id, timestamp));
+                }
             }
         }
     }
@@ -79,7 +126,7 @@ public class Receiver {
         boolean isInMembershipList = false;
         for (int i = 0; i < membershipList.size(); i++) {
             Member member = membershipList.get(i);
-            if (member.getId().equals(id) && member.getStatus().equals(Status.WORKING) && timestamp.after(member.getTimestamp())) {
+            if (member.getId().equals(id) && timestamp.after(member.getTimestamp())) {
                 synchronized (membershipList.get(i)) {
                     member.updateTimestamp(timestamp);
                 }
@@ -107,7 +154,18 @@ public class Receiver {
         return sb.toString();
     }
 
+    private boolean isMemberExists(String senderId) {
+        boolean isMemberExists = false;
+        for (Member member : this.membershipList) {
+            if (member.getId().equals(senderId)) {
+                isMemberExists = true;
+                break;
+            }
+        }
+        return isMemberExists;
+    }
+
     public void disconnect() {
-        socket.close();
+        this.socket.disconnect();
     }
 }

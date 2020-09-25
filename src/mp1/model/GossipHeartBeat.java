@@ -5,7 +5,7 @@ import org.json.JSONObject;
 import java.util.List;
 
 public class GossipHeartBeat extends HeartBeat {
-    List<Member> membershipList;
+    private List<Member> membershipList;
 
     public GossipHeartBeat(String mode, List<Member> membershipList) {
         super(mode);
