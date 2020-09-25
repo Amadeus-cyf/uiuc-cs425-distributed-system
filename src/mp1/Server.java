@@ -17,10 +17,11 @@ public class Server extends BaseServer {
 
     public Server(String ipAddress, int port) {
         super(ipAddress, port);
+        this.incarnation = Long.valueOf(0);
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 5000);
+        Server server = new Server("localhost", 3302);
         server.join();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
@@ -31,7 +32,7 @@ public class Server extends BaseServer {
                 while (true) {
                     server.sender.sendAllToAll();
                     try {
-                        Thread.sleep(5000);
+                        Thread.sleep(200);
                     } catch (Exception e) {
 
                     }
@@ -51,7 +52,7 @@ public class Server extends BaseServer {
                 logger.warning("ID: " + member.getId() + " TIMESTAMP: " + member.getTimestamp());
             }
             try {
-                Thread.sleep(10000);
+                Thread.sleep(1000);
             } catch(Exception ignored) {
 
             }
@@ -64,7 +65,7 @@ public class Server extends BaseServer {
         }
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
-        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
+        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.incarnation);
         this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
         Member member = new Member(this.id, this.startingTime);
         this.membershipList.add(member);

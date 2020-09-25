@@ -16,15 +16,17 @@ public class Sender {
     private List<Member> membershipList;
     private String id;
     private String mode;
+    private Long incarnation;
     static Logger logger = Logger.getLogger(Sender.class.getName());
 
-    public Sender(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket) {
+    public Sender(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket, Long incarnation) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.membershipList = membershipList;
         this.id = id;
         this.socket = socket;
         this.mode = mode;
+        this.incarnation = incarnation;
     }
 
     public void sendAllToAll() {
@@ -47,7 +49,7 @@ public class Sender {
     }
 
     public void sendMembership(String targetIpAddress, int targetPort) {
-        GossipHeartBeat gossipHeartBeat = new GossipHeartBeat(this.mode, this.membershipList);
+        GossipHeartBeat gossipHeartBeat = new GossipHeartBeat(this.mode, this.membershipList, this.incarnation);
         logger.warning("sendMembership: sends " + gossipHeartBeat.toJSON() + "to" + targetIpAddress + ":" + targetPort);
         this.socket.send(gossipHeartBeat.toJSON(), targetIpAddress, targetPort);
     }

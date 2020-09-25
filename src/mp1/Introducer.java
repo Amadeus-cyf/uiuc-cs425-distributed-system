@@ -20,7 +20,8 @@ public class Introducer extends BaseServer {
         super(IP_ADDRESS, PORT);
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
-        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
+        this.incarnation = Long.valueOf(0);
+        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.incarnation);
         this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
         this.membershipList.add(new Member(this.id, this.startingTime));
     }
@@ -36,7 +37,7 @@ public class Introducer extends BaseServer {
                 while (true) {
                     server.sender.sendAllToAll();
                     try {
-                        Thread.sleep(5000);
+                        Thread.sleep(200);
                     } catch (Exception e) {
 
                     }
@@ -56,7 +57,7 @@ public class Introducer extends BaseServer {
                 logger.warning("ID: " + member.getId() + " TIMESTAMP: " + member.getTimestamp());
             }
             try {
-                Thread.sleep(10000);
+                Thread.sleep(1000);
             } catch(Exception ignored) {
 
             }

@@ -54,6 +54,7 @@ public class Receiver {
                 receiveJoinRequest(msgJson);
                 break;
             case(MsgType.AGREE_JOIN):
+                logger.warning("agree join!");
                 receiveAndInitMembership(msgJson);
                 break;
             default:
@@ -141,9 +142,9 @@ public class Receiver {
         }
         // this is a new server joining the system
         if (!isInMembershipList) {
-            synchronized (this.membershipList) {
-                membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis())));
-            }
+//            synchronized (this.membershipList) {
+            membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis())));
+//            }
         }
     }
 

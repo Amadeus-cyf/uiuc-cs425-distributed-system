@@ -10,7 +10,7 @@ public class AgreeJoinHeartBeat extends HeartBeat {
     private String mode;
 
     public AgreeJoinHeartBeat(String mode, List<Member> membershipList) {
-        super(MsgType.JOIN_MSG);
+        super(MsgType.AGREE_JOIN);
         this.membershipList = membershipList;
         this.mode = mode;
     }

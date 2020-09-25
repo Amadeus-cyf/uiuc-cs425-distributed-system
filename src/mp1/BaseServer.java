@@ -13,6 +13,7 @@ public abstract class BaseServer {
     protected List<Member> membershipList;
     protected Timestamp startingTime;
     protected String id;
+    protected Long incarnation;
 
     protected BaseServer(String ipAddress, int port) {
         this.ipAddress = ipAddress;
