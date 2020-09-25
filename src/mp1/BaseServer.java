@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class BaseServer {
-
     protected String ipAddress;
     protected int port;
     protected UdpSocket socket;

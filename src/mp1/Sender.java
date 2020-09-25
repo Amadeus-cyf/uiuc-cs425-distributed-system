@@ -24,6 +24,7 @@ public class Sender {
         this.membershipList = membershipList;
         this.id = id;
         this.socket = socket;
+        this.mode = mode;
     }
 
     public void sendAllToAll() {
@@ -52,7 +53,7 @@ public class Sender {
     }
 
     public void sendJoinRequest() {
-        JoinSystemHeartBeat joinSystemHeartBeat = new JoinSystemHeartBeat(this.mode, this.id);
+        JoinSystemHeartBeat joinSystemHeartBeat = new JoinSystemHeartBeat(this.id);
         logger.warning("sendJoinRequest: sends " + joinSystemHeartBeat.toJSON() + "to Introducer");
         this.socket.send(joinSystemHeartBeat.toJSON(), Introducer.IP_ADDRESS, Introducer.PORT);
     }

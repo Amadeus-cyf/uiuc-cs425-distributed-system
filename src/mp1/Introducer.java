@@ -16,16 +16,17 @@ public class Introducer extends BaseServer {
     private String status;
     static Logger logger = Logger.getLogger(Server.class.getName());
 
-    public Introducer(String ipAddress, int port) {
+    public Introducer() {
         super(IP_ADDRESS, PORT);
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
         this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
         this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
+        this.membershipList.add(new Member(this.id, this.startingTime));
     }
 
     public static void main(String[] args) {
-        Introducer server = new Introducer("localhost", 5000);
+        Introducer server = new Introducer();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         ExecutorService checkerThread = Executors.newSingleThreadExecutor();
@@ -62,6 +63,4 @@ public class Introducer extends BaseServer {
         }
 
     }
-
-
 }

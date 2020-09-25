@@ -47,21 +47,19 @@ public class Receiver {
      */
     private void receive(String msg) {
         JSONObject msgJson = new JSONObject(msg);
-        String senderMode = msgJson.getString("mode");
-        if (senderMode.equals(Mode.JOIN) || senderMode.equals(Mode.AGREE_JOIN) || this.mode.equals(senderMode)) {
-            switch(senderMode) {
-                case(Mode.ALL_TO_ALL):
-                    receiveAllToAll(msgJson);
-                    break;
-                case(Mode.JOIN):
-                    receiveJoinRequest(msgJson);
-                    break;
-                case(Mode.AGREE_JOIN):
-                    receiveAndInitMembership(msgJson);
-                    break;
-                default:
-                    break;
-            }
+        String senderMsgType = msgJson.getString("msgType");
+        switch(senderMsgType) {
+            case(MsgType.ALL_TO_ALL_MSG):
+                receiveAllToAll(msgJson);
+                break;
+            case(MsgType.JOIN_MSG):
+                receiveJoinRequest(msgJson);
+                break;
+            case(MsgType.AGREE_JOIN):
+                receiveAndInitMembership(msgJson);
+                break;
+            default:
+                break;
         }
     }
 
@@ -72,8 +70,12 @@ public class Receiver {
         logger.warning("receiveAllToAllt" + msg);
         String senderId = msg.getString("id");
         String timestampStr = msg.getString("timestamp");
-        Timestamp timestamp = Timestamp.valueOf(timestampStr);
-        updateMembershipAllToAll(senderId, timestamp);
+        String senderMode = msg.getString("mode");
+        // thread race condition, mode could be null if a heartbeat before a introducer response reaches
+        if (this.mode == null || this.mode.equals(senderMode)) {
+            Timestamp timestamp = Timestamp.valueOf(timestampStr);
+            updateMembershipAllToAll(senderId, timestamp);
+        }
     }
 
     /*
@@ -87,6 +89,9 @@ public class Receiver {
         if (senderId == null || isMemberExists(senderId)) {
             return;
         }
+        if (this.mode == null) {
+            this.mode = request.getString("mode");
+        }
         String[] senderInfo = senderId.split("_");
         if (senderInfo.length == 3) {
             logger.warning("receiveJoinRequest" + request);
@@ -94,7 +99,7 @@ public class Receiver {
             int targetPort = Integer.parseInt(senderInfo[1]);
             Timestamp joinTimeStamp = Timestamp.valueOf(senderInfo[2]);
             this.membershipList.add(new Member(senderId, joinTimeStamp));
-            HeartBeat heartBeat = new GossipHeartBeat(Mode.AGREE_JOIN,this.membershipList);
+            HeartBeat heartBeat = new GossipHeartBeat(this.mode, this.membershipList);
             logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
         }
@@ -114,7 +119,7 @@ public class Receiver {
             JSONObject memberJson = new JSONObject(jsonArray.get(i).toString());
             String id = memberJson.getString("id");
             String timestampStr = memberJson.getString("timestamp");
-            if (id != null && timestampStr != null) {
+            if (id != null && timestampStr != null && !isMemberExists(id)) {
                 Timestamp timestamp = Timestamp.valueOf(memberJson.getString("timestamp"));
                 synchronized (this.membershipList) {
                     this.membershipList.add(new Member(id, timestamp));
