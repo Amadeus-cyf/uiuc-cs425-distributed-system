@@ -8,13 +8,11 @@ import java.util.List;
 public class GossipHeartBeat extends HeartBeat {
     private List<Member> membershipList;
     private String mode;
-    private Long incarnation;
 
-    public GossipHeartBeat(String mode, List<Member> membershipList, Long incarnation) {
+    public GossipHeartBeat(String mode, List<Member> membershipList) {
         super(MsgType.GOSSIP_MSG);
         this.membershipList = membershipList;
         this.mode = mode;
-        this.incarnation = incarnation;
     }
 
     @Override
@@ -23,7 +21,6 @@ public class GossipHeartBeat extends HeartBeat {
         jsonObject.put("msgType", this.msgType);
         jsonObject.put("membership", this.membershipList);
         jsonObject.put("mode", this.mode);
-        jsonObject.put("incarnation", this.incarnation);
         return jsonObject;
     }
 }

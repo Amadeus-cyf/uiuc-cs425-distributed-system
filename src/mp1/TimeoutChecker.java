@@ -31,10 +31,10 @@ public class TimeoutChecker implements Runnable {
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 logger.warning("CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
                 if ((timestamp.getTime() - member.getTimestamp().getTime()) > MAX_TIME_LIMIT)  {
-                    member.setStatue(Status.FAIL);
+                    member.setStatus(Status.FAIL);
                     logger.warning("TIMEOUT: SERVER - " + member.getId());
                 } else if (member.getStatus().equals(Status.FAIL)) {
-                    member.setStatue(Status.WORKING);
+                    member.setStatus(Status.WORKING);
                 }
             }
         }

@@ -13,6 +13,7 @@ public class Server extends BaseServer {
     static Logger logger = Logger.getLogger(Server.class.getName());
     public Sender sender;
     public Receiver receiver;
+    private Long incarnation = 0L;
 
 
     public Server(String ipAddress, int port) {
@@ -66,8 +67,8 @@ public class Server extends BaseServer {
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
         this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.incarnation);
-        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
-        Member member = new Member(this.id, this.startingTime);
+        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.incarnation);
+        Member member = new Member(this.id, this.startingTime,this.incarnation);
         this.membershipList.add(member);
         // sender send a message to the ip address and port of the introducer
         this.sender.sendJoinRequest();

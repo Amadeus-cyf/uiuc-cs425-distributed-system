@@ -11,17 +11,20 @@ public class Member {
 
     private Timestamp timestamp;
 
-    public Member(String id, Timestamp timestamp) {
+    private long incarnation;
+
+    public Member(String id, Timestamp timestamp, long incarnation) {
         this.timestamp = timestamp;
         this.status = Status.WORKING;
         this.id = id;
+        this.incarnation = incarnation;
     }
 
     public String getStatus() {
         return this.status;
     }
 
-    public void setStatue(String status) {
+    public void setStatus(String status) {
         this.status = status;
     }
 
@@ -35,5 +38,13 @@ public class Member {
 
     public String getId() {
         return this.id;
+    }
+
+    public long getIncarnation() {
+        return this.incarnation;
+    }
+
+    public void setIncarnation(long incarnation) {
+        this.incarnation = incarnation;
     }
 }

@@ -49,7 +49,7 @@ public class Sender {
     }
 
     public void sendMembership(String targetIpAddress, int targetPort) {
-        GossipHeartBeat gossipHeartBeat = new GossipHeartBeat(this.mode, this.membershipList, this.incarnation);
+        GossipHeartBeat gossipHeartBeat = new GossipHeartBeat(this.mode, this.membershipList);
         logger.warning("sendMembership: sends " + gossipHeartBeat.toJSON() + "to" + targetIpAddress + ":" + targetPort);
         this.socket.send(gossipHeartBeat.toJSON(), targetIpAddress, targetPort);
     }

@@ -17,15 +17,18 @@ public class Receiver {
     private byte[] buffer = new byte[2048];
     private volatile String mode;
     private final List<Member> membershipList;
+    private Long incarnation;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
-    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket) {
+    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket, Long incarnation
+    ) {
         this.id = id;
         this.ipAddress = ipAddress;
         this.port = port;
         this.membershipList = membershipList;
         this.mode = mode;
         this.socket = socket;
+        this.incarnation = incarnation;
     }
 
     public void start() {
@@ -49,6 +52,9 @@ public class Receiver {
         switch(senderMsgType) {
             case(MsgType.ALL_TO_ALL_MSG):
                 receiveAllToAll(msgJson);
+                break;
+            case(MsgType.GOSSIP_MSG):
+                receiveGossip(msgJson);
                 break;
             case(MsgType.JOIN_MSG):
                 receiveJoinRequest(msgJson);
@@ -76,6 +82,54 @@ public class Receiver {
     }
 
     /*
+     * handle gossip heartbeats
+     */
+    private void receiveGossip(JSONObject msg) {
+        String senderMode = msg.getString("mode");
+        if (this.mode != null && (!this.mode.equals(senderMode))) {
+            return;
+        }
+        JSONArray senderMembershipList = msg.getJSONArray("membership");
+        if (senderMembershipList == null) {
+            return;
+        }
+        for (int i = 0; i < senderMembershipList.length(); i++) {
+            JSONObject memberJson = new JSONObject(senderMembershipList.get(i).toString());
+            long incarnation = memberJson.getLong("incarnation");
+            String status = memberJson.getString("status");
+            String id = memberJson.getString("id");
+            for (Member member : this.membershipList) {
+                if (member.getId().equals(id)) {
+                    if (this.id.equals(id)) {
+                        if (status.equals(Status.SUSPECT)) {
+                            synchronized (this.incarnation) {
+                                this.incarnation++;
+                            }
+                        }
+                    }
+                    if (member.getStatus().equals(Status.WORKING)) {
+                        if (status.equals(Status.WORKING)) {
+                            member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
+                        } else if (status.equals(Status.SUSPECT)) {
+                            if (member.getIncarnation() <= incarnation) {
+                                member.setStatus(Status.SUSPECT);
+                                member.setIncarnation(incarnation);
+                            }
+                        }
+                    } else if (member.getStatus().equals(Status.SUSPECT)) {
+                        if (status.equals(Status.WORKING)) {
+                            if (incarnation > member.getIncarnation()) {
+                                member.setStatus(Status.WORKING);
+                                member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /*
      * handle message request for joining the system
      */
     private void receiveJoinRequest(JSONObject request) {
@@ -94,7 +148,7 @@ public class Receiver {
             logger.warning("receiveJoinRequest" + request);
             String targetIpAddress = senderInfo[0];
             int targetPort = Integer.parseInt(senderInfo[1]);
-            this.membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis())));
+            this.membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), this.incarnation));
             HeartBeat heartBeat = new AgreeJoinHeartBeat(this.mode, this.membershipList);
             logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
@@ -119,7 +173,7 @@ public class Receiver {
             String id = memberJson.getString("id");
             if (id != null && !isMemberExists(id)) {
                 synchronized (this.membershipList) {
-                    this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis())));
+                    this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), this.incarnation));
                 }
             }
         }
@@ -142,9 +196,9 @@ public class Receiver {
         }
         // this is a new server joining the system
         if (!isInMembershipList) {
-//            synchronized (this.membershipList) {
-            membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis())));
-//            }
+            synchronized (this.membershipList) {
+                membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), this.incarnation));
+            }
         }
     }
 
