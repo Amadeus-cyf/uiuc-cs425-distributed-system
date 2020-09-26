@@ -64,9 +64,7 @@ public class TimeoutChecker implements Runnable {
     private void gossipTimeoutChecker() {
         while (true) {
             try{
-
                 Thread.sleep(1000);
-
             } catch (InterruptedException e) {
             }
             List<Member> delList = new ArrayList<>();
@@ -85,7 +83,6 @@ public class TimeoutChecker implements Runnable {
                     logger.warning("GOSSIP-FAIL: SERVER - " + member.getId());
                 }
             }
-
             for (Member member : delList) {
                 membershipList.remove(member);
             }
@@ -101,5 +98,4 @@ public class TimeoutChecker implements Runnable {
         }
         return false;
     }
-
 }

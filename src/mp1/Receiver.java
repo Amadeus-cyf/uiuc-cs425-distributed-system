@@ -75,9 +75,24 @@ public class Receiver {
         logger.warning("receiveAllToAllt" + msg);
         String senderId = msg.getString("id");
         String senderMode = msg.getString("mode");
+        long heartbeatCounter = msg.getLong("heartbeatCounter");
         // thread race condition, mode could be null if a heartbeat before a introducer response reaches
         if (this.mode == null || this.mode.equals(senderMode)) {
-            updateMembershipAllToAll(senderId);
+            boolean isInMembershipList = false;
+            for (Member member : this.membershipList) {
+                if (member.getId().equals(senderId) && member.getHeartbeatCounter() < heartbeatCounter) {
+                    member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
+                    member.setHeartbeatCounter(heartbeatCounter);
+                    isInMembershipList = true;
+                    break;
+                }
+            }
+            // this is a new server joining the system
+            if (!isInMembershipList) {
+                synchronized (this.membershipList) {
+                    membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), this.heartbeatCounter));
+                }
+            }
         }
     }
 
@@ -170,29 +185,6 @@ public class Receiver {
                 synchronized (this.membershipList) {
                     this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
                 }
-            }
-        }
-    }
-
-    /*
-    * In all to all mode, update membership  ist based on the heartbeat received
-     */
-    private void updateMembershipAllToAll(String id) {
-        boolean isInMembershipList = false;
-        for (int i = 0; i < membershipList.size(); i++) {
-            Member member = membershipList.get(i);
-            if (member.getId().equals(id)) {
-                synchronized (membershipList.get(i)) {
-                    member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
-                }
-                isInMembershipList = true;
-                break;
-            }
-        }
-        // this is a new server joining the system
-        if (!isInMembershipList) {
-            synchronized (this.membershipList) {
-                membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), this.heartbeatCounter));
             }
         }
     }

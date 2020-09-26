@@ -5,9 +5,7 @@ import mp1.model.GossipHeartBeat;
 import mp1.model.JoinSystemHeartBeat;
 import mp1.model.Member;
 
-import java.util.ArrayList;
 import java.util.Random;
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -33,7 +31,6 @@ public class Sender {
     }
 
     public void send() {
-//        logger.warning("current send mode:" + mode);
         switch(mode) {
             case(Mode.ALL_TO_ALL):
                 sendAllToAll();
@@ -48,15 +45,10 @@ public class Sender {
 
     private void sendAllToAll() {
         for (Member member : membershipList){
-            Timestamp curTime = new Timestamp(System.currentTimeMillis());
-            if(member.getId().equals(this.id)) {
-//                member.updateTimestamp(curTime);
+            if(member.getId().equals(this.id) || member.getStatus().equals(Status.FAIL)) {
                 continue;
             }
-            if (member.getStatus().equals(Status.FAIL)) {
-                continue;
-            }
-            AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id);
+            AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id, this.heartbeatCounter);
             String[] idInfo = member.getId().split("_"); // ipaddr_port_timestamp
             if (idInfo.length == 3) {
                 logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
@@ -67,15 +59,12 @@ public class Sender {
 
     private void sendGossip() {
         int length = membershipList.size();
-//        logger.warning("length of the membership list:" + length);
         // empty membership list, do nothing
         if(length == 0){
             return;
         }
-//        logger.warning("length not equal to zero");
 
         // count the number of working members
-
        int numAlive = 0;
        for (Member member : membershipList) {
            if (member.getStatus().equals(Status.WORKING)) {
@@ -85,10 +74,8 @@ public class Sender {
 
         // if we have less number of servers then K working now, we send all membershiplists
         if(numAlive <= K){
-//            logger.warning("length smaller than K");
             // update the timestamp for the current id
             for (Member member : membershipList) {
-//                Timestamp curTime = new Timestamp(System.currentTimeMillis());
                 if (member.getId().equals(this.id)) {
                     continue;
                 }
@@ -96,19 +83,16 @@ public class Sender {
                     continue;
                 }
                 String[] idInfo = member.getId().split("_");
-//                logger.warning("the splitting result:" + idInfo.length);
                 if(idInfo.length == 3){
                     sendMembership(idInfo[0], Integer.parseInt(idInfo[1]));
                 }
             }
             return;
         }
-//        logger.warning("start generating random numbers");
         int[] randomIndices;
         randomIndices = new int[K];
         Random random = new Random();
         for(int i = 0; i < K; i++) {
-//            logger.warning("value i " + i);
             int randIdx = random.nextInt(length);
             if(membershipList.get(randIdx).getId().equals(id) || membershipList.get(randIdx).getStatus().equals(Status.FAIL)){
                 i--;
@@ -123,17 +107,11 @@ public class Sender {
                 }
             }
         }
-//        logger.warning("sendGossip: generate K random indices");
-
         // send MembershipList for each random indices
         for(int indx: randomIndices){
             Member curMember = membershipList.get(indx);
             // we stop sending the membershipList to the server which already fails
-//            if(curMember.getStatus().equals(Status.FAIL)) {
-//                continue;
-//            }
             String[] idInfo = curMember.getId().split("_");
-//            logger.warning("the splitting result:" + idInfo.length);
             if(idInfo.length == 3){
                 sendMembership(idInfo[0], Integer.parseInt(idInfo[1]));
             }
