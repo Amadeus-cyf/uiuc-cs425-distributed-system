@@ -3,8 +3,8 @@ package mp1;
 import mp1.model.Member;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import static mp1.Introducer.IP_ADDRESS;
@@ -13,8 +13,7 @@ import static mp1.Introducer.PORT;
 public class TimeoutChecker implements Runnable {
     private final List<Member> membershipList;
     private final long ALLTOALL_FAIL_TIME_LIMIT = 3000;
-    private final long GOSSIP_SUSPECT_TIME_LIMIT = 5000;
-    private final long GOSSIP_FAIL_TIME_LIMIT = GOSSIP_SUSPECT_TIME_LIMIT;
+    private final long GOSSIP_FAIL_TIME_LIMIT = 3000;
     private volatile String mode;
     private String id;
     static Logger logger = Logger.getLogger(TimeoutChecker.class.getName());
@@ -66,26 +65,29 @@ public class TimeoutChecker implements Runnable {
         while (true) {
             try{
 
-                Thread.sleep(3000);
+                Thread.sleep(1000);
 
             } catch (InterruptedException e) {
             }
+            List<Member> delList = new ArrayList<>();
             for (Member member : membershipList) {
-                if(isIntroducer(member.getId())){
-                    continue;
-                }
-                if(member.getId().equals(id)) {
+                if(isIntroducer(member.getId()) || member.getId().equals(id)) {
                     continue;
                 }
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                logger.warning("GOSSIPCHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
-                if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_FAIL_TIME_LIMIT && member.getStatus().equals(Status.SUSPECT)){
+                logger.warning("GOSSIP-CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
+                if((timestamp.getTime() - member.getTimestamp().getTime()) >= 2*GOSSIP_FAIL_TIME_LIMIT){
+                    logger.warning("GOSSIP-CLEANOUT: SERVER - " + member.getId());
+                    // go through the membershiplist, delete the member
+                    delList.add(member);
+                } else if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_FAIL_TIME_LIMIT && member.getStatus().equals(Status.WORKING)){
                     member.setStatus(Status.FAIL);
                     logger.warning("GOSSIP-FAIL: SERVER - " + member.getId());
-                } else if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_SUSPECT_TIME_LIMIT && member.getStatus().equals(Status.WORKING)){
-                    member.setStatus(Status.SUSPECT);
-                    logger.warning("GOSSIP-SUSPECT: SERVER - " + member.getId());
                 }
+            }
+
+            for (Member member : delList) {
+                membershipList.remove(member);
             }
         }
     }

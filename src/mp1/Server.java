@@ -32,7 +32,7 @@ public class Server extends BaseServer {
                 while (true) {
                     server.sender.send();
                     try {
-                        Thread.sleep(3000);
+                        Thread.sleep(1000);
                     } catch (Exception e) {
 
                     }
@@ -47,16 +47,16 @@ public class Server extends BaseServer {
         });
         checkerThread.execute(new TimeoutChecker(server.membershipList, server.mode, server.id));
 
-        while (true) {
-            for (Member member : server.membershipList) {
-                logger.warning("ID: " + member.getId() + " TIMESTAMP: " + member.getTimestamp());
-            }
-            try {
-                Thread.sleep(3000);
-            } catch(Exception ignored) {
-
-            }
-        }
+//        while (true) {
+//            for (Member member : server.membershipList) {
+//                logger.warning("ID: " + member.getId() + " TIMESTAMP: " + member.getTimestamp());
+//            }
+//            try {
+//                Thread.sleep(3000);
+//            } catch(Exception ignored) {
+//
+//            }
+//        }
     }
 
     public void join() {
