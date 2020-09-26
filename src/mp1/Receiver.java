@@ -80,7 +80,7 @@ public class Receiver {
         if (this.mode == null || this.mode.equals(senderMode)) {
             boolean isInMembershipList = false;
             for (Member member : this.membershipList) {
-                if ((member.getId().equals(senderId)) && member.getHeartbeatCounter() < heartbeatCounter) {
+                if ((member.getId().equals(senderId))) {
                     member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
                     member.setHeartbeatCounter(heartbeatCounter);
                     isInMembershipList = true;
@@ -162,17 +162,6 @@ public class Receiver {
 
             logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
-//            updateMember();
-        }
-    }
-
-    // helper function to inc by 1 of the sender'id member
-    private void updateMember() {
-        this.heartbeatCounter++;
-        for(int i= 0; i < this.membershipList.size(); i++) {
-            if(this.membershipList.get(i).getId().equals(this.id)) {
-                this.membershipList.get(i).incHeartbeatCounter();
-            }
         }
     }
 

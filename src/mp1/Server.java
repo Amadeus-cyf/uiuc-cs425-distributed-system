@@ -21,7 +21,7 @@ public class Server extends BaseServer {
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3300);
+        Server server = new Server("localhost", 3100);
         server.join();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
@@ -46,17 +46,6 @@ public class Server extends BaseServer {
             }
         });
         checkerThread.execute(new TimeoutChecker(server.membershipList, server.mode, server.id));
-
-//        while (true) {
-//            for (Member member : server.membershipList) {
-//                logger.warning("ID: " + member.getId() + " TIMESTAMP: " + member.getTimestamp());
-//            }
-//            try {
-//                Thread.sleep(3000);
-//            } catch(Exception ignored) {
-//
-//            }
-//        }
     }
 
     public void join() {

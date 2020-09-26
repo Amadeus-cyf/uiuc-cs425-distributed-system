@@ -21,7 +21,6 @@ public class Introducer extends BaseServer {
         super(IP_ADDRESS, PORT);
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
-        this.heartbeatCounter = Long.valueOf(0);
         this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.heartbeatCounter);
         this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.heartbeatCounter);
         this.membershipList.add(new Member(this.id, this.startingTime, this.heartbeatCounter));
