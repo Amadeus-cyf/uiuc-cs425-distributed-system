@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 public class Server extends BaseServer {
-    private volatile String mode;
+    private volatile String mode = Mode.GOSSIP;
     private String status;
     static Logger logger = Logger.getLogger(Server.class.getName());
     public Sender sender;
@@ -22,7 +22,7 @@ public class Server extends BaseServer {
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3302);
+        Server server = new Server("localhost", 3303);
         server.join();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
@@ -31,9 +31,9 @@ public class Server extends BaseServer {
             @Override
             public void run() {
                 while (true) {
-                    server.sender.sendAllToAll();
+                    server.sender.send();
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(3000);
                     } catch (Exception e) {
 
                     }
@@ -46,14 +46,14 @@ public class Server extends BaseServer {
                 server.receiver.start();
             }
         });
-        checkerThread.execute(new TimeoutChecker(server.membershipList, server.mode));
+        checkerThread.execute(new TimeoutChecker(server.membershipList, server.mode, server.id));
 
         while (true) {
             for (Member member : server.membershipList) {
                 logger.warning("ID: " + member.getId() + " TIMESTAMP: " + member.getTimestamp());
             }
             try {
-                Thread.sleep(1000);
+                Thread.sleep(3000);
             } catch(Exception ignored) {
 
             }
@@ -64,6 +64,7 @@ public class Server extends BaseServer {
         if (this.status != null && this.status.equals(Status.WORKING)) {
             return;
         }
+        this.status = Status.WORKING;
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
         this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.incarnation);

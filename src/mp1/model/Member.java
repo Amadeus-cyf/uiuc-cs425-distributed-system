@@ -47,4 +47,9 @@ public class Member {
     public void setIncarnation(long incarnation) {
         this.incarnation = incarnation;
     }
+
+    public void updateIncarnation() {
+        this.incarnation++;
+    }
+
 }

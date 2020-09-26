@@ -6,6 +6,7 @@ import org.json.JSONObject;
 
 import java.net.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -93,17 +94,28 @@ public class Receiver {
         if (senderMembershipList == null) {
             return;
         }
+        String senderId = msg.getString("id");
+
+        List<Member> failList = new ArrayList<>();
         for (int i = 0; i < senderMembershipList.length(); i++) {
             JSONObject memberJson = new JSONObject(senderMembershipList.get(i).toString());
             long incarnation = memberJson.getLong("incarnation");
             String status = memberJson.getString("status");
             String id = memberJson.getString("id");
+            boolean isInMembershipList = false;
             for (Member member : this.membershipList) {
                 if (member.getId().equals(id)) {
+                    if (status.equals(Status.FAIL)) {
+                        member.setStatus(Status.FAIL);
+                        continue;
+                    }
+                    isInMembershipList = true;
                     if (this.id.equals(id)) {
                         if (status.equals(Status.SUSPECT)) {
+                            member.updateIncarnation();
                             synchronized (this.incarnation) {
                                 this.incarnation++;
+                                logger.warning("update incarnation number" + this.id + this.incarnation);
                             }
                         }
                     }
@@ -121,11 +133,30 @@ public class Receiver {
                             if (incarnation > member.getIncarnation()) {
                                 member.setStatus(Status.WORKING);
                                 member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
+                                member.setIncarnation(incarnation);
                             }
                         }
+                    } else if (member.getStatus().equals(Status.FAIL)) {
+                        failList.add(member);
+                        logger.warning("fail server:" + member.getId());
                     }
                 }
             }
+            if (!isInMembershipList) {
+                this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), incarnation));
+            }
+        }
+        // if the sender has fail/suspect status on local membership, we update the status to working.
+        for (Member member : this.membershipList) {
+            if (member.getId().equals(senderId)) {
+                if (member.getStatus().equals(Status.FAIL) || member.getStatus().equals(Status.SUSPECT)) {
+                    member.setStatus(Status.WORKING);
+                }
+            }
+        }
+        // remove all members with fail status from the membership list
+        for (Member member : failList) {
+            this.membershipList.remove(member);
         }
     }
 
@@ -148,7 +179,7 @@ public class Receiver {
             logger.warning("receiveJoinRequest" + request);
             String targetIpAddress = senderInfo[0];
             int targetPort = Integer.parseInt(senderInfo[1]);
-            this.membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), this.incarnation));
+            this.membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), 0));
             HeartBeat heartBeat = new AgreeJoinHeartBeat(this.mode, this.membershipList);
             logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
@@ -171,9 +202,10 @@ public class Receiver {
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject memberJson = new JSONObject(jsonArray.get(i).toString());
             String id = memberJson.getString("id");
+            long incarnation = memberJson.getLong("incarnation");
             if (id != null && !isMemberExists(id)) {
                 synchronized (this.membershipList) {
-                    this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), this.incarnation));
+                    this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), incarnation));
                 }
             }
         }

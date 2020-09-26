@@ -10,11 +10,12 @@ import java.util.logging.Logger;
 public class Introducer extends BaseServer {
     public static final String IP_ADDRESS = "localhost";
     public static final int PORT = 3000;
-    private volatile String mode = Mode.ALL_TO_ALL;
+    private volatile String mode = Mode.GOSSIP;
     private Sender sender;
     private Receiver receiver;
     private String status;
     static Logger logger = Logger.getLogger(Server.class.getName());
+    private Long incarnation = 0L;
 
     public Introducer() {
         super(IP_ADDRESS, PORT);
@@ -22,8 +23,8 @@ public class Introducer extends BaseServer {
         this.id = createId();
         this.incarnation = Long.valueOf(0);
         this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.incarnation);
-        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket);
-        this.membershipList.add(new Member(this.id, this.startingTime));
+        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.incarnation);
+        this.membershipList.add(new Member(this.id, this.startingTime, this.incarnation));
     }
 
     public static void main(String[] args) {
@@ -35,9 +36,9 @@ public class Introducer extends BaseServer {
             @Override
             public void run() {
                 while (true) {
-                    server.sender.sendAllToAll();
+                    server.sender.send();
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(3000);
                     } catch (Exception e) {
 
                     }
@@ -50,14 +51,14 @@ public class Introducer extends BaseServer {
                 server.receiver.start();
             }
         });
-        checkerThread.execute(new TimeoutChecker(server.membershipList, server.mode));
+        checkerThread.execute(new TimeoutChecker(server.membershipList, server.mode, server.id));
 
         while (true) {
             for (Member member : server.membershipList) {
                 logger.warning("ID: " + member.getId() + " TIMESTAMP: " + member.getTimestamp());
             }
             try {
-                Thread.sleep(1000);
+                Thread.sleep(3000);
             } catch(Exception ignored) {
 
             }
