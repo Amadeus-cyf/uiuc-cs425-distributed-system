@@ -95,8 +95,10 @@ public class Receiver {
             long heartbeatCounter = memberJson.getLong("heartbeatCounter");
             String status = memberJson.getString("status");
             String id = memberJson.getString("id");
+            boolean isMemberExist = false;
             for (Member member : this.membershipList) {
                 if (member.getId().equals(id)) {
+                    isMemberExist = true;
                     if (status.equals(Status.FAIL)) {
                         if (member.getHeartbeatCounter() < heartbeatCounter) {
                             member.setHeartbeatCounter(heartbeatCounter);
@@ -114,6 +116,9 @@ public class Receiver {
                         member.setHeartbeatCounter(heartbeatCounter);
                     }
                 }
+            }
+            if (!isMemberExist) {
+                this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
             }
         }
     }
