@@ -98,15 +98,20 @@ public class Receiver {
             for (Member member : this.membershipList) {
                 if (member.getId().equals(id)) {
                     if (status.equals(Status.FAIL)) {
-                        member.setStatus(Status.FAIL);
+                        if (member.getHeartbeatCounter() < heartbeatCounter) {
+                            member.setHeartbeatCounter(heartbeatCounter);
+                            member.setStatus(Status.FAIL);
+                        }
                     } else {
                         if (member.getHeartbeatCounter() < heartbeatCounter) {
                             member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
+                            member.setHeartbeatCounter(heartbeatCounter);
                         }
                     }
                     // sender has fail status on the local membership list, we let it rejoin the system
                     if (member.getId().equals(senderId) && member.getStatus().equals(Status.FAIL)) {
                         member.setStatus(Status.WORKING);
+                        member.setHeartbeatCounter(heartbeatCounter);
                     }
                 }
             }
@@ -155,10 +160,10 @@ public class Receiver {
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject memberJson = new JSONObject(jsonArray.get(i).toString());
             String id = memberJson.getString("id");
-            long incarnation = memberJson.getLong("incarnation");
+            long  heartbeatCounter = memberJson.getLong("heartbeatCounter");
             if (id != null && !isMemberExists(id)) {
                 synchronized (this.membershipList) {
-                    this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), incarnation));
+                    this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
                 }
             }
         }

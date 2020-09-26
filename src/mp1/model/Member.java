@@ -47,4 +47,8 @@ public class Member {
     public void incHeartbeatCounter() {
         this.heartbeatCounter++;
     }
+
+    public void setHeartbeatCounter(long heartbeatCounter) {
+        this.heartbeatCounter = heartbeatCounter;
+    }
 }
