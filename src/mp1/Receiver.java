@@ -6,7 +6,6 @@ import org.json.JSONObject;
 
 import java.net.*;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -18,10 +17,10 @@ public class Receiver {
     private byte[] buffer = new byte[2048];
     private volatile String mode;
     private final List<Member> membershipList;
-    private Long incarnation;
+    private Long heartbeatCounter;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
-    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket, Long incarnation
+    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket, Long heartbeatCounter
     ) {
         this.id = id;
         this.ipAddress = ipAddress;
@@ -29,7 +28,7 @@ public class Receiver {
         this.membershipList = membershipList;
         this.mode = mode;
         this.socket = socket;
-        this.incarnation = incarnation;
+        this.heartbeatCounter = heartbeatCounter;
     }
 
     public void start() {
@@ -86,77 +85,31 @@ public class Receiver {
      * handle gossip heartbeats
      */
     private void receiveGossip(JSONObject msg) {
-        String senderMode = msg.getString("mode");
-        if (this.mode != null && (!this.mode.equals(senderMode))) {
-            return;
-        }
-        JSONArray senderMembershipList = msg.getJSONArray("membership");
-        if (senderMembershipList == null) {
-            return;
-        }
         String senderId = msg.getString("id");
-
-        List<Member> failList = new ArrayList<>();
+        JSONArray senderMembershipList = msg.getJSONArray("membership");
+        if (senderMembershipList == null || senderId == null) {
+            return;
+        }
         for (int i = 0; i < senderMembershipList.length(); i++) {
             JSONObject memberJson = new JSONObject(senderMembershipList.get(i).toString());
-            long incarnation = memberJson.getLong("incarnation");
+            long heartbeatCounter = memberJson.getLong("heartbeatCounter");
             String status = memberJson.getString("status");
             String id = memberJson.getString("id");
-            boolean isInMembershipList = false;
             for (Member member : this.membershipList) {
                 if (member.getId().equals(id)) {
                     if (status.equals(Status.FAIL)) {
                         member.setStatus(Status.FAIL);
-                        continue;
-                    }
-                    isInMembershipList = true;
-                    if (this.id.equals(id)) {
-                        if (status.equals(Status.SUSPECT)) {
-                            member.updateIncarnation();
-                            synchronized (this.incarnation) {
-                                this.incarnation++;
-                                logger.warning("update incarnation number" + this.id + this.incarnation);
-                            }
-                        }
-                    }
-                    if (member.getStatus().equals(Status.WORKING)) {
-                        if (status.equals(Status.WORKING)) {
+                    } else {
+                        if (member.getHeartbeatCounter() < heartbeatCounter) {
                             member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
-                        } else if (status.equals(Status.SUSPECT)) {
-                            if (member.getIncarnation() <= incarnation) {
-                                member.setStatus(Status.SUSPECT);
-                                member.setIncarnation(incarnation);
-                            }
                         }
-                    } else if (member.getStatus().equals(Status.SUSPECT)) {
-                        if (status.equals(Status.WORKING)) {
-                            if (incarnation > member.getIncarnation()) {
-                                member.setStatus(Status.WORKING);
-                                member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
-                                member.setIncarnation(incarnation);
-                            }
-                        }
-                    } else if (member.getStatus().equals(Status.FAIL)) {
-                        failList.add(member);
-                        logger.warning("fail server:" + member.getId());
+                    }
+                    // sender has fail status on the local membership list, we let it rejoin the system
+                    if (member.getId().equals(senderId) && member.getStatus().equals(Status.FAIL)) {
+                        member.setStatus(Status.WORKING);
                     }
                 }
             }
-            if (!isInMembershipList) {
-                this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), incarnation));
-            }
-        }
-        // if the sender has fail/suspect status on local membership, we update the status to working.
-        for (Member member : this.membershipList) {
-            if (member.getId().equals(senderId)) {
-                if (member.getStatus().equals(Status.FAIL) || member.getStatus().equals(Status.SUSPECT)) {
-                    member.setStatus(Status.WORKING);
-                }
-            }
-        }
-        // remove all members with fail status from the membership list
-        for (Member member : failList) {
-            this.membershipList.remove(member);
         }
     }
 
@@ -229,7 +182,7 @@ public class Receiver {
         // this is a new server joining the system
         if (!isInMembershipList) {
             synchronized (this.membershipList) {
-                membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), this.incarnation));
+                membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), this.heartbeatCounter));
             }
         }
     }

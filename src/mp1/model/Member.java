@@ -11,13 +11,13 @@ public class Member {
 
     private Timestamp timestamp;
 
-    private long incarnation;
+    private long heartbeatCounter;
 
-    public Member(String id, Timestamp timestamp, long incarnation) {
+    public Member(String id, Timestamp timestamp, long heartbeatCounter) {
         this.timestamp = timestamp;
         this.status = Status.WORKING;
         this.id = id;
-        this.incarnation = incarnation;
+        this.heartbeatCounter = heartbeatCounter;
     }
 
     public String getStatus() {
@@ -40,16 +40,11 @@ public class Member {
         return this.id;
     }
 
-    public long getIncarnation() {
-        return this.incarnation;
+    public long getHeartbeatCounter() {
+        return this.heartbeatCounter;
     }
 
-    public void setIncarnation(long incarnation) {
-        this.incarnation = incarnation;
+    public void incHeartbeatCounter() {
+        this.heartbeatCounter++;
     }
-
-    public void updateIncarnation() {
-        this.incarnation++;
-    }
-
 }

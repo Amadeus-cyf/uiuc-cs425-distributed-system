@@ -5,7 +5,6 @@ import mp1.model.GossipHeartBeat;
 import mp1.model.JoinSystemHeartBeat;
 import mp1.model.Member;
 
-import java.util.ArrayList;
 import java.util.Random;
 import java.sql.Timestamp;
 import java.util.List;
