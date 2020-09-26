@@ -16,17 +16,19 @@ public class Receiver {
     private UdpSocket socket;
     private byte[] buffer = new byte[2048];
     private volatile String mode;
+    private StringBuilder modeBuilder;
     private final List<Member> membershipList;
     private Long heartbeatCounter;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
-    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket, Long heartbeatCounter
+    public Receiver(String id, String ipAddress, int port, List<Member> membershipList, StringBuilder modeBuilder, UdpSocket socket, Long heartbeatCounter
     ) {
         this.id = id;
         this.ipAddress = ipAddress;
         this.port = port;
         this.membershipList = membershipList;
-        this.mode = mode;
+        this.modeBuilder = modeBuilder;
+        this.mode = modeBuilder.toString();
         this.socket = socket;
         this.heartbeatCounter = heartbeatCounter;
     }
@@ -38,7 +40,7 @@ public class Receiver {
             String msg = readBytes(buffer, receivedPacket.getLength());
             InetAddress senderAddress =  receivedPacket.getAddress();
             int senderPort = receivedPacket.getPort();
-            logger.warning("mp1.Receiver: Re" + senderAddress + ":" + senderPort + " sends " + msg);
+            //logger.warning("mp1.Receiver: Re" + senderAddress + ":" + senderPort + " sends " + msg);
             receive(msg);
         }
     }
@@ -60,8 +62,11 @@ public class Receiver {
                 receiveJoinRequest(msgJson);
                 break;
             case(MsgType.AGREE_JOIN):
-                logger.warning("agree join!");
+                //logger.warning("agree join!");
                 receiveAndInitMembership(msgJson);
+                break;
+            case(MsgType.SWITCH_MODE):
+                receiveSwitchMode(msgJson);
                 break;
             default:
                 break;
@@ -72,7 +77,7 @@ public class Receiver {
      * handle all to all heartbeats
      */
     private void receiveAllToAll(JSONObject msg) {
-        logger.warning("receiveAllToAllt" + msg);
+        //logger.warning("receiveAllToAllt" + msg);
         String senderId = msg.getString("id");
         String senderMode = msg.getString("mode");
         long heartbeatCounter = msg.getLong("heartbeatCounter");
@@ -105,6 +110,10 @@ public class Receiver {
         if (senderMembershipList == null || senderId == null) {
             return;
         }
+        String senderMode = msg.getString("mode");
+        if (this.mode != null && (!this.mode.equals(senderMode))) {
+            return;
+        }
         for (int i = 0; i < senderMembershipList.length(); i++) {
             JSONObject memberJson = new JSONObject(senderMembershipList.get(i).toString());
             long heartbeatCounter = memberJson.getLong("heartbeatCounter");
@@ -126,10 +135,10 @@ public class Receiver {
                         }
                     }
                     // sender has fail status on the local membership list, we let it rejoin the system
-                    if (member.getId().equals(senderId) && member.getStatus().equals(Status.FAIL)) {
-                        member.setStatus(Status.WORKING);
-                        member.setHeartbeatCounter(heartbeatCounter);
-                    }
+                    //if (member.getId().equals(senderId) && member.getStatus().equals(Status.FAIL)) {
+                    //    member.setStatus(Status.WORKING);
+                    //    member.setHeartbeatCounter(heartbeatCounter);
+                    //}
                 }
             }
             if (!isMemberExist) {
@@ -154,13 +163,13 @@ public class Receiver {
         }
         String[] senderInfo = senderId.split("_");
         if (senderInfo.length == 3) {
-            logger.warning("receiveJoinRequest" + request);
+           // logger.warning("receiveJoinRequest" + request);
             String targetIpAddress = senderInfo[0];
             int targetPort = Integer.parseInt(senderInfo[1]);
             this.membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), 0));
             HeartBeat heartBeat = new AgreeJoinHeartBeat(this.mode, this.membershipList);
 
-            logger.warning("SendBackMembership" + heartBeat.toJSON());
+            //logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
         }
     }
@@ -177,7 +186,7 @@ public class Receiver {
         if (jsonArray == null) {
             return;
         }
-        logger.warning("receiveAndInitMembership" + msg);
+        //logger.warning("receiveAndInitMembership" + msg);
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject memberJson = new JSONObject(jsonArray.get(i).toString());
             String id = memberJson.getString("id");
@@ -187,6 +196,19 @@ public class Receiver {
                     this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
                 }
             }
+        }
+    }
+
+    /*
+     * change the mode
+     */
+    private void receiveSwitchMode(JSONObject msg) {
+        String newMode = msg.getString("mode");
+        this.modeBuilder.setLength(0);
+        this.modeBuilder.append(newMode);
+        logger.warning("MODE CHANGED FROM " + this.mode + " to " + newMode);
+        if (newMode != null) {
+            this.mode = newMode;
         }
     }
 

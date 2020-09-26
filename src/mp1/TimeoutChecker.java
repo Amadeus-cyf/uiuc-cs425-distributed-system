@@ -14,13 +14,15 @@ public class TimeoutChecker implements Runnable {
     private final List<Member> membershipList;
     private final long ALLTOALL_FAIL_TIME_LIMIT = 3000;
     private final long GOSSIP_FAIL_TIME_LIMIT = 3000;
+    private StringBuilder modeBuilder;
     private volatile String mode;
     private String id;
     static Logger logger = Logger.getLogger(TimeoutChecker.class.getName());
 
-    public TimeoutChecker(List<Member> membershipList, String mode, String id) {
+    public TimeoutChecker(List<Member> membershipList, StringBuilder modeBuilder, String id) {
         this.membershipList = membershipList;
-        this.mode = mode;
+        this.modeBuilder = modeBuilder;
+        this.mode = modeBuilder.toString();
         this.id = id;
     }
 
@@ -28,67 +30,66 @@ public class TimeoutChecker implements Runnable {
      * run the timeoutchecker based on different modes
      */
     public void run() {
-        switch (mode) {
-            case(Mode.ALL_TO_ALL):
-                allToAllTimeoutChecker();
-                break;
-            case(Mode.GOSSIP):
-                gossipTimeoutChecker();
-                break;
-            default:
-                break;
+        while(true) {
+            switch (this.modeBuilder.toString()) {
+                case(Mode.ALL_TO_ALL):
+                    logger.warning("TIME CHECKER ALL TO ALL");
+                    allToAllTimeoutChecker();
+                    break;
+                case(Mode.GOSSIP):
+                    logger.warning("TIME CHECKER GOSSIP");
+                    gossipTimeoutChecker();
+                    break;
+                default:
+                    break;
+            }
         }
-
     }
 
     private void allToAllTimeoutChecker() {
-        while (true) {
-            try {
-                Thread.sleep(1000);
-            } catch (Exception e) {
+        try {
+            Thread.sleep(1000);
+        } catch (Exception e) {
 
+        }
+        for (Member member : membershipList) {
+            if(isIntroducer(member.getId()) || member.getId().equals(id)) {
+                continue;
             }
-            for (Member member : membershipList) {
-                if(isIntroducer(member.getId()) || member.getId().equals(id)) {
-                    continue;
-                }
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                logger.warning("ALL2ALL-CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
-                if ((timestamp.getTime() - member.getTimestamp().getTime()) >= ALLTOALL_FAIL_TIME_LIMIT)  {
-                    member.setStatus(Status.FAIL);
-                    logger.warning("ALL2ALL-FAIL: SERVER - " + member.getId());
-                } else if (member.getStatus().equals(Status.FAIL)) {
-                    member.setStatus(Status.WORKING);
-                }
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            //logger.warning("ALL2ALL-CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
+            if ((timestamp.getTime() - member.getTimestamp().getTime()) >= ALLTOALL_FAIL_TIME_LIMIT)  {
+                member.setStatus(Status.FAIL);
+                //logger.warning("ALL2ALL-FAIL: SERVER - " + member.getId());
+            } else if (member.getStatus().equals(Status.FAIL)) {
+                member.setStatus(Status.WORKING);
             }
         }
     }
 
     private void gossipTimeoutChecker() {
-        while (true) {
-            try{
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
+        try{
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+        }
+        List<Member> delList = new ArrayList<>();
+        for (Member member : membershipList) {
+            if(isIntroducer(member.getId()) || member.getId().equals(id)) {
+                continue;
             }
-            List<Member> delList = new ArrayList<>();
-            for (Member member : membershipList) {
-                if(isIntroducer(member.getId()) || member.getId().equals(id)) {
-                    continue;
-                }
-                Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                logger.warning("GOSSIP-CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
-                if((timestamp.getTime() - member.getTimestamp().getTime()) >= 2*GOSSIP_FAIL_TIME_LIMIT){
-                    logger.warning("GOSSIP-CLEANOUT: SERVER - " + member.getId());
-                    // go through the membershiplist, delete the member
-                    delList.add(member);
-                } else if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_FAIL_TIME_LIMIT && member.getStatus().equals(Status.WORKING)){
-                    member.setStatus(Status.FAIL);
-                    logger.warning("GOSSIP-FAIL: SERVER - " + member.getId());
-                }
+            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+            //logger.warning("GOSSIP-CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
+            if((timestamp.getTime() - member.getTimestamp().getTime()) >= 2*GOSSIP_FAIL_TIME_LIMIT){
+                logger.warning("GOSSIP-CLEANOUT: SERVER - " + member.getId());
+                // go through the membershiplist, delete the member
+                delList.add(member);
+            } else if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_FAIL_TIME_LIMIT && member.getStatus().equals(Status.WORKING)){
+                member.setStatus(Status.FAIL);
+                logger.warning("GOSSIP-FAIL: SERVER - " + member.getId());
             }
-            for (Member member : delList) {
-                membershipList.remove(member);
-            }
+        }
+        for (Member member : delList) {
+            membershipList.remove(member);
         }
     }
 

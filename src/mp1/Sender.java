@@ -1,9 +1,6 @@
 package mp1;
 
-import mp1.model.AllToAllHeartBeat;
-import mp1.model.GossipHeartBeat;
-import mp1.model.JoinSystemHeartBeat;
-import mp1.model.Member;
+import mp1.model.*;
 
 import java.util.Random;
 import java.util.List;
@@ -15,23 +12,25 @@ public class Sender {
     private int port;
     private List<Member> membershipList;
     private String id;
-    private String mode;
+    private StringBuilder modeBuilder;
+    private volatile  String mode;
     private Long heartbeatCounter;
     static Logger logger = Logger.getLogger(Sender.class.getName());
     private static final int K = 3;
 
-    public Sender(String id, String ipAddress, int port, List<Member> membershipList, String mode, UdpSocket socket, Long heartbeatCounter) {
+    public Sender(String id, String ipAddress, int port, List<Member> membershipList, StringBuilder modeBuilder, UdpSocket socket, Long heartbeatCounter) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.membershipList = membershipList;
         this.id = id;
         this.socket = socket;
-        this.mode = mode;
+        this.modeBuilder = modeBuilder;
+        this.mode = modeBuilder.toString();
         this.heartbeatCounter = heartbeatCounter;
     }
 
     public void send() {
-        switch(mode) {
+        switch(this.modeBuilder.toString()) {
             case(Mode.ALL_TO_ALL):
                 sendAllToAll();
                 break;
@@ -51,7 +50,8 @@ public class Sender {
             AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id, this.heartbeatCounter);
             String[] idInfo = member.getId().split("_"); // ipaddr_port_timestamp
             if (idInfo.length == 3) {
-                logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
+                logger.warning("ALL TO ALL");
+                //logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
                 this.socket.send(all2all.toJSON(), idInfo[0], Integer.parseInt(idInfo[1]));
                 updateMember();
             }
@@ -59,6 +59,7 @@ public class Sender {
     }
 
     private void sendGossip() {
+        logger.warning("GOSSIP");
         int length = membershipList.size();
         // empty membership list, do nothing
         if(length == 0){
@@ -140,8 +141,28 @@ public class Sender {
 
     public void sendJoinRequest() {
         JoinSystemHeartBeat joinSystemHeartBeat = new JoinSystemHeartBeat(this.id);
-        logger.warning("sendJoinRequest: sends " + joinSystemHeartBeat.toJSON() + "to Introducer");
+        //logger.warning("sendJoinRequest: sends " + joinSystemHeartBeat.toJSON() + "to Introducer");
         this.socket.send(joinSystemHeartBeat.toJSON(), Introducer.IP_ADDRESS, Introducer.PORT);
+    }
+
+    public void switchMode(String mode) {
+        if (this.mode.equals(mode)) {
+            return;
+        }
+        this.modeBuilder.setLength(0);
+        this.modeBuilder.append(mode);
+        this.mode = mode;
+        SwitchModeHeartBeat switchModeHeartBeat = new SwitchModeHeartBeat(mode);
+        for (Member member : membershipList) {
+            if (member.getId().equals(this.id)) {
+                continue;
+            }
+            String[] idInfo = member.getId().split("_");
+            if (idInfo.length == 3) {
+                this.socket.send(switchModeHeartBeat.toJSON(),idInfo[0], Integer.parseInt(idInfo[1]));
+                logger.warning("Mode changed sends to " + idInfo[0] + ":" + idInfo[1] + switchModeHeartBeat.toJSON().toString());
+            }
+        }
     }
 
     public void disconnect() {

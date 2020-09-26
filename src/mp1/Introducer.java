@@ -3,6 +3,7 @@ package mp1;
 import mp1.model.Member;
 
 import java.sql.Timestamp;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
@@ -10,7 +11,8 @@ import java.util.logging.Logger;
 public class Introducer extends BaseServer {
     public static final String IP_ADDRESS = "localhost";
     public static final int PORT = 3000;
-    private volatile String mode = Mode.ALL_TO_ALL;
+    private StringBuilder modeBuilder;
+    private volatile String mode = Mode.GOSSIP;
     private Sender sender;
     private Receiver receiver;
     private String status;
@@ -21,8 +23,10 @@ public class Introducer extends BaseServer {
         super(IP_ADDRESS, PORT);
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
-        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.heartbeatCounter);
-        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.mode, this.socket, this.heartbeatCounter);
+        this.modeBuilder = new StringBuilder();
+        this.modeBuilder.append(Mode.GOSSIP);
+        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.socket, this.heartbeatCounter);
+        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.socket, this.heartbeatCounter);
         this.membershipList.add(new Member(this.id, this.startingTime, this.heartbeatCounter));
     }
 
@@ -50,18 +54,19 @@ public class Introducer extends BaseServer {
                 server.receiver.start();
             }
         });
-        checkerThread.execute(new TimeoutChecker(server.membershipList, server.mode, server.id));
+        checkerThread.execute(new TimeoutChecker(server.membershipList, server.modeBuilder, server.id));
+        handleCommandInput(server);
+    }
 
-//        while (true) {
-//            for (Member member : server.membershipList) {
-//                logger.warning("ID: " + member.getId() + " TIMESTAMP: " + member.getTimestamp());
-//            }
-//            try {
-//                Thread.sleep(1000);
-//            } catch(Exception ignored) {
-//
-//            }
-//        }
-
+    private static void handleCommandInput(Introducer server) {
+        Scanner scanner = new Scanner(System.in);
+        while(true) {
+            String command = scanner.nextLine();
+            if (command.equals("C")) {
+                String newMode = server.modeBuilder.toString().equals(Mode.GOSSIP) ? Mode.ALL_TO_ALL : Mode.GOSSIP;
+                logger.warning(newMode);
+                server.sender.switchMode(newMode);
+            }
+        }
     }
 }
