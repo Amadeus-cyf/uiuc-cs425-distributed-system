@@ -53,6 +53,7 @@ public class Sender {
             if (idInfo.length == 3) {
                 logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
                 this.socket.send(all2all.toJSON(), idInfo[0], Integer.parseInt(idInfo[1]));
+                updateMember();
             }
         }
     }

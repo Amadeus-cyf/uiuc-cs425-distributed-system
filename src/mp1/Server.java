@@ -8,7 +8,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 public class Server extends BaseServer {
-    private volatile String mode = Mode.GOSSIP;
+    private volatile String mode = Mode.ALL_TO_ALL;
     private String status;
     static Logger logger = Logger.getLogger(Server.class.getName());
     public Sender sender;
@@ -21,7 +21,7 @@ public class Server extends BaseServer {
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3303);
+        Server server = new Server("localhost", 3300);
         server.join();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();

@@ -80,7 +80,7 @@ public class Receiver {
         if (this.mode == null || this.mode.equals(senderMode)) {
             boolean isInMembershipList = false;
             for (Member member : this.membershipList) {
-                if (member.getId().equals(senderId) && member.getHeartbeatCounter() < heartbeatCounter) {
+                if ((member.getId().equals(senderId)) && member.getHeartbeatCounter() < heartbeatCounter) {
                     member.updateTimestamp(new Timestamp(System.currentTimeMillis()));
                     member.setHeartbeatCounter(heartbeatCounter);
                     isInMembershipList = true;
@@ -90,7 +90,7 @@ public class Receiver {
             // this is a new server joining the system
             if (!isInMembershipList) {
                 synchronized (this.membershipList) {
-                    membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), this.heartbeatCounter));
+                    membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
                 }
             }
         }
@@ -159,8 +159,20 @@ public class Receiver {
             int targetPort = Integer.parseInt(senderInfo[1]);
             this.membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), 0));
             HeartBeat heartBeat = new AgreeJoinHeartBeat(this.mode, this.membershipList);
+
             logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
+//            updateMember();
+        }
+    }
+
+    // helper function to inc by 1 of the sender'id member
+    private void updateMember() {
+        this.heartbeatCounter++;
+        for(int i= 0; i < this.membershipList.size(); i++) {
+            if(this.membershipList.get(i).getId().equals(this.id)) {
+                this.membershipList.get(i).incHeartbeatCounter();
+            }
         }
     }
 

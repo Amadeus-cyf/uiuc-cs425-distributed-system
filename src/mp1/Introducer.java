@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 public class Introducer extends BaseServer {
     public static final String IP_ADDRESS = "localhost";
     public static final int PORT = 3000;
-    private volatile String mode = Mode.GOSSIP;
+    private volatile String mode = Mode.ALL_TO_ALL;
     private Sender sender;
     private Receiver receiver;
     private String status;

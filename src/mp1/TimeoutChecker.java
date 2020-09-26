@@ -49,11 +49,14 @@ public class TimeoutChecker implements Runnable {
 
             }
             for (Member member : membershipList) {
+                if(isIntroducer(member.getId()) || member.getId().equals(id)) {
+                    continue;
+                }
                 Timestamp timestamp = new Timestamp(System.currentTimeMillis());
                 logger.warning("ALL2ALL-CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
                 if ((timestamp.getTime() - member.getTimestamp().getTime()) >= ALLTOALL_FAIL_TIME_LIMIT)  {
                     member.setStatus(Status.FAIL);
-                    logger.warning("ALL2ALL-TIMEOUT: SERVER - " + member.getId());
+                    logger.warning("ALL2ALL-FAIL: SERVER - " + member.getId());
                 } else if (member.getStatus().equals(Status.FAIL)) {
                     member.setStatus(Status.WORKING);
                 }
