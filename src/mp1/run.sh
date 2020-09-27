@@ -6,6 +6,8 @@
 # BIN_PATH=$PROJECT_PATH/bin
 # SRC_PATH= mp1
 
+#IP_ADDR = enyij2@fa20-cs425-g53-02.cs.illinois.edu
+
 # First remove the sources.list file if it exists and then create the sources file of the project
 rm -f sources
 find . -name '*.java' > sources.list
@@ -15,5 +17,5 @@ chmod 777 sources.list
 javac -d ../../out -classpath ../../json-20140107.jar @sources.list
 
 # Run the project
-java -classpath ../../out:../../json-20140107.jar mp1.Server
+java -classpath ../../out:../../json-20140107.jar mp1.Server enyij2@fa20-cs425-g53-02.cs.illinois.edu
 
