@@ -17,5 +17,5 @@ chmod 777 sources.list
 javac -d ../../out -classpath ../../json-20140107.jar @sources.list
 
 # Run the project
-java -classpath ../../out:../../json-20140107.jar mp1.Introducer #fa20-cs425-g53-02.cs.illinois.edu
+java -classpath ../../out:../../json-20140107.jar mp1.Server fa20-cs425-g53-02.cs.illinois.edu
 
