@@ -16,7 +16,7 @@ public class Receiver {
     private UdpSocket socket;
     private byte[] buffer = new byte[2048];
     private volatile String mode;
-    private StringBuilder modeBuilder;
+    private volatile StringBuilder modeBuilder;
     private final List<Member> membershipList;
     private Long heartbeatCounter;
     static Logger logger = Logger.getLogger(Receiver.class.getName());
@@ -38,9 +38,6 @@ public class Receiver {
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
             this.socket.receive(receivedPacket);
             String msg = readBytes(buffer, receivedPacket.getLength());
-            InetAddress senderAddress =  receivedPacket.getAddress();
-            int senderPort = receivedPacket.getPort();
-            //logger.warning("mp1.Receiver: Re" + senderAddress + ":" + senderPort + " sends " + msg);
             receive(msg);
         }
     }
@@ -62,7 +59,6 @@ public class Receiver {
                 receiveJoinRequest(msgJson);
                 break;
             case(MsgType.AGREE_JOIN):
-                //logger.warning("agree join!");
                 receiveAndInitMembership(msgJson);
                 break;
             case(MsgType.SWITCH_MODE):
@@ -81,6 +77,9 @@ public class Receiver {
         String senderId = msg.getString("id");
         String senderMode = msg.getString("mode");
         long heartbeatCounter = msg.getLong("heartbeatCounter");
+        if (senderId == null) {
+            return;
+        }
         // thread race condition, mode could be null if a heartbeat before a introducer response reaches
         if (this.mode == null || this.mode.equals(senderMode)) {
             boolean isInMembershipList = false;
@@ -92,11 +91,9 @@ public class Receiver {
                     break;
                 }
             }
-            // this is a new server joining the system
+            // this is a new working server joining the system
             if (!isInMembershipList) {
-                synchronized (this.membershipList) {
-                    membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
-                }
+                membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
             }
         }
     }
@@ -135,13 +132,14 @@ public class Receiver {
                         }
                     }
                     // sender has fail status on the local membership list, we let it rejoin the system
-                    //if (member.getId().equals(senderId) && member.getStatus().equals(Status.FAIL)) {
-                    //    member.setStatus(Status.WORKING);
-                    //    member.setHeartbeatCounter(heartbeatCounter);
-                    //}
+                    if (member.getId().equals(senderId) && member.getStatus().equals(Status.FAIL)) {
+                        member.setStatus(Status.WORKING);
+                       member.setHeartbeatCounter(heartbeatCounter);
+                    }
                 }
             }
-            if (!isMemberExist) {
+            // this is a new working server joininig the system
+            if (!isMemberExist && status.equals(Status.WORKING)) {
                 this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
             }
         }
@@ -155,6 +153,7 @@ public class Receiver {
             return;
         }
         String senderId = request.getString("id");
+        logger.warning("SERVER " + senderId + " requests joining the system.");
         if (senderId == null || isMemberExists(senderId)) {
             return;
         }

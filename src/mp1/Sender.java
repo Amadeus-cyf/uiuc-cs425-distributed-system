@@ -12,7 +12,7 @@ public class Sender {
     private int port;
     private List<Member> membershipList;
     private String id;
-    private StringBuilder modeBuilder;
+    private volatile StringBuilder modeBuilder;
     private volatile  String mode;
     private Long heartbeatCounter;
     static Logger logger = Logger.getLogger(Sender.class.getName());
@@ -43,6 +43,7 @@ public class Sender {
     }
 
     private void sendAllToAll() {
+        logger.warning("SEND ALL TO ALL");
         for (Member member : membershipList){
             if(member.getId().equals(this.id) || member.getStatus().equals(Status.FAIL)) {
                 continue;
@@ -50,7 +51,6 @@ public class Sender {
             AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id, this.heartbeatCounter);
             String[] idInfo = member.getId().split("_"); // ipaddr_port_timestamp
             if (idInfo.length == 3) {
-                logger.warning("ALL TO ALL");
                 //logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
                 this.socket.send(all2all.toJSON(), idInfo[0], Integer.parseInt(idInfo[1]));
                 updateMember();
@@ -59,13 +59,12 @@ public class Sender {
     }
 
     private void sendGossip() {
-        logger.warning("GOSSIP");
+        logger.warning("SEND GOSSIP");
         int length = membershipList.size();
         // empty membership list, do nothing
         if(length == 0){
             return;
         }
-
         // count the number of working members
        int numAlive = 0;
        for (Member member : membershipList) {
@@ -73,7 +72,6 @@ public class Sender {
                numAlive++;
            }
        }
-
         // if we have less number of servers then K working now, we send all membershiplists
         if(numAlive <= K){
             // update the timestamp for the current id
@@ -120,16 +118,20 @@ public class Sender {
         }
     }
 
-    // helper function for sendGossip() of sending each membership
+    /*
+     * helper function for sendGossip() of sending each membership
+     */
     private void sendMembership(String targetIpAddress, int targetPort) {
         GossipHeartBeat gossipHeartBeat = new GossipHeartBeat(this.mode, this.id, this.membershipList, this.heartbeatCounter);
-        logger.warning("sendMembership: sends " + gossipHeartBeat.toJSON() + "to" + targetIpAddress + ":" + targetPort);
+        //logger.warning("sendMembership: sends " + gossipHeartBeat.toJSON() + "to" + targetIpAddress + ":" + targetPort);
         this.socket.send(gossipHeartBeat.toJSON(), targetIpAddress, targetPort);
         this.updateMember();
 
     }
 
-    // helper function to inc by 1 of the sender'id member
+    /*
+     * helper function to inc by 1 of the sender'id member
+     */
     private void updateMember() {
         this.heartbeatCounter++;
         for(int i= 0; i < this.membershipList.size(); i++) {
@@ -154,9 +156,6 @@ public class Sender {
         this.mode = mode;
         SwitchModeHeartBeat switchModeHeartBeat = new SwitchModeHeartBeat(mode);
         for (Member member : membershipList) {
-            if (member.getId().equals(this.id)) {
-                continue;
-            }
             String[] idInfo = member.getId().split("_");
             if (idInfo.length == 3) {
                 this.socket.send(switchModeHeartBeat.toJSON(),idInfo[0], Integer.parseInt(idInfo[1]));

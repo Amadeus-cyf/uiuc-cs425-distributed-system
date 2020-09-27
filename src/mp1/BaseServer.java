@@ -13,12 +13,15 @@ public abstract class BaseServer {
     protected List<Member> membershipList;
     protected Timestamp startingTime;
     protected String id;
+    protected volatile StringBuilder modeBuilder;
 
     protected BaseServer(String ipAddress, int port) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.socket = new UdpSocket(ipAddress, port);
         this.membershipList = new ArrayList<>();
+        this.modeBuilder = new StringBuilder();
+        this.modeBuilder.append(Mode.GOSSIP);
     }
 
     protected String createId() {
@@ -29,5 +32,15 @@ public abstract class BaseServer {
         sb.append("_");
         sb.append(this.startingTime.toString());
         return sb.toString();
+    }
+
+    protected StringBuilder getModeBuilder() {
+        return this.modeBuilder;
+    }
+
+    abstract public Sender getSender();
+
+    public void disconnect() {
+        this.socket.disconnect();
     }
 }

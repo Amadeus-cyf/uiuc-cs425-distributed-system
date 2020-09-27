@@ -3,27 +3,21 @@ package mp1;
 import mp1.model.Member;
 
 import java.sql.Timestamp;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 public class Server extends BaseServer {
-    private StringBuilder modeBuilder;
     private String status;
-    static Logger logger = Logger.getLogger(Server.class.getName());
     public Sender sender;
     public Receiver receiver;
     private Long heartbeatCounter = 0L;
 
     public Server(String ipAddress, int port) {
         super(ipAddress, port);
-        this.modeBuilder = new StringBuilder();
-        this.modeBuilder.append(Mode.GOSSIP);
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3100);
+        Server server = new Server("localhost", 3600);
         server.join();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
@@ -32,7 +26,6 @@ public class Server extends BaseServer {
             @Override
             public void run() {
                 while (true) {
-                    logger.warning("Current Mode " + server.modeBuilder.toString());
                     server.sender.send();
                     try {
                         Thread.sleep(1000);
@@ -49,7 +42,8 @@ public class Server extends BaseServer {
             }
         });
         checkerThread.execute(new TimeoutChecker(server.membershipList, server.modeBuilder, server.id));
-        handleCommandInput(server);
+        CommandHandler commandHandler = new CommandHandler(server);
+        commandHandler.handleCommand();
     }
 
     private void join() {
@@ -67,15 +61,8 @@ public class Server extends BaseServer {
         this.sender.sendJoinRequest();
     }
 
-    private static void handleCommandInput(Server server) {
-        Scanner scanner = new Scanner(System.in);
-        while(true) {
-            String command = scanner.nextLine();
-            if (command.equals("C")) {
-                String newMode = server.modeBuilder.toString().equals(Mode.GOSSIP) ? Mode.ALL_TO_ALL : Mode.GOSSIP;
-                logger.warning(newMode);
-                server.sender.switchMode(newMode);
-            }
-        }
+    @Override
+    public Sender getSender() {
+        return this.sender;
     }
 }
