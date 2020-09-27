@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Introducer extends BaseServer {
-    public static final String IP_ADDRESS = "localhost";
+    public static final String IP_ADDRESS = "enyij2@fa20-cs425-g53-01.cs.illinois.edu";
     public static final int PORT = 3000;
     private volatile String mode = Mode.GOSSIP;
     private Sender sender;
