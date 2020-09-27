@@ -12,6 +12,7 @@
 rm -f sources
 find . -name '*.java' > sources.list
 chmod 777 sources.list
+mkdir ../../out
  
 # Compile the project
 javac -d ../../out -classpath ../../json-20140107.jar @sources.list
