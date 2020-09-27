@@ -14,6 +14,9 @@ public abstract class BaseServer {
     protected Timestamp startingTime;
     protected String id;
     protected volatile StringBuilder modeBuilder;
+    protected volatile StringBuilder statusBuilder;
+    protected volatile  boolean exit = false;
+    protected String status = Status.RUNNING;
 
     protected BaseServer(String ipAddress, int port) {
         this.ipAddress = ipAddress;
@@ -22,6 +25,8 @@ public abstract class BaseServer {
         this.membershipList = new ArrayList<>();
         this.modeBuilder = new StringBuilder();
         this.modeBuilder.append(Mode.GOSSIP);
+        this.statusBuilder = new StringBuilder();
+        this.statusBuilder.append(Status.RUNNING);
     }
 
     protected String createId() {
@@ -34,19 +39,21 @@ public abstract class BaseServer {
         return sb.toString();
     }
 
-    public void reBind() {
-        if (this.socket != null) {
-            this.socket.bind();
-        }
-    }
-
     protected StringBuilder getModeBuilder() {
         return this.modeBuilder;
     }
 
     abstract public Sender getSender();
 
-    public void disconnect() {
+    public void leave() {
+        this.statusBuilder.setLength(0);
+        this.statusBuilder.append(Status.STOP);
+        this.status = Status.STOP;
+        this.membershipList.clear();
+    }
+
+    public void exit() {
+        this.exit = true;
         this.socket.disconnect();
     }
 }

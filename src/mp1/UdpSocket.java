@@ -4,7 +4,6 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.logging.Logger;
 
 public class UdpSocket {
     private DatagramSocket socket;
@@ -43,8 +42,6 @@ public class UdpSocket {
             InetAddress targetAddress = InetAddress.getByName(targetIpAddress);
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, targetAddress, targetPort);
             this.socket.send(packet);
-            Logger logger = Logger.getLogger(Sender.class.getName());
-//            logger.warning("SENDER: " + this.ipAddress+":"+ this.port + " sends to " +  targetIpAddress+":"+ targetPort + " message: " + msg);
         } catch (UnknownHostException exception) {
             // TODO: Log the exception
         } catch (IOException exception) {
@@ -61,6 +58,6 @@ public class UdpSocket {
     }
 
     public void disconnect() {
-        this.socket.close();
+        this.socket.disconnect();
     }
 }

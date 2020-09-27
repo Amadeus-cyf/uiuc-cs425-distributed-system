@@ -12,8 +12,8 @@ import static mp1.Introducer.PORT;
 
 public class TimeoutChecker implements Runnable {
     private final List<Member> membershipList;
-    private final long ALLTOALL_FAIL_TIME_LIMIT = 3000;
-    private final long GOSSIP_FAIL_TIME_LIMIT = 3000;
+    private final long ALLTOALL_FAIL_TIME_LIMIT = 4000;
+    private final long GOSSIP_FAIL_TIME_LIMIT = 4000;
     private StringBuilder modeBuilder;
     private volatile String mode;
     private String id;
@@ -23,6 +23,10 @@ public class TimeoutChecker implements Runnable {
         this.membershipList = membershipList;
         this.modeBuilder = modeBuilder;
         this.mode = modeBuilder.toString();
+        this.id = id;
+    }
+
+    public void resetId(String id) {
         this.id = id;
     }
 
@@ -54,14 +58,14 @@ public class TimeoutChecker implements Runnable {
         }
         List<Member> delList = new ArrayList<>();
         for (Member member : membershipList) {
-            if(isIntroducer(member.getId()) || member.getId().equals(id)) {
+            if(isIntroducer(member.getId()) || member.getId().equals(this.id)) {
                 continue;
             }
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if ((timestamp.getTime() - member.getTimestamp().getTime()) >= ALLTOALL_FAIL_TIME_LIMIT)  {
                 member.setStatus(Status.FAIL);
                 delList.add(member);
-                logger.warning("ALL_TO_ALL FAIL " + member.getId());
+                logger.warning("ALL_TO_ALL LEAVE/FAIL " + member.getId());
             }
         }
         for (Member member : delList) {
@@ -80,14 +84,13 @@ public class TimeoutChecker implements Runnable {
                 continue;
             }
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            //logger.warning("GOSSIP-CHECKER  " + member.getId() + "   " + timestamp.getTime() + "   "  + member.getTimestamp().getTime());
-            if((timestamp.getTime() - member.getTimestamp().getTime()) >= 2*GOSSIP_FAIL_TIME_LIMIT){
+            if((timestamp.getTime() - member.getTimestamp().getTime()) >= 2 * GOSSIP_FAIL_TIME_LIMIT){
                 logger.warning("GOSSIP CLEANOUT " + member.getId());
                 // go through the membershiplist, delete the member
                 delList.add(member);
-            } else if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_FAIL_TIME_LIMIT && member.getStatus().equals(Status.WORKING)){
+            } else if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_FAIL_TIME_LIMIT && (!member.getStatus().equals(Status.FAIL))) {
                 member.setStatus(Status.FAIL);
-                logger.warning("GOSSIP FAIL  " + member.getId());
+                logger.warning("GOSSIP LEAVE/FAIL  " + member.getId());
             }
         }
         for (Member member : delList) {

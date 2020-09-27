@@ -15,7 +15,7 @@ public class Member {
 
     public Member(String id, Timestamp timestamp, long heartbeatCounter) {
         this.timestamp = timestamp;
-        this.status = Status.WORKING;
+        this.status = Status.RUNNING;
         this.id = id;
         this.heartbeatCounter = heartbeatCounter;
     }

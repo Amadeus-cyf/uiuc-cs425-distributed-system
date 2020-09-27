@@ -3,21 +3,22 @@ package mp1;
 import mp1.model.Member;
 
 import java.sql.Timestamp;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server extends BaseServer {
-    private String status;
     public Sender sender;
     public Receiver receiver;
     private Long heartbeatCounter = 0L;
+    private TimeoutChecker checker;
 
     public Server(String ipAddress, int port) {
         super(ipAddress, port);
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3600);
+        Server server = new Server("localhost", 3700);
         server.join();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
@@ -41,24 +42,32 @@ public class Server extends BaseServer {
                 server.receiver.start();
             }
         });
-        checkerThread.execute(new TimeoutChecker(server.membershipList, server.modeBuilder, server.id));
+        server.checker = new TimeoutChecker(server.membershipList, server.modeBuilder, server.id);
+        checkerThread.execute(server.checker);
         CommandHandler commandHandler = new CommandHandler(server);
-        commandHandler.handleCommand();
+        Scanner scanner = new Scanner(System.in);
+        while(!server.exit) {
+            commandHandler.handleCommand(scanner);
+        }
     }
 
     public void join() {
-        if (this.status != null && this.status.equals(Status.WORKING)) {
-            return;
-        }
-        this.status = Status.WORKING;
+        this.status = Status.RUNNING;
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
-        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.socket, this.heartbeatCounter);
-        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.socket, this.heartbeatCounter);
+        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.statusBuilder, this.socket, this.heartbeatCounter);
+        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.statusBuilder, this.socket, this.heartbeatCounter);
         Member member = new Member(this.id, this.startingTime,this.heartbeatCounter);
         this.membershipList.add(member);
         // sender send a message to the ip address and port of the introducer
         this.sender.sendJoinRequest();
+    }
+
+    public void rejoin() {
+        this.statusBuilder.setLength(0);
+        this.statusBuilder.append(Status.RUNNING);
+        this.join();
+        this.checker.resetId(this.id);
     }
 
     @Override

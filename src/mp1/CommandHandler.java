@@ -13,26 +13,26 @@ public class CommandHandler {
         this.server = server;
     }
 
-    public void handleCommand() {
-        Scanner scanner = new Scanner(System.in);
-        while(true) {
-            String command = scanner.nextLine();
-            if (command.equals(Command.SWITCH_MODE)) {
-                String newMode = this.server.getModeBuilder().toString().equals(Mode.GOSSIP) ? Mode.ALL_TO_ALL : Mode.GOSSIP;
-                logger.warning(newMode);
-                // sends switch mode message to all machines in the system
-                this.server.getSender().switchMode(newMode);
-            } else if (command.equals(Command.PRINT_MEMBERSHIP)) {
-                JSONArray jsonArray = new JSONArray(server.membershipList);
-                System.out.println(jsonArray.toString());
-            } else if (command.equals(Command.EXIT)) {
-                this.server.disconnect();
-            } else if (command.equals(Command.REJOIN)) {
-                if (this.server instanceof Server) {
-                    this.server.reBind();
-                    ((Server)this.server).join();
-                }
+    public void handleCommand(Scanner scanner) {
+        String command = scanner.nextLine();
+        if (command.equals(Command.SWITCH_MODE)) {
+            String newMode = this.server.getModeBuilder().toString().equals(Mode.GOSSIP) ? Mode.ALL_TO_ALL : Mode.GOSSIP;
+            logger.warning(newMode);
+            // sends switch mode message to all machines in the system
+            this.server.getSender().switchMode(newMode);
+        } else if (command.equals(Command.PRINT_MEMBERSHIP)) {
+            JSONArray jsonArray = new JSONArray(server.membershipList);
+            System.out.println(jsonArray.toString());
+        } else if (command.equals(Command.LEAVE)) {
+            if (this.server instanceof Server) {
+                this.server.leave();
             }
+        } else if (command.equals(Command.REJOIN)) {
+            if (this.server instanceof Server) {
+                ((Server) this.server).rejoin();
+            }
+        } else if (command.equals((Command.EXIT))) {
+            this.server.exit();
         }
     }
 }

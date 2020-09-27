@@ -13,23 +13,27 @@ public class Sender {
     private List<Member> membershipList;
     private String id;
     private volatile StringBuilder modeBuilder;
-    private volatile  String mode;
+    private volatile StringBuilder statusBuilder;
     private Long heartbeatCounter;
     static Logger logger = Logger.getLogger(Sender.class.getName());
     private static final int K = 3;
 
-    public Sender(String id, String ipAddress, int port, List<Member> membershipList, StringBuilder modeBuilder, UdpSocket socket, Long heartbeatCounter) {
+    public Sender(String id, String ipAddress, int port, List<Member> membershipList, StringBuilder modeBuilder, StringBuilder statusBuilder,
+                  UdpSocket socket, Long heartbeatCounter) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.membershipList = membershipList;
         this.id = id;
         this.socket = socket;
         this.modeBuilder = modeBuilder;
-        this.mode = modeBuilder.toString();
+        this.statusBuilder = statusBuilder;
         this.heartbeatCounter = heartbeatCounter;
     }
 
     public void send() {
+        if (!this.statusBuilder.toString().equals(Status.RUNNING)) {
+            return;
+        }
         switch(this.modeBuilder.toString()) {
             case(Mode.ALL_TO_ALL):
                 sendAllToAll();
@@ -43,9 +47,9 @@ public class Sender {
     }
 
     private void sendAllToAll() {
-        logger.warning("SEND ALL TO ALL");
+        //logger.warning("SEND ALL TO ALL");
         for (Member member : membershipList){
-            if(member.getId().equals(this.id) || member.getStatus().equals(Status.FAIL)) {
+            if(member.getId().equals(this.id) || (!member.getStatus().equals(Status.RUNNING))) {
                 continue;
             }
             AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id, this.heartbeatCounter);
@@ -59,7 +63,7 @@ public class Sender {
     }
 
     private void sendGossip() {
-        logger.warning("SEND GOSSIP");
+        //logger.warning("SEND GOSSIP");
         int length = membershipList.size();
         // empty membership list, do nothing
         if(length == 0){
@@ -68,7 +72,7 @@ public class Sender {
         // count the number of working members
        int numAlive = 0;
        for (Member member : membershipList) {
-           if (member.getStatus().equals(Status.WORKING)) {
+           if (member.getStatus().equals(Status.RUNNING)) {
                numAlive++;
            }
        }
@@ -79,7 +83,7 @@ public class Sender {
                 if (member.getId().equals(this.id)) {
                     continue;
                 }
-                if(member.getStatus().equals(Status.FAIL)) {
+                if(!member.getStatus().equals(Status.RUNNING)) {
                     continue;
                 }
                 String[] idInfo = member.getId().split("_");
@@ -94,7 +98,7 @@ public class Sender {
         Random random = new Random();
         for(int i = 0; i < K; i++) {
             int randIdx = random.nextInt(length);
-            if(membershipList.get(randIdx).getId().equals(id) || membershipList.get(randIdx).getStatus().equals(Status.FAIL)){
+            if(membershipList.get(randIdx).getId().equals(id) || (!membershipList.get(randIdx).getStatus().equals(Status.RUNNING))){
                 i--;
                 continue;
             }
@@ -122,7 +126,7 @@ public class Sender {
      * helper function for sendGossip() of sending each membership
      */
     private void sendMembership(String targetIpAddress, int targetPort) {
-        GossipHeartBeat gossipHeartBeat = new GossipHeartBeat(this.mode, this.id, this.membershipList, this.heartbeatCounter);
+        GossipHeartBeat gossipHeartBeat = new GossipHeartBeat(this.modeBuilder.toString(), this.id, this.membershipList, this.heartbeatCounter);
         //logger.warning("sendMembership: sends " + gossipHeartBeat.toJSON() + "to" + targetIpAddress + ":" + targetPort);
         this.socket.send(gossipHeartBeat.toJSON(), targetIpAddress, targetPort);
         this.updateMember();
@@ -148,12 +152,11 @@ public class Sender {
     }
 
     public void switchMode(String mode) {
-        if (this.mode.equals(mode)) {
+        if (this.modeBuilder.toString().equals(mode)) {
             return;
         }
         this.modeBuilder.setLength(0);
         this.modeBuilder.append(mode);
-        this.mode = mode;
         SwitchModeHeartBeat switchModeHeartBeat = new SwitchModeHeartBeat(mode);
         for (Member member : membershipList) {
             String[] idInfo = member.getId().split("_");
