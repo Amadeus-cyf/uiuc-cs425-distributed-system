@@ -46,7 +46,7 @@ public class Server extends BaseServer {
         commandHandler.handleCommand();
     }
 
-    private void join() {
+    public void join() {
         if (this.status != null && this.status.equals(Status.WORKING)) {
             return;
         }

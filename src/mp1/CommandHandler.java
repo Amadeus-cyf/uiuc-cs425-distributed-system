@@ -27,6 +27,11 @@ public class CommandHandler {
                 System.out.println(jsonArray.toString());
             } else if (command.equals(Command.EXIT)) {
                 this.server.disconnect();
+            } else if (command.equals(Command.REJOIN)) {
+                if (this.server instanceof Server) {
+                    this.server.reBind();
+                    ((Server)this.server).join();
+                }
             }
         }
     }

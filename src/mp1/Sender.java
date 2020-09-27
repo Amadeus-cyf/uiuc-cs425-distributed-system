@@ -163,8 +163,4 @@ public class Sender {
             }
         }
     }
-
-    public void disconnect() {
-        socket.disconnect();
-    }
 }

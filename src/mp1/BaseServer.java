@@ -34,6 +34,12 @@ public abstract class BaseServer {
         return sb.toString();
     }
 
+    public void reBind() {
+        if (this.socket != null) {
+            this.socket.bind();
+        }
+    }
+
     protected StringBuilder getModeBuilder() {
         return this.modeBuilder;
     }

@@ -235,8 +235,4 @@ public class Receiver {
         }
         return isMemberExists;
     }
-
-    public void disconnect() {
-        this.socket.disconnect();
-    }
 }
