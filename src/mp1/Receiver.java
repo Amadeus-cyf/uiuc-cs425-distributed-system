@@ -185,6 +185,13 @@ public class Receiver {
         if (jsonArray == null) {
             return;
         }
+        String senderMode = msg.getString("mode");
+        if (senderMode == null) {
+            return;
+        }
+        this.modeBuilder.setLength(0);
+        this.modeBuilder.append(senderMode);
+        this.mode = senderMode;
         //logger.warning("receiveAndInitMembership" + msg);
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject memberJson = new JSONObject(jsonArray.get(i).toString());
