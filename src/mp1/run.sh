@@ -12,6 +12,7 @@
 rm -f sources
 find . -name '*.java' > sources.list
 chmod 777 sources.list
+rm ../../out
 mkdir ../../out
  
 # Compile the project
