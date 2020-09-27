@@ -211,8 +211,6 @@ public class Receiver {
                 }
             }
         }
-        JSONArray jsonArray1 = new JSONArray(membershipList);
-        System.out.println(jsonArray1.toString());
     }
 
     /*

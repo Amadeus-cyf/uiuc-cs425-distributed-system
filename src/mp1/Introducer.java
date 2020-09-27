@@ -51,7 +51,7 @@ public class Introducer extends BaseServer {
         checkerThread.execute(new TimeoutChecker(server.membershipList, server.modeBuilder, server.id));
         CommandHandler commandHandler = new CommandHandler(server);
         Scanner scanner = new Scanner(System.in);
-        while(!server.exit) {
+        while(true) {
             commandHandler.handleCommand(scanner);
         }
     }

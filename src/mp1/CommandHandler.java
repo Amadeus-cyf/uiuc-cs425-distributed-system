@@ -31,8 +31,6 @@ public class CommandHandler {
             if (this.server instanceof Server) {
                 ((Server) this.server).rejoin();
             }
-        } else if (command.equals((Command.EXIT))) {
-            this.server.exit();
         }
     }
 }

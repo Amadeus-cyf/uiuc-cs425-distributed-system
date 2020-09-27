@@ -15,7 +15,6 @@ public abstract class BaseServer {
     protected String id;
     protected volatile StringBuilder modeBuilder;
     protected volatile StringBuilder statusBuilder;
-    protected volatile  boolean exit = false;
     protected String status = Status.RUNNING;
 
     protected BaseServer(String ipAddress, int port) {
@@ -50,10 +49,5 @@ public abstract class BaseServer {
         this.statusBuilder.append(Status.STOP);
         this.status = Status.STOP;
         this.membershipList.clear();
-    }
-
-    public void exit() {
-        this.exit = true;
-        this.socket.disconnect();
     }
 }

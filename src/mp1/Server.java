@@ -46,7 +46,7 @@ public class Server extends BaseServer {
         checkerThread.execute(server.checker);
         CommandHandler commandHandler = new CommandHandler(server);
         Scanner scanner = new Scanner(System.in);
-        while(!server.exit) {
+        while(true) {
             commandHandler.handleCommand(scanner);
         }
     }
