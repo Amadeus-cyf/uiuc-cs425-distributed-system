@@ -17,15 +17,15 @@ public class CommandHandler {
         Scanner scanner = new Scanner(System.in);
         while(true) {
             String command = scanner.nextLine();
-            if (command.equals("C")) {
+            if (command.equals(Command.SWITCH_MODE)) {
                 String newMode = this.server.getModeBuilder().toString().equals(Mode.GOSSIP) ? Mode.ALL_TO_ALL : Mode.GOSSIP;
                 logger.warning(newMode);
                 // sends switch mode message to all machines in the system
                 this.server.getSender().switchMode(newMode);
-            } else if (command.equals("PM")) {
+            } else if (command.equals(Command.PRINT_MEMBERSHIP)) {
                 JSONArray jsonArray = new JSONArray(server.membershipList);
                 System.out.println(jsonArray.toString());
-            } else if (command.equals("EXIT")) {
+            } else if (command.equals(Command.EXIT)) {
                 this.server.disconnect();
             }
         }
