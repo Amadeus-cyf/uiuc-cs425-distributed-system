@@ -25,10 +25,8 @@ public class UdpSocket {
         try {
             InetAddress address = InetAddress.getByName(ipAddress);
             this.socket = new DatagramSocket(port, address);
-        } catch (SocketException exception) {
-            logger.warning(exception.toString());
-        } catch (UnknownHostException exception) {
-            logger.warning(exception.toString());
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
 
@@ -44,22 +42,16 @@ public class UdpSocket {
             InetAddress targetAddress = InetAddress.getByName(targetIpAddress);
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length, targetAddress, targetPort);
             this.socket.send(packet);
-        } catch (UnknownHostException exception) {
-            logger.warning(exception.toString());
-        } catch (IOException exception) {
-            logger.warning(exception.toString());
+        } catch (Exception exception) {
+            exception.printStackTrace();
         }
     }
 
     public void receive(DatagramPacket receivedPacket) {
         try {
             this.socket.receive(receivedPacket);
-        } catch(IOException exception) {
-            // TODO: log exception
+        } catch(Exception exception) {
+            exception.printStackTrace();
         }
-    }
-
-    public void disconnect() {
-        this.socket.disconnect();
     }
 }
