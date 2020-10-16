@@ -1,5 +1,6 @@
 package mp2.failureDetector;
 
+import mp2.UdpSocket;
 import mp2.failureDetector.model.*;
 
 import java.util.List;
