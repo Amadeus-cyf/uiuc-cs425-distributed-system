@@ -1,4 +1,4 @@
-package mp1;
+package mp2.failureDetector;
 
 import org.json.JSONObject;
 
