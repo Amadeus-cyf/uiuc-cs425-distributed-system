@@ -17,7 +17,7 @@ public class Receiver {
     private List<File> files;
     private UdpSocket socket;
     private final int BLOCK_SIZE = 4096;
-    private PriorityQueue<JSONObject> fileBlocks;
+    private Map<String, PriorityQueue<JSONObject>> fileBlockMap;
 
     public Receiver(String ipAddress, int port, boolean isMaster, UdpSocket socket) {
         this.ipAddress = ipAddress;
@@ -29,6 +29,7 @@ public class Receiver {
             File file = new File("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/test.pdf");
             files.add(file);
         }
+        fileBlockMap = new HashMap<>();
     }
 
     public void start() {
@@ -66,7 +67,7 @@ public class Receiver {
             }
         }
         if(target == null) {
-            Message response = new GetResponse(null, 0, 0);
+            Message response = new GetResponse(null, fileName,0, 0);
             this.socket.send(response.toJSON(), senderIpAddress, senderPort);
         } else {
             byte[] bytes = null;
@@ -93,7 +94,7 @@ public class Receiver {
                 int start = blockSeq * BLOCK_SIZE;
                 int end = Math.min((blockSeq + 1) * BLOCK_SIZE, bytes.length);
                 byte[] block = Arrays.copyOfRange(bytes, start, end);
-                Message response = new GetResponse(block, blockNum, blockSeq);
+                Message response = new GetResponse(block, fileName, blockNum, blockSeq);
                 blockSeq++;
                 this.socket.send(response.toJSON(), senderIpAddress, senderPort);
                 System.out.println(blockSeq + " sent to" + senderIpAddress + " " + senderPort);
@@ -106,13 +107,16 @@ public class Receiver {
             System.out.println("No such file");
             return;
         }
-        if (this.fileBlocks == null) {
-            this.fileBlocks = new PriorityQueue<>(new Comparator<JSONObject>() {
+        String sdfsFileName = msgJson.getString(MsgKey.FILE_NAME);
+        PriorityQueue<JSONObject> fileBlocks = fileBlockMap.get(sdfsFileName);
+        if (fileBlocks == null) {
+            fileBlocks = new PriorityQueue<>(new Comparator<JSONObject>() {
                 @Override
                 public int compare(JSONObject o1, JSONObject o2) {
                     return o1.getInt(MsgKey.BLOCK_SEQ) - o2.getInt(MsgKey.BLOCK_SEQ);
                 }
             });
+            fileBlockMap.put(sdfsFileName, fileBlocks);
         }
         int blockNum = msgJson.getInt(MsgKey.BLOCK_NUM);
         System.out.println("receive res " + fileBlocks.size() + " " + blockNum);

@@ -33,7 +33,7 @@ public class Server extends BaseServer {
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 4000);
+        Server server = new Server("localhost", 3000);
         server.run();
     }
 }
