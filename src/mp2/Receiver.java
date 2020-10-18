@@ -25,10 +25,10 @@ public class Receiver {
         this.isMaster = isMaster;
         this.socket = socket;
         this.files = new ArrayList<>();
-        if (this.port == 3000) {
-            File file = new File("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/test.pdf");
-            files.add(file);
-        }
+//        if (this.port == 3000) {
+//            File file = new File("random.txt");
+//            files.add(file);
+//        }
         fileBlockMap = new HashMap<>();
     }
 
@@ -51,6 +51,9 @@ public class Receiver {
                 break;
             case(MsgType.GET_RESPONSE):
                 receiveGetResponse(msgJson);
+                break;
+            case(MsgType.PUT_RESPONSE):
+                receivePutResponse(msgJson);
                 break;
         }
     }
@@ -122,7 +125,55 @@ public class Receiver {
         System.out.println("receive res " + fileBlocks.size() + " " + blockNum);
         fileBlocks.add(msgJson);
         if (fileBlocks.size() >= blockNum) {
-            File file = new File("test1.pdf");
+            File file = new File("random1.txt");
+            FileOutputStream fOut = null;
+            try {
+                fOut = new FileOutputStream(file);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
+            if (fOut == null) {
+                return;
+            }
+            while (!fileBlocks.isEmpty()) {
+                JSONObject block = fileBlocks.poll();
+                byte[] bytes = Base64.getDecoder().decode(block.getString(MsgKey.FILE_BLOCK));
+                try {
+                    fOut.write(bytes, 0, bytes.length);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+            }
+            try {
+                fOut.close();
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
+        }
+    }
+
+    private void receivePutResponse(JSONObject msgJson){
+        if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.NO_FILE_FOUND)) {
+            System.out.println("No such file");
+            return;
+        }
+        String sdfsFileName = msgJson.getString(MsgKey.FILE_NAME);
+        PriorityQueue<JSONObject> fileBlocks = fileBlockMap.get(sdfsFileName);
+        if (fileBlocks == null) {
+            fileBlocks = new PriorityQueue<>(new Comparator<JSONObject>() {
+                @Override
+                public int compare(JSONObject o1, JSONObject o2) {
+                    return o1.getInt(MsgKey.BLOCK_SEQ) - o2.getInt(MsgKey.BLOCK_SEQ);
+                }
+            });
+            fileBlockMap.put(sdfsFileName, fileBlocks);
+        }
+        int blockNum = msgJson.getInt(MsgKey.BLOCK_NUM);
+        System.out.println("receive from the local file:" + fileBlocks.size() + " " + blockNum);
+        fileBlocks.add(msgJson);
+        if (fileBlocks.size() >= blockNum) {
+            File file = new File("random1.txt");
+            files.add(file);
             FileOutputStream fOut = null;
             try {
                 fOut = new FileOutputStream(file);
