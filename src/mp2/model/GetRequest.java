@@ -1,7 +1,7 @@
 package mp2.model;
 
-import mp2.MsgKey;
-import mp2.MsgType;
+import mp2.constant.MsgKey;
+import mp2.constant.MsgType;
 import org.json.JSONObject;
 
 public class GetRequest extends Message {

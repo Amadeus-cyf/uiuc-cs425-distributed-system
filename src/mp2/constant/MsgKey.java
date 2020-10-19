@@ -1,4 +1,4 @@
-package mp2;
+package mp2.constant;
 
 public class MsgKey {
     public static final String MSG_TYPE = "msgType";
