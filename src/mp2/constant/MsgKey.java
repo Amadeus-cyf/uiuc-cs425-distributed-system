@@ -9,4 +9,6 @@ public class MsgKey {
     public static final String LOCAL_FILE_NAME = "localFileName";
     public static final String BLOCK_NUM = "blockNum";
     public static final String BLOCK_SEQ = "blockSeq";
+    public static final String TARGET_SERVERS = "targetServers";
+    public static final String ERROR = "error";
 }

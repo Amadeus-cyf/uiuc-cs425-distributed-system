@@ -61,7 +61,7 @@ public class UdpSocket {
      * @param target the file we send
      * @param fileName the name of the file in receiver where we write content of target into
      */
-    public void sendFile(String msgType, File target, String fileName, String senderIpAddress, int senderPort) {
+    public void sendFile(String msgType, File target, String fileName, String targetIpAddress, int targetPort) {
         byte[] bytes = null;
         try {
             bytes = Files.readAllBytes(target.toPath());
@@ -88,8 +88,8 @@ public class UdpSocket {
             byte[] block = Arrays.copyOfRange(bytes, start, end);
             Message response = new FileBlockMessage(msgType, block, fileName, blockNum, blockSeq);
             blockSeq++;
-            send(response.toJSON(), senderIpAddress, senderPort);
-            System.out.println(blockSeq + " sent to" + senderIpAddress + " " + senderPort);
+            send(response.toJSON(), targetIpAddress, targetPort);
+            System.out.println(blockSeq + " sent to" + targetIpAddress + " " + targetPort);
         }
     }
 

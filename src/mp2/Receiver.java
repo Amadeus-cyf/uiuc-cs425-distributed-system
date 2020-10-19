@@ -7,23 +7,20 @@ import mp2.model.GetResponse;
 import mp2.model.Message;
 import org.json.JSONObject;
 
-
 import java.io.File;
 import java.net.DatagramPacket;
 import java.util.*;
 
 public class Receiver {
-    private String ipAddress;
-    private int port;
-    private boolean isMaster;
-    private Set<File> files;
-    private UdpSocket socket;
+    protected String ipAddress;
+    protected int port;
+    protected Set<File> files;
+    protected UdpSocket socket;
     private final int BLOCK_SIZE = 4096;
 
-    public Receiver(String ipAddress, int port, boolean isMaster, UdpSocket socket) {
+    public Receiver(String ipAddress, int port, UdpSocket socket) {
         this.ipAddress = ipAddress;
         this.port = port;
-        this.isMaster = isMaster;
         this.socket = socket;
         this.files = new HashSet<>();
         if (this.port == 3000) {
@@ -31,7 +28,6 @@ public class Receiver {
             files.add(file);
         }
         System.out.println("Current files: "+ files.toString());
-        HashMap fileBlockMap = new HashMap<>();
     }
 
     public void start() {
@@ -84,7 +80,7 @@ public class Receiver {
     }
 
     private void receiveGetResponse(JSONObject msgJson) {
-        if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.NO_FILE_FOUND)) {
+        if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.FILE_NOT_FOUND)) {
             System.out.println("No such file");
             return;
         }

@@ -15,7 +15,7 @@ public class Server extends BaseServer {
 
     public void run() {
         UdpSocket socket = new UdpSocket(this.ipAddress, this.port);
-        Receiver receiver = new Receiver(this.ipAddress, this.port, false, socket);
+        Receiver receiver = new Receiver(this.ipAddress, this.port, socket);
         Sender sender = new Sender(this.ipAddress, this.port, false, socket);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         receiveThread.execute(new Runnable() {
