@@ -29,6 +29,7 @@ public class Server extends BaseServer {
         while(true) {
             String line = scanner.nextLine();
             sender.sendDeleteRequest("random.txt","localhost", 3000);
+            sender.sendPutRequest("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/17.pdf", "test2.pdf", "localhost", 4000);
         }
     }
 

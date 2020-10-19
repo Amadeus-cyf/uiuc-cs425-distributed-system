@@ -1,36 +1,40 @@
 package mp2;
 
+import mp2.constant.MsgContent;
+import mp2.constant.MsgKey;
+import mp2.constant.MsgType;
 import mp2.model.GetResponse;
 import mp2.model.Message;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.net.DatagramPacket;
-import java.nio.file.Files;
 import java.util.*;
 
 public class Receiver {
     private String ipAddress;
     private int port;
     private boolean isMaster;
-    private List<File> files;
+    private Set<File> files;
     private UdpSocket socket;
     private final int BLOCK_SIZE = 4096;
-    private Map<String, PriorityQueue<JSONObject>> fileBlockMap;
 
     public Receiver(String ipAddress, int port, boolean isMaster, UdpSocket socket) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.isMaster = isMaster;
         this.socket = socket;
-        this.files = new ArrayList<>();
         if (this.port == 3000) {
             File file = new File("random.txt");
             files.add(file);
         }
         System.out.println("Current files: "+ files.toString());
-        fileBlockMap = new HashMap<>();
+        HashMap fileBlockMap = new HashMap<>();
+        this.files = new HashSet<>();
+        /*if (this.port == 3000) {
+            File file = new File("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/test.pdf");
+            files.add(file);
+        }*/
     }
 
     public void start() {
@@ -77,35 +81,7 @@ public class Receiver {
             Message response = new GetResponse(null, fileName,0, 0);
             this.socket.send(response.toJSON(), senderIpAddress, senderPort);
         } else {
-            byte[] bytes = null;
-            try {
-                bytes = Files.readAllBytes(target.toPath());
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
-            if (bytes == null) {
-                return;
-            }
-            int blockSeq = 0;
-            int blockNum = bytes.length / BLOCK_SIZE;
-            if (bytes.length % BLOCK_SIZE > 0) {
-                blockNum++;
-            }
-            System.out.println("Block NUM: " + blockNum);
-            while(blockSeq < blockNum){
-                try {
-                    Thread.sleep(10);
-                } catch (Exception e) {
-
-                }
-                int start = blockSeq * BLOCK_SIZE;
-                int end = Math.min((blockSeq + 1) * BLOCK_SIZE, bytes.length);
-                byte[] block = Arrays.copyOfRange(bytes, start, end);
-                Message response = new GetResponse(block, fileName, blockNum, blockSeq);
-                blockSeq++;
-                this.socket.send(response.toJSON(), senderIpAddress, senderPort);
-                System.out.println(blockSeq + " sent to" + senderIpAddress + " " + senderPort);
-            }
+            this.socket.sendFile(MsgType.GET_RESPONSE, target, fileName, senderIpAddress, senderPort);
         }
     }
 
@@ -114,94 +90,19 @@ public class Receiver {
             System.out.println("No such file");
             return;
         }
-        String sdfsFileName = msgJson.getString(MsgKey.FILE_NAME);
-        PriorityQueue<JSONObject> fileBlocks = fileBlockMap.get(sdfsFileName);
-        if (fileBlocks == null) {
-            fileBlocks = new PriorityQueue<>(new Comparator<JSONObject>() {
-                @Override
-                public int compare(JSONObject o1, JSONObject o2) {
-                    return o1.getInt(MsgKey.BLOCK_SEQ) - o2.getInt(MsgKey.BLOCK_SEQ);
-                }
-            });
-            fileBlockMap.put(sdfsFileName, fileBlocks);
-        }
-        int blockNum = msgJson.getInt(MsgKey.BLOCK_NUM);
-        System.out.println("receive res " + fileBlocks.size() + " " + blockNum);
-        fileBlocks.add(msgJson);
-        if (fileBlocks.size() >= blockNum) {
-            File file = new File("random1.txt");
-            FileOutputStream fOut = null;
-            try {
-                fOut = new FileOutputStream(file);
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
-            if (fOut == null) {
-                return;
-            }
-            while (!fileBlocks.isEmpty()) {
-                JSONObject block = fileBlocks.poll();
-                byte[] bytes = Base64.getDecoder().decode(block.getString(MsgKey.FILE_BLOCK));
-                try {
-                    fOut.write(bytes, 0, bytes.length);
-                } catch (Exception exception) {
-                    exception.printStackTrace();
-                }
-            }
-            try {
-                fOut.close();
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
+        File file = this.socket.receiveFile(msgJson);
+        if (file != null) {
+            this.files.add(file);
         }
     }
 
     private void receivePutRequest(JSONObject msgJson){
-        if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.NO_FILE_FOUND)) {
-            System.out.println("No such file");
-            return;
+        System.out.println("receive put response");
+        File file = this.socket.receiveFile(msgJson);
+        if (file != null) {
+            this.files.add(file);
         }
-        String sdfsFileName = msgJson.getString(MsgKey.FILE_NAME);
-        PriorityQueue<JSONObject> fileBlocks = fileBlockMap.get(sdfsFileName);
-        if (fileBlocks == null) {
-            fileBlocks = new PriorityQueue<>(new Comparator<JSONObject>() {
-                @Override
-                public int compare(JSONObject o1, JSONObject o2) {
-                    return o1.getInt(MsgKey.BLOCK_SEQ) - o2.getInt(MsgKey.BLOCK_SEQ);
-                }
-            });
-            fileBlockMap.put(sdfsFileName, fileBlocks);
-        }
-        int blockNum = msgJson.getInt(MsgKey.BLOCK_NUM);
-        System.out.println("receive from the local file:" + fileBlocks.size() + " " + blockNum);
-        fileBlocks.add(msgJson);
-        if (fileBlocks.size() >= blockNum) {
-            File file = new File("random1.txt");
-            files.add(file);
-            FileOutputStream fOut = null;
-            try {
-                fOut = new FileOutputStream(file);
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
-            if (fOut == null) {
-                return;
-            }
-            while (!fileBlocks.isEmpty()) {
-                JSONObject block = fileBlocks.poll();
-                byte[] bytes = Base64.getDecoder().decode(block.getString(MsgKey.FILE_BLOCK));
-                try {
-                    fOut.write(bytes, 0, bytes.length);
-                } catch (Exception exception) {
-                    exception.printStackTrace();
-                }
-            }
-            try {
-                fOut.close();
-            } catch (Exception exception) {
-                exception.printStackTrace();
-            }
-        }
+        System.out.println(files.size());
     }
 
     private void receiveDeleteRequest(JSONObject msgJson) {

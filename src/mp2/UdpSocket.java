@@ -1,9 +1,18 @@
 package mp2;
 
+import mp2.constant.MsgKey;
+import mp2.constant.MsgType;
+import mp2.model.FileBlockMessage;
+import mp2.model.GetResponse;
+import mp2.model.Message;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.*;
+import java.nio.file.Files;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class UdpSocket {
@@ -11,10 +20,13 @@ public class UdpSocket {
     private String ipAddress;
     private int port;
     private static Logger logger = Logger.getLogger(UdpSocket.class.getName());
+    private final int BLOCK_SIZE = 4096;
+    private Map<String, PriorityQueue<JSONObject>> fileBlockMap;
 
     public UdpSocket(String ipAddress, int port) {
         this.ipAddress = ipAddress;
         this.port = port;
+        fileBlockMap = new HashMap<>();
         bind();
     }
 
@@ -47,11 +59,88 @@ public class UdpSocket {
         }
     }
 
+    public void sendFile(String msgType, File target, String fileName, String senderIpAddress, int senderPort) {
+        byte[] bytes = null;
+        try {
+            bytes = Files.readAllBytes(target.toPath());
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
+        if (bytes == null) {
+            return;
+        }
+        int blockSeq = 0;
+        int blockNum = bytes.length / BLOCK_SIZE;
+        if (bytes.length % BLOCK_SIZE > 0) {
+            blockNum++;
+        }
+        System.out.println("Block NUM: " + blockNum);
+        while(blockSeq < blockNum){
+            try {
+                Thread.sleep(10);
+            } catch (Exception e) {
+
+            }
+            int start = blockSeq * BLOCK_SIZE;
+            int end = Math.min((blockSeq + 1) * BLOCK_SIZE, bytes.length);
+            byte[] block = Arrays.copyOfRange(bytes, start, end);
+            Message response = new FileBlockMessage(msgType, block, fileName, blockNum, blockSeq);
+            blockSeq++;
+            send(response.toJSON(), senderIpAddress, senderPort);
+            System.out.println(blockSeq + " sent to" + senderIpAddress + " " + senderPort);
+        }
+    }
+
     public void receive(DatagramPacket receivedPacket) {
         try {
             this.socket.receive(receivedPacket);
         } catch(Exception exception) {
             exception.printStackTrace();
         }
+    }
+
+    public File receiveFile(JSONObject msgJson) {
+        String sdfsFileName = msgJson.getString(MsgKey.FILE_NAME);
+        PriorityQueue<JSONObject> fileBlocks = fileBlockMap.get(sdfsFileName);
+        if (fileBlocks == null) {
+            fileBlocks = new PriorityQueue<>(new Comparator<JSONObject>() {
+                @Override
+                public int compare(JSONObject o1, JSONObject o2) {
+                    return o1.getInt(MsgKey.BLOCK_SEQ) - o2.getInt(MsgKey.BLOCK_SEQ);
+                }
+            });
+            fileBlockMap.put(sdfsFileName, fileBlocks);
+        }
+        int blockNum = msgJson.getInt(MsgKey.BLOCK_NUM);
+        System.out.println("receive from the local file:" + fileBlocks.size() + " " + blockNum);
+        fileBlocks.add(msgJson);
+        if (fileBlocks.size() >= blockNum) {
+            File file = new File(sdfsFileName);
+            FileOutputStream fOut = null;
+            try {
+                fOut = new FileOutputStream(file);
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
+            if (fOut == null) {
+                return null;
+            }
+            while (!fileBlocks.isEmpty()) {
+                JSONObject block = fileBlocks.poll();
+                byte[] bytes = Base64.getDecoder().decode(block.getString(MsgKey.FILE_BLOCK));
+                try {
+                    fOut.write(bytes, 0, bytes.length);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                }
+            }
+            try {
+                fOut.close();
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
+            return file;
+        }
+        return null;
     }
 }
