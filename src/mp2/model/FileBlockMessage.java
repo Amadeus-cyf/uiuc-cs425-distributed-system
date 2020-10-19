@@ -8,7 +8,7 @@ import org.json.JSONObject;
 import java.util.Base64;
 
 public class FileBlockMessage extends Message {
-    protected String fileName;                // sdfs file name
+    protected String fileName;              // filename is the name of file in receiver where we write file blocks into
     protected byte[] file;
     protected int blockSeq;
     protected int blockNum;
@@ -32,7 +32,11 @@ public class FileBlockMessage extends Message {
                 jsonObject.put(MsgKey.FILE_BLOCK, Base64.getEncoder().encodeToString(this.file));
             }
         }
-        jsonObject.put(MsgKey.FILE_NAME, this.fileName);
+        if (msgType.equals(MsgType.GET_RESPONSE)) {
+            jsonObject.put(MsgKey.LOCAL_FILE_NAME, this.fileName);
+        } else if (msgType.equals(MsgType.PUT_REQUEST)) {
+            jsonObject.put(MsgKey.SDFS_FILE_NAME, this.fileName);
+        }
         jsonObject.put(MsgKey.BLOCK_NUM, this.blockNum);
         jsonObject.put(MsgKey.BLOCK_SEQ, this.blockSeq);
         return jsonObject;

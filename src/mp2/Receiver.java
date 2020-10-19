@@ -25,10 +25,10 @@ public class Receiver {
         this.isMaster = isMaster;
         this.socket = socket;
         this.files = new HashSet<>();
-        /*if (this.port == 3000) {
+        if (this.port == 3000) {
             File file = new File("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/test.pdf");
             files.add(file);
-        }*/
+        }
     }
 
     public void start() {
@@ -58,21 +58,22 @@ public class Receiver {
     }
 
     private void receiveGetRequest(JSONObject msgJson) {
-        String fileName = msgJson.getString(MsgKey.FILE_NAME);
+        String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         String senderIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int senderPort = msgJson.getInt(MsgKey.PORT);
         File target = null;
         for (File file : files) {
-            if (file.getName().equals(fileName)) {
+            if (file.getName().equals(sdfsFileName)) {
                 target = file;
                 break;
             }
         }
+        String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         if(target == null) {
-            Message response = new GetResponse(null, fileName,0, 0);
+            Message response = new GetResponse(null, localFileName,0, 0);
             this.socket.send(response.toJSON(), senderIpAddress, senderPort);
         } else {
-            this.socket.sendFile(MsgType.GET_RESPONSE, target, fileName, senderIpAddress, senderPort);
+            this.socket.sendFile(MsgType.GET_RESPONSE, target, localFileName, senderIpAddress, senderPort);
         }
     }
 

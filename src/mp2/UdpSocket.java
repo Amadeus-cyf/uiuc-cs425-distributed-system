@@ -59,6 +59,10 @@ public class UdpSocket {
         }
     }
 
+    /*
+     * @param target the file we send
+     * @param fileName the name of the file in receiver where we write content of target into
+     */
     public void sendFile(String msgType, File target, String fileName, String senderIpAddress, int senderPort) {
         byte[] bytes = null;
         try {
@@ -100,8 +104,16 @@ public class UdpSocket {
     }
 
     public File receiveFile(JSONObject msgJson) {
-        String sdfsFileName = msgJson.getString(MsgKey.FILE_NAME);
-        PriorityQueue<JSONObject> fileBlocks = fileBlockMap.get(sdfsFileName);
+        String fileName = null;                                 // the name of file we write received file blocks into
+        String msgType = msgJson.getString(MsgKey.MSG_TYPE);
+        if (msgType.equals(MsgType.PUT_REQUEST)) {
+            fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        } else if (msgType.equals(MsgType.GET_RESPONSE)) {
+            fileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
+        } else {
+            return null;
+        }
+        PriorityQueue<JSONObject> fileBlocks = fileBlockMap.get(fileName);
         if (fileBlocks == null) {
             fileBlocks = new PriorityQueue<>(new Comparator<JSONObject>() {
                 @Override
@@ -109,13 +121,13 @@ public class UdpSocket {
                     return o1.getInt(MsgKey.BLOCK_SEQ) - o2.getInt(MsgKey.BLOCK_SEQ);
                 }
             });
-            fileBlockMap.put(sdfsFileName, fileBlocks);
+            fileBlockMap.put(fileName, fileBlocks);
         }
         int blockNum = msgJson.getInt(MsgKey.BLOCK_NUM);
         System.out.println("receive from the local file:" + fileBlocks.size() + " " + blockNum);
         fileBlocks.add(msgJson);
         if (fileBlocks.size() >= blockNum) {
-            File file = new File(sdfsFileName);
+            File file = new File(fileName);
             FileOutputStream fOut = null;
             try {
                 fOut = new FileOutputStream(file);

@@ -28,7 +28,7 @@ public class Server extends BaseServer {
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {
             String line = scanner.nextLine();
-            sender.sendPutRequest("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/17.pdf", "test2.pdf", "localhost", 4000);
+            sender.sendGetRequest("localhost", 3000);
         }
     }
 
