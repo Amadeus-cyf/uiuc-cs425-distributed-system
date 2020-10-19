@@ -21,7 +21,7 @@ public class Sender {
 
     public void sendGetRequest(String targetIpAddress, int targetPort) {
         System.out.println(this.ipAddress + " " + this.port);
-        Message getRequest = new GetRequest("test.pdf", this.ipAddress, this.port);
+        Message getRequest = new GetRequest("", this.ipAddress, this.port);
         this.socket.send(getRequest.toJSON(), targetIpAddress, targetPort);
     }
 

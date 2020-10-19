@@ -24,13 +24,13 @@ public class Receiver {
         this.port = port;
         this.isMaster = isMaster;
         this.socket = socket;
+        this.files = new HashSet<>();
         if (this.port == 3000) {
             File file = new File("random.txt");
             files.add(file);
         }
         System.out.println("Current files: "+ files.toString());
         HashMap fileBlockMap = new HashMap<>();
-        this.files = new HashSet<>();
         /*if (this.port == 3000) {
             File file = new File("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/test.pdf");
             files.add(file);
