@@ -25,10 +25,11 @@ public class Receiver {
         this.isMaster = isMaster;
         this.socket = socket;
         this.files = new ArrayList<>();
-//        if (this.port == 3000) {
-//            File file = new File("random.txt");
-//            files.add(file);
-//        }
+        if (this.port == 3000) {
+            File file = new File("random.txt");
+            files.add(file);
+        }
+        System.out.println("Current files: "+ files.toString());
         fileBlockMap = new HashMap<>();
     }
 
@@ -52,8 +53,11 @@ public class Receiver {
             case(MsgType.GET_RESPONSE):
                 receiveGetResponse(msgJson);
                 break;
-            case(MsgType.PUT_RESPONSE):
-                receivePutResponse(msgJson);
+            case(MsgType.PUT_REQUEST):
+                receivePutRequest(msgJson);
+                break;
+            case(MsgType.DEL_REQUEST):
+                receiveDeleteRequest(msgJson);
                 break;
         }
     }
@@ -152,7 +156,7 @@ public class Receiver {
         }
     }
 
-    private void receivePutResponse(JSONObject msgJson){
+    private void receivePutRequest(JSONObject msgJson){
         if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.NO_FILE_FOUND)) {
             System.out.println("No such file");
             return;
@@ -198,6 +202,22 @@ public class Receiver {
                 exception.printStackTrace();
             }
         }
+    }
+
+    private void receiveDeleteRequest(JSONObject msgJson) {
+        String fileName = msgJson.getString(MsgKey.FILE_NAME);
+        for (File file : files) {
+            if (file.getName().equals(fileName)) {
+                files.remove(file); // remove from the file list
+                file.delete(); // delete the sdfs file on the disk
+                System.out.println("Successfully delete file "+ fileName);
+                System.out.println("Current files: "+ files.toString());
+                return;
+            }
+        }
+        System.out.println("Delete file not found");
+        return;
+
     }
 
     /*

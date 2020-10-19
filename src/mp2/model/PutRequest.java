@@ -4,17 +4,16 @@ import mp2.MsgContent;
 import mp2.MsgKey;
 import mp2.MsgType;
 import org.json.JSONObject;
-
 import java.util.Base64;
 
-public class PutResponse extends Message{
+public class PutRequest extends Message{
     private String fileName;                // local file name
     private byte[] file;
     private int blockSeq;
     private int blockNum;
 
-    public PutResponse(byte[] file, String fileName, int blockNum, int blockSeq) {
-        super(MsgType.PUT_RESPONSE);
+    public PutRequest(byte[] file, String fileName, int blockNum, int blockSeq) {
+        super(MsgType.PUT_REQUEST);
         this.file = file;
         this.fileName = fileName;
         this.blockNum = blockNum;

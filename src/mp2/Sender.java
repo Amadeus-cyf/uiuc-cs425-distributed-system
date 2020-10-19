@@ -1,9 +1,6 @@
 package mp2;
 
-import mp2.model.GetRequest;
-import mp2.model.GetResponse;
-import mp2.model.Message;
-import mp2.model.PutResponse;
+import mp2.model.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -59,10 +56,16 @@ public class Sender {
             int start = blockSeq * BLOCK_SIZE;
             int end = Math.min((blockSeq + 1) * BLOCK_SIZE, bytes.length);
             byte[] block = Arrays.copyOfRange(bytes, start, end);
-            Message response = new PutResponse(block, fileName, blockNum, blockSeq);
+            Message request = new PutRequest(block, fileName, blockNum, blockSeq);
             blockSeq++;
-            this.socket.send(response.toJSON(), targetIpAddress, targetPort);
+            this.socket.send(request.toJSON(), targetIpAddress, targetPort);
             System.out.println("Local file" + blockSeq + " sent to " + targetIpAddress + " " + targetPort);
         }
+    }
+
+    public void sendDeleteRequest(String fileName, String targetIpAddress, int targetPort) {
+        Message request = new DeleteRequest(fileName, targetIpAddress, targetPort);
+        this.socket.send(request.toJSON(), targetIpAddress, targetPort);
+        System.out.println("Delete request of file " + fileName + " send to " + targetIpAddress + " " + targetPort);
     }
 }

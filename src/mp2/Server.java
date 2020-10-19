@@ -28,7 +28,7 @@ public class Server extends BaseServer {
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {
             String line = scanner.nextLine();
-            sender.sendPutRequest("random.txt","localhost", 3000);
+            sender.sendDeleteRequest("random.txt","localhost", 3000);
         }
     }
 
