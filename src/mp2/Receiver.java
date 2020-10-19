@@ -7,6 +7,7 @@ import mp2.model.GetResponse;
 import mp2.model.Message;
 import org.json.JSONObject;
 
+
 import java.io.File;
 import java.net.DatagramPacket;
 import java.util.*;
@@ -29,6 +30,8 @@ public class Receiver {
             File file = new File("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/test.pdf");
             files.add(file);
         }
+        System.out.println("Current files: "+ files.toString());
+        HashMap fileBlockMap = new HashMap<>();
     }
 
     public void start() {
@@ -53,6 +56,9 @@ public class Receiver {
                 break;
             case(MsgType.PUT_REQUEST):
                 receivePutRequest(msgJson);
+                break;
+            case(MsgType.DEL_REQUEST):
+                receiveDeleteRequest(msgJson);
                 break;
         }
     }
@@ -95,6 +101,21 @@ public class Receiver {
             this.files.add(file);
         }
         System.out.println(files.size());
+    }
+
+    private void receiveDeleteRequest(JSONObject msgJson) {
+        String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        for (File file : files) {
+            if (file.getName().equals(fileName)) {
+                files.remove(file); // remove from the file list
+                file.delete(); // delete the sdfs file on the disk
+                System.out.println("Successfully delete file "+ fileName);
+                System.out.println("Current files: "+ files.toString());
+                return;
+            }
+        }
+        System.out.println("Delete file not found");
+        return;
     }
 
     /*

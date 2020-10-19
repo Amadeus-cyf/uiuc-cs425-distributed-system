@@ -3,13 +3,11 @@ package mp2;
 import mp2.constant.MsgKey;
 import mp2.constant.MsgType;
 import mp2.model.FileBlockMessage;
-import mp2.model.GetResponse;
 import mp2.model.Message;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.*;
 import java.nio.file.Files;
 import java.util.*;

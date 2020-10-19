@@ -1,8 +1,8 @@
 package mp2;
 
+import mp2.model.*;
 import mp2.constant.MsgType;
-import mp2.model.GetRequest;
-import mp2.model.Message;
+
 
 import java.io.File;
 
@@ -26,10 +26,17 @@ public class Sender {
     }
 
     public void sendPutRequest(String localFileName, String sdfsFileName, String targetIpAddress, int targetPort) {
-        // read in the local file to bytes
         File localFile = new File(localFileName);
         if (localFile.exists()) {
             this.socket.sendFile(MsgType.PUT_REQUEST, localFile, sdfsFileName, targetIpAddress, targetPort);
+        } else {
+            System.out.println("PUT REQUEST: LOCAL FILE NOT EXISTS");
         }
+    }
+
+    public void sendDeleteRequest(String sdfsFileName, String targetIpAddress, int targetPort) {
+        Message request = new DeleteRequest(sdfsFileName, targetIpAddress, targetPort);
+        this.socket.send(request.toJSON(), targetIpAddress, targetPort);
+        System.out.println("Delete request of file " + sdfsFileName + " send to " + targetIpAddress + " " + targetPort);
     }
 }

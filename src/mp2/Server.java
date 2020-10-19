@@ -28,12 +28,12 @@ public class Server extends BaseServer {
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {
             String line = scanner.nextLine();
-            sender.sendGetRequest("localhost", 3000);
+            sender.sendPutRequest("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/test.pdf", "test1.pdf", "localhost", 4000);
         }
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 4000);
+        Server server = new Server("localhost", 3000);
         server.run();
     }
 }
