@@ -59,7 +59,7 @@ public class Receiver {
         }
     }
 
-    private void receiveGetRequest(JSONObject msgJson) {
+    protected void receiveGetRequest(JSONObject msgJson) {
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         String senderIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int senderPort = msgJson.getInt(MsgKey.PORT);
