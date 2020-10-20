@@ -40,7 +40,7 @@ public class Receiver {
         }
     }
 
-    private void receive(String msg) {
+    protected void receive(String msg) {
         JSONObject msgJson  = new JSONObject(msg);
         String msgType = msgJson.getString(MsgKey.MSG_TYPE);
         switch(msgType) {
@@ -79,7 +79,7 @@ public class Receiver {
         }
     }
 
-    private void receiveGetResponse(JSONObject msgJson) {
+    protected void receiveGetResponse(JSONObject msgJson) {
         if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.FILE_NOT_FOUND)) {
             System.out.println("No such file");
             return;
@@ -90,7 +90,7 @@ public class Receiver {
         }
     }
 
-    private void receivePutRequest(JSONObject msgJson){
+    protected void receivePutRequest(JSONObject msgJson){
         System.out.println("receive put response");
         File file = this.socket.receiveFile(msgJson);
         if (file != null) {
@@ -99,7 +99,7 @@ public class Receiver {
         System.out.println(files.size());
     }
 
-    private void receiveDeleteRequest(JSONObject msgJson) {
+    protected void receiveDeleteRequest(JSONObject msgJson) {
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         for (File file : files) {
             if (file.getName().equals(fileName)) {
