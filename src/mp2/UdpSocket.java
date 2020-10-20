@@ -2,6 +2,7 @@ package mp2;
 
 import mp2.constant.MsgKey;
 import mp2.constant.MsgType;
+import mp2.model.Ack;
 import mp2.model.FileBlockMessage;
 import mp2.model.Message;
 import org.json.JSONObject;
@@ -12,6 +13,9 @@ import java.net.*;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static mp2.constant.MasterInfo.masterIpAddress;
+import static mp2.constant.MasterInfo.masterPort;
 
 public class UdpSocket {
     private DatagramSocket socket;
@@ -151,8 +155,33 @@ public class UdpSocket {
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
+            // send ack message to the master server
+            if(msgType.equals(MsgType.PUT_REQUEST)) {
+               String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+               Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.PUT_ACK);
+               this.send(ack.toJSON(), masterIpAddress, masterPort);
+               System.out.println("sending PUT ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
+                       ":" + port);
+               System.out.println(ack.toJSON().toString());
+            }
+            if(msgType.equals(MsgType.GET_RESPONSE)){
+                // send ack message to the master server
+                String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+                Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.GET_ACK);
+                this.send(ack.toJSON(), masterIpAddress, masterPort);
+                System.out.println("sending GET ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
+                        ":" + port);
+            }
+
             return file;
         }
         return null;
+    }
+
+    /*
+     * whether a server is the master
+     */
+    private Boolean isMaster(String ipAddress, int port) {
+        return ipAddress.equals(masterIpAddress) && port == masterPort;
     }
 }

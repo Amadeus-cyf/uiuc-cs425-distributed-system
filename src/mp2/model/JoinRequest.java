@@ -6,6 +6,7 @@ import mp2.constant.MsgType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class JoinRequest extends Message{
@@ -13,6 +14,7 @@ public class JoinRequest extends Message{
 
     public JoinRequest(List<Member> membershipList) {
         super(MsgType.JOIN_REQUEST);
+        this.servers = new ArrayList<>();
         for (Member member: membershipList) {
             String[] idInfo = member.getId().split("_");
             this.servers.add(new ServerInfo(idInfo[0], Integer.parseInt(idInfo[1])));

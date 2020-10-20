@@ -17,9 +17,12 @@ public class Master extends BaseServer {
     private String ipAddress;
     private int port;
 
-    public Master(String ipAddress, int port) {
+    public Master() {
         this.ipAddress = masterIpAddress;
         this.port = masterPort;
+        this.messageMap = new HashMap<>();
+        this.fileStatus = new HashMap<>();
+        this.fileStorageInfo = new HashMap<>();
     }
 
     public void run() {
@@ -35,10 +38,14 @@ public class Master extends BaseServer {
         });
         Scanner scanner = new Scanner(System.in);
         System.out.println(this.ipAddress + ":" + this.port);
+        while(true) {
+            String line = scanner.nextLine();
+            sender.sendPrePutRequest("random1.txt", "random1_sdfs.txt");
+        }
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3400);
+        Master server = new Master();
         server.run();
     }
 

@@ -7,16 +7,19 @@ import mp2.model.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
+import java.io.*;
 import java.net.DatagramPacket;
 import java.util.*;
+
+import static mp2.constant.MasterInfo.masterIpAddress;
+import static mp2.constant.MasterInfo.masterPort;
 
 public class Receiver {
     protected String ipAddress;
     protected int port;
     protected Set<File> files;
     protected UdpSocket socket;
-    private final int BLOCK_SIZE = 4096;
+    protected final int BLOCK_SIZE = 4096;
 
     public Receiver(String ipAddress, int port, UdpSocket socket) {
         this.ipAddress = ipAddress;
@@ -73,7 +76,18 @@ public class Receiver {
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         String targetIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int targetPort = msgJson.getInt(MsgKey.PORT);
-        sendGetRequest(localFileName, sdfsFileName, targetIpAddress, targetPort);
+        if(ipAddress.equals(this.ipAddress) && port == this.port){
+            String inputName = "sdfs/" + sdfsFileName;
+            String outputName = "local/" + localFileName;
+            writeFile(inputName,outputName);
+            Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.GET_ACK);
+            this.socket.send(ack.toJSON(), masterIpAddress, masterPort);
+            System.out.println("sending GET ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
+                    ":" + port);
+        }
+        else{
+            sendGetRequest(localFileName, sdfsFileName, targetIpAddress, targetPort);
+            }
     }
 
     private void receivePrePutResponse(JSONObject msgJson) {
@@ -82,10 +96,26 @@ public class Receiver {
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         int len = servers.length();
+        System.out.println(servers.toString());
         for (int i = 0; i < len; i ++) {
-            ServerInfo server = (ServerInfo) servers.get(i);
-            System.out.println("receivePrePutResponse: " + (i + 1) + "replica send to " + server.getIpAddress() + ":" + server.getPort());
-            sendPutRequest(localFileName, sdfsFileName, server.getIpAddress(), server.getPort());
+            JSONObject server = servers.getJSONObject(i);
+            String ipAddress = server.getString("ipAddress");
+            int port = server.getInt("port");
+            ServerInfo serverInfo = new ServerInfo(ipAddress, port);
+            System.out.println("receivePrePutResponse: " + (i + 1) + "replica send to " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+            // judge if we are sending the file to the server itself
+            if(ipAddress.equals(this.ipAddress) && port == this.port){
+                files.add(new File(sdfsFileName));
+                String inputName = "local/" + localFileName;
+                String outputName = "sdfs/" + sdfsFileName;
+                writeFile(inputName,outputName);
+                Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.PUT_ACK);
+                this.socket.send(ack.toJSON(), masterIpAddress, masterPort);
+                System.out.println("sending PUT ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
+                        ":" + port);
+            }else{
+                sendPutRequest(localFileName, sdfsFileName, serverInfo.getIpAddress(), serverInfo.getPort());
+            }
         }
 
     }
@@ -96,10 +126,24 @@ public class Receiver {
         JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         int len = servers.length();
         for (int i = 0; i < len; i ++) {
-            ServerInfo server = (ServerInfo) servers.get(i);
-            System.out.println("receivePreDelResponse: " + (i + 1) + "replica send to " + server.getIpAddress() + ":" + server.getPort());
-            sendDeleteRequest(sdfsFileName, server.getIpAddress(), server.getPort());
-        }
+            JSONObject server = servers.getJSONObject(i);
+            String ipAddress = server.getString("ipAddress");
+            int port = server.getInt("port");
+            ServerInfo serverInfo = new ServerInfo(ipAddress, port);
+            System.out.println("receivePreDelResponse: " + (i + 1) + "replica send to " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+            // judge if we are sending the file to the server itself
+            if(ipAddress.equals(this.ipAddress) && port == this.port){
+                File file = new File("sdfs/" + sdfsFileName);
+                files.remove(file.getName()); // remove from the file list
+                file.delete(); // delete the sdfs file on the disk
+                Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.DEL_ACK);
+                this.socket.send(ack.toJSON(), masterIpAddress, masterPort);
+                System.out.println("sending DELETE ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
+                        ":" + port);
+                }else{
+                sendDeleteRequest(sdfsFileName, serverInfo.getIpAddress(), serverInfo.getPort());}
+            }
+
     }
 
     public void sendGetRequest(String localFileName, String sdfsFilename, String targetIpAddress, int targetPort) {
@@ -109,7 +153,7 @@ public class Receiver {
     }
 
     public void sendPutRequest(String localFileName, String sdfsFileName, String targetIpAddress, int targetPort) {
-        File localFile = new File(localFileName);
+        File localFile = new File("local/" + localFileName);
         if (localFile.exists()) {
             this.socket.sendFile(MsgType.PUT_REQUEST, localFile, sdfsFileName, targetIpAddress, targetPort);
             System.out.println("Send Put Request to server " + targetIpAddress + ":" + targetPort);
@@ -136,8 +180,10 @@ public class Receiver {
             }
         }
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
+        System.out.println("receive get request from " + senderIpAddress + ":" + senderPort +"with local fileName "
+                + localFileName + "and sdfs fileName " + sdfsFileName);
         if(target == null) {
-            Message response = new GetResponse(null, localFileName,0, 0);
+            Message response = new GetResponse(null, localFileName, sdfsFileName, 0, 0);
             this.socket.send(response.toJSON(), senderIpAddress, senderPort);
         } else {
             this.socket.sendFile(MsgType.GET_RESPONSE, target, localFileName, senderIpAddress, senderPort);
@@ -145,6 +191,7 @@ public class Receiver {
     }
 
     protected void receiveGetResponse(JSONObject msgJson) {
+        System.out.println("receive get response");
         if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.FILE_NOT_FOUND)) {
             System.out.println("No such file");
             return;
@@ -153,25 +200,36 @@ public class Receiver {
         if (file != null) {
             this.files.add(file);
         }
+
     }
 
     protected void receivePutRequest(JSONObject msgJson){
-        System.out.println("receive put response");
+        System.out.println("receive put request");
         File file = this.socket.receiveFile(msgJson);
         if (file != null) {
             this.files.add(file);
         }
         System.out.println(files.size());
+
     }
 
     protected void receiveDeleteRequest(JSONObject msgJson) {
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        System.out.println("receive delete request with filename " + fileName);
         for (File file : files) {
             if (file.getName().equals(fileName)) {
                 files.remove(file); // remove from the file list
                 file.delete(); // delete the sdfs file on the disk
                 System.out.println("Successfully delete file "+ fileName);
                 System.out.println("Current files: "+ files.toString());
+                // send ack message to the master server
+                String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+//                if(!isMaster(this.ipAddress, this.port)) {
+                Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.DEL_ACK);
+                this.socket.send(ack.toJSON(), masterIpAddress, masterPort);
+                System.out.println("sending DELETE ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
+                        ":" + port);
+//                }
                 return;
             }
         }
@@ -182,7 +240,7 @@ public class Receiver {
     /*
      * turn bytes into string
      */
-    private String readBytes(byte[] packet, int length) {
+    protected String readBytes(byte[] packet, int length) {
         if (packet == null) {
             return null;
         }
@@ -192,4 +250,40 @@ public class Receiver {
         }
         return sb.toString();
     }
+
+    /*
+     * whether a server is the master
+     */
+    private Boolean isMaster(String ipAddress, int port) {
+        return ipAddress.equals(masterIpAddress) && port == masterPort;
+    }
+
+    /*
+    writing a file from the input to the ouput
+     */
+    private void writeFile(String inputFilePath, String outputFilePath) {
+        FileInputStream in = null;
+        try {
+            in = new FileInputStream(inputFilePath);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        FileOutputStream out = null;
+        try {
+            out = new FileOutputStream(outputFilePath);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        int f = 0;
+        try {
+            while ((f = in.read()) != -1) {
+                out.write(f);
+            }
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 }
