@@ -1,5 +1,4 @@
 package mp2;
-
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,12 +27,12 @@ public class Server extends BaseServer {
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {
             String line = scanner.nextLine();
-            sender.sendPutRequest("/Users/amadeus.cyf/Projects/uiuc-cs425-distributed-system/src/mp2/test.pdf", "test1.pdf", "localhost", 4000);
+            sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
         }
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3000);
+        Server server = new Server("localhost", 3400);
         server.run();
     }
 }

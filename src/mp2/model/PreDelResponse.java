@@ -9,10 +9,11 @@ import java.util.Set;
 
 public class PreDelResponse extends Message {
     private Set<ServerInfo> servers;
-
-    public PreDelResponse(Set<ServerInfo> servers) {
+    private  String fileName;
+    public PreDelResponse(String fileName, Set<ServerInfo> servers) {
         super(MsgType.PRE_DEL_RESPONSE);
         this.servers = servers;
+        this.fileName = fileName;
     }
 
     public JSONObject toJSON() {
@@ -20,6 +21,7 @@ public class PreDelResponse extends Message {
         jsonObject.put(MsgKey.MSG_TYPE, msgType);
         JSONArray jsonArray = new JSONArray(servers);
         jsonObject.put(MsgKey.TARGET_SERVERS, jsonArray);
+        jsonObject.put(MsgKey.SDFS_FILE_NAME, fileName);
         return jsonObject;
     }
 }

@@ -1,10 +1,14 @@
 package mp2;
 
+import mp2.constant.MsgKey;
 import mp2.model.*;
 import mp2.constant.MsgType;
 
 
 import java.io.File;
+
+import static mp2.constant.MasterInfo.masterIpAddress;
+import static mp2.constant.MasterInfo.masterPort;
 
 public class Sender {
     private String ipAddress;
@@ -19,24 +23,23 @@ public class Sender {
         this.socket = socket;
     }
 
-    public void sendGetRequest(String targetIpAddress, int targetPort) {
-        System.out.println(this.ipAddress + " " + this.port);
-        Message getRequest = new GetRequest("test.pdf","test3.pdf", this.ipAddress, this.port);
-        this.socket.send(getRequest.toJSON(), targetIpAddress, targetPort);
+
+    public void sendPreGetRequest(String sdfsFileName, String localFileName) {
+        Message request = new PreGetRequest(this.ipAddress, this.port, sdfsFileName, localFileName);
+        this.socket.send(request.toJSON(), masterIpAddress, masterPort);
+        System.out.println("Pre Get request send to master " + masterIpAddress + ":" + masterPort);
+
     }
 
-    public void sendPutRequest(String localFileName, String sdfsFileName, String targetIpAddress, int targetPort) {
-        File localFile = new File(localFileName);
-        if (localFile.exists()) {
-            this.socket.sendFile(MsgType.PUT_REQUEST, localFile, sdfsFileName, targetIpAddress, targetPort);
-        } else {
-            System.out.println("PUT REQUEST: LOCAL FILE NOT EXISTS");
-        }
+    public void sendPrePutRequest(String localFileName, String sdfsFileName) {
+        Message request = new PrePutRequest(this.ipAddress, this.port, sdfsFileName, localFileName);
+        this.socket.send(request.toJSON(), masterIpAddress, masterPort);
+        System.out.println("Pre Put request send to master " + masterIpAddress + ":" + masterPort);
     }
 
-    public void sendDeleteRequest(String sdfsFileName, String targetIpAddress, int targetPort) {
-        Message request = new DeleteRequest(sdfsFileName, targetIpAddress, targetPort);
-        this.socket.send(request.toJSON(), targetIpAddress, targetPort);
-        System.out.println("Delete request of file " + sdfsFileName + " send to " + targetIpAddress + " " + targetPort);
+    public void sendPreDelRequest(String sdfsFileName) {
+        Message request = new PreDelRequest(this.ipAddress, this.port, sdfsFileName);
+        this.socket.send(request.toJSON(), masterIpAddress, masterPort);
+        System.out.println("Pre Delete request send to master " + masterIpAddress + ":" + masterPort);
     }
 }

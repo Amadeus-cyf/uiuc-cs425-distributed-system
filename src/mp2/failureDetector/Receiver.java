@@ -4,6 +4,8 @@ import mp2.UdpSocket;
 import mp2.failureDetector.model.AgreeJoinHeartBeat;
 import mp2.failureDetector.model.HeartBeat;
 import mp2.failureDetector.model.Member;
+import mp2.model.JoinRequest;
+import mp2.model.Message;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -11,6 +13,9 @@ import java.net.DatagramPacket;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.logging.Logger;
+
+import static mp2.constant.MasterInfo.masterIpAddress;
+import static mp2.constant.MasterInfo.masterPort;
 
 public class Receiver {
     private String id;
@@ -147,7 +152,7 @@ public class Receiver {
                     }
                 }
             }
-            // this is a new working server joininig the system
+            // this is a new working server joining the system
             if (!isMemberExist && status.equals(Status.RUNNING)) {
                 this.membershipList.add(new Member(id, new Timestamp(System.currentTimeMillis()), heartbeatCounter));
             }
@@ -183,6 +188,9 @@ public class Receiver {
         }
         JSONArray jsonArray = new JSONArray(membershipList);
         System.out.println(jsonArray.toString());
+        Message joinRequest = new JoinRequest(membershipList);
+        // send the new membership list to the master for the sdfs file system
+        this.socket.send(joinRequest.toJSON(), masterIpAddress, masterPort);
     }
 
     /*

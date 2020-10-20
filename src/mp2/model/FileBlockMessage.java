@@ -26,7 +26,7 @@ public class FileBlockMessage extends Message {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
         if (this.file == null) {
-            jsonObject.put(MsgKey.FILE_BLOCK, MsgContent.NO_FILE_FOUND);
+            jsonObject.put(MsgKey.FILE_BLOCK, MsgContent.FILE_NOT_FOUND);
         } else {
             if (this.file != null) {
                 jsonObject.put(MsgKey.FILE_BLOCK, Base64.getEncoder().encodeToString(this.file));

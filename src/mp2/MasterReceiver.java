@@ -47,17 +47,19 @@ public class MasterReceiver extends Receiver {
                 if (msgType.equals(MsgType.PRE_PUT_REQUEST)) {
                     // return all servers storing the file
                     fileStatus.put(fileName, true);
-                    PrePutResponse prePutResponse = new PrePutResponse(targetServers);
+                    String localFileName = jsonObject.getString(MsgKey.LOCAL_FILE_NAME);
+                    PrePutResponse prePutResponse = new PrePutResponse(fileName, localFileName, targetServers);
                     this.socket.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
                     System.out.println("Master: SEND PRE_PUT_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
                 } else if (msgType.equals(MsgType.PRE_DEL_REQUEST)) {
                     fileStatus.put(fileName, true);
-                    PreDelResponse preDelResponse = new PreDelResponse(targetServers);
+                    PreDelResponse preDelResponse = new PreDelResponse(fileName,targetServers);
                     this.socket.send(preDelResponse.toJSON(), targetIpAddress, targetPort);
                     System.out.println("Master: SEND PRE_DEL_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
                 } else if (msgType.equals(MsgType.PRE_GET_REQUEST)) {
                     for (ServerInfo server : targetServers) {
-                        PreGetResponse preGetResponse = new PreGetResponse(server.getIpAddress(), server.getPort());
+                        String localFileName = jsonObject.getString(MsgKey.LOCAL_FILE_NAME);
+                        PreGetResponse preGetResponse = new PreGetResponse(fileName, localFileName, server.getIpAddress(), server.getPort());
                         this.socket.send(preGetResponse.toJSON(), targetIpAddress, targetPort);
                         break;
                     }
@@ -85,10 +87,11 @@ public class MasterReceiver extends Receiver {
                         }
                     }
                     for (ServerInfo serverInfo : serversArranged) {
-                        System.out.println("Master: ASSIGN FILE: " + fileName " TO "  + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                        System.out.println("Master: ASSIGN FILE: " + fileName + " TO "  + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                     }
                     fileStorageInfo.put(fileName, serversArranged);
-                    PrePutResponse prePutResponse = new PrePutResponse(servers);
+                    String localFileName = jsonObject.getString(MsgKey.LOCAL_FILE_NAME);
+                    PrePutResponse prePutResponse = new PrePutResponse(fileName, localFileName, servers);
                     this.socket.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
                     System.out.println("SEND PRE PUT RESPONSE TO " + targetIpAddress + ":" + targetPort);
                 }
@@ -136,13 +139,15 @@ public class MasterReceiver extends Receiver {
                     String currentMsgType = json.getString(MsgKey.MSG_TYPE);
                     Set<ServerInfo> servers = fileStorageInfo.get(fileName);
                     String targetIpAddress = json.getString(MsgKey.IP_ADDRESS);
+                    String sdfsFileName = json.getString(MsgKey.SDFS_FILE_NAME);
                     int targetPort = json.getInt(MsgKey.PORT);
                     if (currentMsgType.equals(MsgType.PRE_GET_REQUEST)) {
                         isFirstMessage = false;
                         messageQueue.poll();
                         // send first server ip and port back to querying server
                         for (ServerInfo server : servers) {
-                            PreGetResponse preGetResponse = new PreGetResponse(server.getIpAddress(), server.getPort());
+                            String localFileName = json.getString(MsgKey.LOCAL_FILE_NAME);
+                            PreGetResponse preGetResponse = new PreGetResponse(sdfsFileName, localFileName, server.getIpAddress(), server.getPort());
                             this.socket.send(preGetResponse.toJSON(), targetIpAddress, targetPort);
                             break;
                         }
@@ -151,7 +156,8 @@ public class MasterReceiver extends Receiver {
                         fileStatus.put(fileName, true);
                         if (isFirstMessage) {
                             messageQueue.poll();
-                            PrePutResponse prePutResponse = new PrePutResponse(servers);
+                            String localFileName = json.getString(MsgKey.LOCAL_FILE_NAME);
+                            PrePutResponse prePutResponse = new PrePutResponse(sdfsFileName, localFileName, servers);
                             this.socket.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
                         }
                         break;
@@ -159,7 +165,7 @@ public class MasterReceiver extends Receiver {
                         fileStatus.put(fileName, true);
                         if (isFirstMessage) {
                             messageQueue.poll();
-                            PreDelResponse preDelResponse = new PreDelResponse(servers);
+                            PreDelResponse preDelResponse = new PreDelResponse(sdfsFileName, servers);
                             this.socket.send(preDelResponse.toJSON(), targetIpAddress, targetPort);
                         }
                         break;

@@ -11,4 +11,5 @@ public class MsgKey {
     public static final String BLOCK_SEQ = "blockSeq";
     public static final String TARGET_SERVERS = "targetServers";
     public static final String ERROR = "error";
+    public static final String MEMBERSHIP_LIST = "membershipList";
 }

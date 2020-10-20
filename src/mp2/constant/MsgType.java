@@ -21,4 +21,7 @@ public class MsgType {
     public static final String GET_ACK = "GET_ACK";
     public static final String PUT_ACK = "PUT_ACK";
     public static final String DEL_ACK = "DEL_ACK";
+
+    // message send to the master when a new server join in the system
+    public static final String JOIN_REQUEST = "JOIN_REQUEST";
 }

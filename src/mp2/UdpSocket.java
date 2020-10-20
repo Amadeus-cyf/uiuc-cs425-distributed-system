@@ -19,6 +19,8 @@ public class UdpSocket {
     private int port;
     private static Logger logger = Logger.getLogger(UdpSocket.class.getName());
     private final int BLOCK_SIZE = 4096;
+    private final String localPath = "local/";
+    private final String sdfsPath = "sdfs/";
     private Map<String, PriorityQueue<JSONObject>> fileBlockMap;
 
     public UdpSocket(String ipAddress, int port) {
@@ -105,9 +107,9 @@ public class UdpSocket {
         String fileName = null;                                 // the name of file we write received file blocks into
         String msgType = msgJson.getString(MsgKey.MSG_TYPE);
         if (msgType.equals(MsgType.PUT_REQUEST)) {
-            fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+            fileName = sdfsPath + msgJson.getString(MsgKey.SDFS_FILE_NAME);
         } else if (msgType.equals(MsgType.GET_RESPONSE)) {
-            fileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
+            fileName = localPath + msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         } else {
             return null;
         }
