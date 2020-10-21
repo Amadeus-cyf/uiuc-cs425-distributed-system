@@ -2,9 +2,7 @@ package mp2;
 
 import mp2.constant.MsgKey;
 import mp2.constant.MsgType;
-import mp2.model.Ack;
-import mp2.model.FileBlockMessage;
-import mp2.model.Message;
+import mp2.model.*;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -14,8 +12,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static mp2.constant.MasterInfo.masterIpAddress;
-import static mp2.constant.MasterInfo.masterPort;
+import static mp2.constant.MasterInfo.*;
 
 public class UdpSocket {
     private DatagramSocket socket;
@@ -77,6 +74,7 @@ public class UdpSocket {
         if (bytes == null) {
             return;
         }
+        System.out.println("file length:" + bytes.length);
         int blockSeq = 0;
         int blockNum = bytes.length / BLOCK_SIZE;
         if (bytes.length % BLOCK_SIZE > 0) {
@@ -92,10 +90,17 @@ public class UdpSocket {
             int start = blockSeq * BLOCK_SIZE;
             int end = Math.min((blockSeq + 1) * BLOCK_SIZE, bytes.length);
             byte[] block = Arrays.copyOfRange(bytes, start, end);
-            Message response = new FileBlockMessage(msgType, block, fileName, blockNum, blockSeq);
-            blockSeq++;
-            send(response.toJSON(), targetIpAddress, targetPort);
-            System.out.println(blockSeq + " sent to" + targetIpAddress + " " + targetPort);
+            Message response = null;
+            if (msgType.equals(MsgType.GET_RESPONSE)) {
+                response = new GetResponse(block, fileName, target.getName(), blockNum, blockSeq);
+            } else if (msgType.equals(MsgType.PUT_REQUEST)) {
+                response = new PutRequest(block, fileName, blockNum, blockSeq);
+            }
+            if (response != null) {
+                blockSeq++;
+                send(response.toJSON(), targetIpAddress, targetPort);
+                System.out.println(blockSeq + " sent to" + targetIpAddress + " " + targetPort);
+            }
         }
     }
 
@@ -159,7 +164,7 @@ public class UdpSocket {
             if(msgType.equals(MsgType.PUT_REQUEST)) {
                String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
                Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.PUT_ACK);
-               this.send(ack.toJSON(), masterIpAddress, masterPort);
+               this.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
                System.out.println("sending PUT ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
                        ":" + port);
                System.out.println(ack.toJSON().toString());
@@ -168,7 +173,7 @@ public class UdpSocket {
                 // send ack message to the master server
                 String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.GET_ACK);
-                this.send(ack.toJSON(), masterIpAddress, masterPort);
+                this.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
                 System.out.println("sending GET ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
                         ":" + port);
             }
@@ -182,6 +187,6 @@ public class UdpSocket {
      * whether a server is the master
      */
     private Boolean isMaster(String ipAddress, int port) {
-        return ipAddress.equals(masterIpAddress) && port == masterPort;
+        return ipAddress.equals(MASTER_IP_ADDRESS) && port == MASTER_PORT;
     }
 }

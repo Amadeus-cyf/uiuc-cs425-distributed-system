@@ -14,8 +14,8 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static mp2.constant.MasterInfo.masterIpAddress;
-import static mp2.constant.MasterInfo.masterPort;
+import static mp2.constant.MasterInfo.MASTER_IP_ADDRESS;
+import static mp2.constant.MasterInfo.MASTER_PORT;
 
 public class Receiver {
     private String id;
@@ -190,7 +190,7 @@ public class Receiver {
         System.out.println(jsonArray.toString());
         Message joinRequest = new JoinRequest(membershipList);
         // send the new membership list to the master for the sdfs file system
-        this.socket.send(joinRequest.toJSON(), masterIpAddress, masterPort);
+        this.socket.send(joinRequest.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
     }
 
     /*

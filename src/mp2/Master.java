@@ -7,19 +7,18 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static mp2.constant.MasterInfo.masterIpAddress;
-import static mp2.constant.MasterInfo.masterPort;
+import static mp2.constant.MasterInfo.*;
 
 public class Master extends BaseServer {
     private Map<String, Queue<JSONObject>> messageMap;
-    private Map<String, Boolean> fileStatus;
+    private Map<String, Status> fileStatus;
     private Map<String, Set<ServerInfo>> fileStorageInfo;
     private String ipAddress;
     private int port;
 
     public Master() {
-        this.ipAddress = masterIpAddress;
-        this.port = masterPort;
+        this.ipAddress = MASTER_IP_ADDRESS;
+        this.port = MASTER_PORT;
         this.messageMap = new HashMap<>();
         this.fileStatus = new HashMap<>();
         this.fileStorageInfo = new HashMap<>();

@@ -11,8 +11,7 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.util.*;
 
-import static mp2.constant.MasterInfo.masterIpAddress;
-import static mp2.constant.MasterInfo.masterPort;
+import static mp2.constant.MasterInfo.*;
 
 public class Receiver {
     protected String ipAddress;
@@ -55,6 +54,7 @@ public class Receiver {
                 break;
             case(MsgType.PRE_DEL_RESPONSE):
                 receivePreDelResponse(msgJson);
+                break;
             case(MsgType.GET_REQUEST):
                 receiveGetRequest(msgJson);
                 break;
@@ -76,12 +76,12 @@ public class Receiver {
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         String targetIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int targetPort = msgJson.getInt(MsgKey.PORT);
-        if(this.ipAddress.equals(targetIpAddress) && port == targetPort){
+        if(this.ipAddress.equals(targetIpAddress) && this.port == targetPort){
             String inputName = "sdfs/" + sdfsFileName;
             String outputName = "local/" + localFileName;
             writeFile(inputName,outputName);
             Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.GET_ACK);
-            this.socket.send(ack.toJSON(), masterIpAddress, masterPort);
+            this.socket.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
             System.out.println("sending GET ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +  ":" + port);
         } else{
             sendGetRequest(localFileName, sdfsFileName, targetIpAddress, targetPort);
@@ -99,8 +99,7 @@ public class Receiver {
             JSONObject server = servers.getJSONObject(i);
             String targetIpAddress = server.getString("ipAddress");
             int targetPort = server.getInt("port");
-            ServerInfo serverInfo = new ServerInfo(ipAddress, port);
-            System.out.println("receivePrePutResponse: " + (i + 1) + "replica send to " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+            System.out.println("receivePrePutResponse: " + (i + 1) + "replica send to " + targetIpAddress + ":" + targetPort);
             // judge if we are sending the file to the server itself
             if(targetIpAddress.equals(this.ipAddress) && targetPort == this.port){
                 files.add(new File(sdfsFileName));
@@ -108,13 +107,12 @@ public class Receiver {
                 String outputName = "sdfs/" + sdfsFileName;
                 writeFile(inputName,outputName);
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.PUT_ACK);
-                this.socket.send(ack.toJSON(), masterIpAddress, masterPort);
+                this.socket.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
                 System.out.println("sending PUT ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress + ":" + port);
             } else{
-                sendPutRequest(localFileName, sdfsFileName, serverInfo.getIpAddress(), serverInfo.getPort());
+                sendPutRequest(localFileName, sdfsFileName, targetIpAddress, targetPort);
             }
         }
-
     }
 
     private void receivePreDelResponse(JSONObject msgJson) {
@@ -126,18 +124,17 @@ public class Receiver {
             JSONObject server = servers.getJSONObject(i);
             String targetIpAddress = server.getString("ipAddress");
             int targetPort = server.getInt("port");
-            ServerInfo serverInfo = new ServerInfo(ipAddress, port);
-            System.out.println("receivePreDelResponse: " + (i + 1) + "replica send to " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+            System.out.println("receivePreDelResponse: " + (i + 1) + "replica send to " + targetIpAddress + ":" + targetPort);
             // judge if we are sending the file to the server itself
             if(this.ipAddress.equals(targetIpAddress) && this.port == targetPort) {
                 File file = new File("sdfs/" + sdfsFileName);
                 files.remove(file.getName()); // remove from the file list
                 file.delete(); // delete the sdfs file on the disk
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.DEL_ACK);
-                this.socket.send(ack.toJSON(), masterIpAddress, masterPort);
+                this.socket.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
                 System.out.println("sending DELETE ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress + ":" + port);
             } else{
-                sendDeleteRequest(sdfsFileName, serverInfo.getIpAddress(), serverInfo.getPort());
+                sendDeleteRequest(sdfsFileName, targetIpAddress, targetPort);
             }
         }
 
@@ -178,7 +175,7 @@ public class Receiver {
         }
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         System.out.println("receive get request from " + senderIpAddress + ":" + senderPort +"with local fileName "
-                + localFileName + "and sdfs fileName " + sdfsFileName);
+                + localFileName + "and sdfs fileName " + target.getName());
         if(target == null) {
             Message response = new GetResponse(null, localFileName, sdfsFileName, 0, 0);
             this.socket.send(response.toJSON(), senderIpAddress, senderPort);
@@ -223,7 +220,7 @@ public class Receiver {
                 String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
 //                if(!isMaster(this.ipAddress, this.port)) {
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.DEL_ACK);
-                this.socket.send(ack.toJSON(), masterIpAddress, masterPort);
+                this.socket.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
                 System.out.println("sending DELETE ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
                         ":" + port);
 //                }
@@ -252,7 +249,7 @@ public class Receiver {
      * whether a server is the master
      */
     private Boolean isMaster(String ipAddress, int port) {
-        return ipAddress.equals(masterIpAddress) && port == masterPort;
+        return ipAddress.equals(MASTER_IP_ADDRESS) && port == MASTER_PORT;
     }
 
     /*
