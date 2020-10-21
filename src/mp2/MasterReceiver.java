@@ -270,6 +270,13 @@ public class MasterReceiver extends Receiver {
                     } else if (currentMsgType.equals(MsgType.REPLICATE_REQUEST)) {
                         this.socket.send(json, targetIpAddress, targetPort);
                         fileStatus.put(fileName, new Status(false, true));
+                        if (this.ackResponse.get(fileName) == null) {
+                            this.ackResponse.put(fileName, new HashSet<>());
+                        }
+                        // the replicate ack response will only receive 1 ack, thus, we need to add 3 more fake ack into the ack response
+                        this.ackResponse.get(fileName).add(new ServerInfo("1", 2));
+                        this.ackResponse.get(fileName).add(new ServerInfo("2", 2));
+                        this.ackResponse.get(fileName).add(new ServerInfo("3", 2));
                     }
                 }
             }
