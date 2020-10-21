@@ -6,7 +6,6 @@ import mp2.message.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import javax.sound.midi.SysexMessage;
 import java.net.DatagramPacket;
 import java.util.*;
 
@@ -196,9 +195,32 @@ public class MasterReceiver extends Receiver {
             Set<ServerInfo> serversAck = ackResponse.get(fileName);
             if (msgType.equals(MsgType.PUT_ACK)) {
 //                if (fileStorageInfo.get(fileName) == null) {
-                Set<ServerInfo> updatedServers = new HashSet<>(serversAck);
-                fileStorageInfo.put(fileName, updatedServers);
-                for (ServerInfo serverInfo : updatedServers) {
+                // either put success or replicate success
+                if (fileStorageInfo.get(fileName) == null || fileStorageInfo.get(fileName).size() == 0) {
+                    fileStorageInfo.put(fileName, serversAck);
+                } else {
+                    // handle replica case
+                    List<ServerInfo> updatedServers = new ArrayList<>(serversAck);
+                    boolean isReplicaAck = false;
+                    for (ServerInfo updatedServer : updatedServers) {
+                        if (updatedServer.getPort() == -1) {
+                            isReplicaAck = true;
+                            break;
+                        }
+                    }
+                    if (isReplicaAck) {
+                        for (ServerInfo updatedServer : updatedServers) {
+                            if (updatedServer.getPort() > 0) {
+                                fileStorageInfo.get(fileName).add(updatedServer);
+                                break;
+                            }
+                        }
+                    }
+                }
+                for (ServerInfo serverInfo : serversAck) {
+                    if (serverInfo.getPort() < 0) {
+                        continue;
+                    }
                     if (serverStorageInfo.get(serverInfo) == null) {
                         serverStorageInfo.put(serverInfo, new HashSet<>());
                     }
@@ -280,9 +302,9 @@ public class MasterReceiver extends Receiver {
                             this.ackResponse.put(fileName, new HashSet<>());
                         }
                         // the replicate ack response will only receive 1 ack, thus, we need to add 3 more fake ack into the ack response
-                        this.ackResponse.get(fileName).add(new ServerInfo("1", 2));
-                        this.ackResponse.get(fileName).add(new ServerInfo("2", 2));
-                        this.ackResponse.get(fileName).add(new ServerInfo("3", 2));
+                        this.ackResponse.get(fileName).add(new ServerInfo("", -1));
+                        this.ackResponse.get(fileName).add(new ServerInfo("", -1));
+                        this.ackResponse.get(fileName).add(new ServerInfo("", -1));
                     }
                 }
             }
@@ -324,11 +346,15 @@ public class MasterReceiver extends Receiver {
                     for (ServerInfo server : servers) {
                         if (!serverStoreFile.contains(server)) {
                             fileStorageInfo.get(fileName).remove(failServerInfo);
-                            fileStorageInfo.get(fileName).add(server);
-                            serverStorageInfo.get(server).add(fileName);
+//                            fileStorageInfo.get(fileName).add(server);
+//                            serverStorageInfo.get(server).add(fileName);
                             ReplicateRequest replicateRequest = new ReplicateRequest(fileName, server.getIpAddress(), server.getPort());
                             if (fileStatus.get(fileName) == null || !fileStatus.get(fileName).isWriting) {
                                 this.socket.send(replicateRequest.toJSON(), serverStoreFile.get(0).getIpAddress(), serverStoreFile.get(0).getPort());
+                                // the replicate ack response will only receive 1 ack, thus, we need to add 3 more fake ack into the ack response
+                                this.ackResponse.get(fileName).add(new ServerInfo("", -1));
+                                this.ackResponse.get(fileName).add(new ServerInfo("", -1));
+                                this.ackResponse.get(fileName).add(new ServerInfo("", -1));
                             } else {
                                 // add fail server ack response to ack response to make ack number >= replica number
                                 ackResponse.get(fileName).add(failServerInfo);
