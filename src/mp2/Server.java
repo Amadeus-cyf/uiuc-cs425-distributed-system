@@ -8,16 +8,15 @@ import java.util.concurrent.Executors;
 public class Server extends BaseServer {
     private String ipAddress;
     private int port;
-    private FailureDetector failureDetector;
 
     public Server(String ipAddress, int port) {
         this.ipAddress = ipAddress;
         this.port = port;
-        this.failureDetector = new mp2.failureDetector.Server(this.ipAddress, this.port);
     }
 
     public void run() {
         UdpSocket socket = new UdpSocket(this.ipAddress, this.port);
+        FailureDetector failureDetector = new mp2.failureDetector.Server(this.ipAddress, this.port, socket);
         Receiver receiver = new Receiver(this.ipAddress, this.port, socket);
         Sender sender = new Sender(this.ipAddress, this.port, false, socket);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
@@ -34,6 +33,7 @@ public class Server extends BaseServer {
             String line = scanner.nextLine();
             sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
             sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
+            sender.sendPrePutRequest("random1.txt", "random_sdfs.txt");
             sender.sendPreDelRequest("random_sdfs.txt");
         }
     }

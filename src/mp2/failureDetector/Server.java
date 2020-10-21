@@ -1,5 +1,6 @@
 package mp2.failureDetector;
 
+import mp2.UdpSocket;
 import mp2.failureDetector.model.Member;
 
 import java.sql.Timestamp;
@@ -13,8 +14,8 @@ public class Server extends FailureDetector {
     private Long heartbeatCounter = 0L;
     private TimeoutChecker checker;
 
-    public Server(String ipAddress, int port) {
-        super(ipAddress, port);
+    public Server(String ipAddress, int port, UdpSocket socket) {
+        super(ipAddress, port, socket);
     }
 
     @Override

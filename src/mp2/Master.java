@@ -16,7 +16,6 @@ public class Master extends BaseServer {
     private Map<String, Set<ServerInfo>> fileStorageInfo;
     private String ipAddress;
     private int port;
-    private FailureDetector failureDetector;
 
     public Master() {
         this.ipAddress = MASTER_IP_ADDRESS;
@@ -24,11 +23,11 @@ public class Master extends BaseServer {
         this.messageMap = new HashMap<>();
         this.fileStatus = new HashMap<>();
         this.fileStorageInfo = new HashMap<>();
-        this.failureDetector = new Introducer();
     }
 
     public void run() {
         UdpSocket socket = new UdpSocket(this.ipAddress, this.port);
+        FailureDetector failureDetector = new Introducer(socket);
         Receiver receiver = new MasterReceiver(this.ipAddress, this.port, socket, messageMap, fileStatus, fileStorageInfo);
         Sender sender = new Sender(this.ipAddress, this.port, true, socket);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();

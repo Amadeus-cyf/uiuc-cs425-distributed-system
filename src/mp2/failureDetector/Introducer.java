@@ -1,5 +1,6 @@
 package mp2.failureDetector;
 
+import mp2.UdpSocket;
 import mp2.failureDetector.model.Member;
 
 import java.sql.Timestamp;
@@ -15,8 +16,8 @@ public class Introducer extends FailureDetector {
     private Receiver receiver;
     private Long heartbeatCounter = 0L;
 
-    public Introducer() {
-        super(IP_ADDRESS, PORT);
+    public Introducer(UdpSocket socket) {
+        super(IP_ADDRESS, PORT, socket);
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
         this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.statusBuilder, this.socket, this.heartbeatCounter);

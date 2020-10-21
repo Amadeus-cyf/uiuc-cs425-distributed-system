@@ -6,6 +6,7 @@ import mp2.message.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import javax.sound.midi.SysexMessage;
 import java.net.DatagramPacket;
 import java.util.*;
 
@@ -194,19 +195,24 @@ public class MasterReceiver extends Receiver {
             System.out.println(ackResponse.get(fileName).toString());
             Set<ServerInfo> serversAck = ackResponse.get(fileName);
             if (msgType.equals(MsgType.PUT_ACK)) {
-                if (fileStorageInfo.get(fileName) == null) {
-                    Set<ServerInfo> updatedServers = new HashSet<>(serversAck);
-                    fileStorageInfo.put(fileName, updatedServers);
-                    for (ServerInfo serverInfo : updatedServers) {
-                        if (serverStorageInfo.get(serverInfo) == null) {
-                            serverStorageInfo.put(serverInfo, new HashSet<>());
-                        }
-                        serverStorageInfo.get(serverInfo).add(fileName);
+//                if (fileStorageInfo.get(fileName) == null) {
+                Set<ServerInfo> updatedServers = new HashSet<>(serversAck);
+                fileStorageInfo.put(fileName, updatedServers);
+                for (ServerInfo serverInfo : updatedServers) {
+                    if (serverStorageInfo.get(serverInfo) == null) {
+                        serverStorageInfo.put(serverInfo, new HashSet<>());
                     }
+                    System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                    serverStorageInfo.get(serverInfo).add(fileName);
                 }
+//                }
             } else if (msgType.equals(MsgType.DEL_ACK)) {
                 fileStorageInfo.remove(fileName);
+                for(ServerInfo serverInfo: serverStorageInfo.keySet()){
+                    System.out.println("DEL_ACK server info: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                }
                 for (ServerInfo serverInfo : serversAck) {
+                    System.out.println((serverStorageInfo.get(serverInfo) == null) + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                     serverStorageInfo.get(serverInfo).remove(fileName);
                 }
             }
@@ -251,7 +257,7 @@ public class MasterReceiver extends Receiver {
                             this.socket.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
                             fileStatus.put(fileName, new Status(false, true));
                             for (ServerInfo serverInfo : targetServers) {
-                                System.out.println("RECEIVE ACK: SEND PRE PUT RESPONSE TO " + targetServers);
+                                System.out.println("RECEIVE ACK: SEND PRE PUT RESPONSE TO " + serverInfo.getIpAddress() + " : " + serverInfo.getPort());
                             }
                         }
                         break;
@@ -310,6 +316,7 @@ public class MasterReceiver extends Receiver {
             return;
         }
         Set<String> fileNames = serverStorageInfo.get(failServerInfo);
+        serverStorageInfo.remove(failServerInfo);
         if (fileNames != null) {
             for (String fileName : fileNames) {
                 List<ServerInfo> serverStoreFile = new ArrayList<>(fileStorageInfo.get(fileName));
