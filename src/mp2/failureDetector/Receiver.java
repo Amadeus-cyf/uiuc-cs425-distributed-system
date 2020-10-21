@@ -4,8 +4,8 @@ import mp2.UdpSocket;
 import mp2.failureDetector.model.AgreeJoinHeartBeat;
 import mp2.failureDetector.model.HeartBeat;
 import mp2.failureDetector.model.Member;
-import mp2.model.JoinRequest;
-import mp2.model.Message;
+import mp2.message.JoinRequest;
+import mp2.message.Message;
 import org.json.JSONArray;
 import org.json.JSONObject;
 

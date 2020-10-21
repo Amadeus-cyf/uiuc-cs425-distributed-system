@@ -51,4 +51,6 @@ public abstract class FailureDetector {
         this.status = Status.STOP;
         this.membershipList.clear();
     }
+
+    public abstract void run();
 }

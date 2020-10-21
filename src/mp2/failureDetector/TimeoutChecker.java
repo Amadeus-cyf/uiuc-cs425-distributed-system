@@ -1,6 +1,9 @@
 package mp2.failureDetector;
 
+import mp2.UdpSocket;
+import mp2.constant.MasterInfo;
 import mp2.failureDetector.model.Member;
+import mp2.message.FailMessage;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -17,13 +20,15 @@ public class TimeoutChecker implements Runnable {
     private StringBuilder modeBuilder;
     private volatile String mode;
     private String id;
-    static Logger logger = Logger.getLogger(TimeoutChecker.class.getName());
+    private static Logger logger = Logger.getLogger(TimeoutChecker.class.getName());
+    private UdpSocket socket;
 
-    public TimeoutChecker(List<Member> membershipList, StringBuilder modeBuilder, String id) {
+    public TimeoutChecker(List<Member> membershipList, StringBuilder modeBuilder, String id, UdpSocket socket) {
         this.membershipList = membershipList;
         this.modeBuilder = modeBuilder;
         this.mode = modeBuilder.toString();
         this.id = id;
+        this.socket = socket;
     }
 
     public void resetId(String id) {
@@ -66,6 +71,7 @@ public class TimeoutChecker implements Runnable {
                 member.setStatus(Status.FAIL);
                 delList.add(member);
                 logger.warning("ALL_TO_ALL LEAVE/FAIL " + member.getId());
+                sendFailMessage(member);
             }
         }
         for (Member member : delList) {
@@ -91,6 +97,7 @@ public class TimeoutChecker implements Runnable {
             } else if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_FAIL_TIME_LIMIT && (!member.getStatus().equals(Status.FAIL))) {
                 member.setStatus(Status.FAIL);
                 logger.warning("GOSSIP LEAVE/FAIL  " + member.getId());
+                sendFailMessage(member);
             }
         }
         for (Member member : delList) {
@@ -102,9 +109,18 @@ public class TimeoutChecker implements Runnable {
         String[] idInfo = id.split("_");
         String ipAddress = idInfo[0];
         int port = Integer.parseInt(idInfo[1]);
-        if(ipAddress.equals(IP_ADDRESS) && port == PORT){
+        if(ipAddress.equals(IP_ADDRESS) && port == PORT) {
             return true;
         }
         return false;
+    }
+
+    private void sendFailMessage(Member member) {
+        String[] idInfo = member.getId().split("_");
+        String failIpAddress = idInfo[0];
+        int failPort = Integer.parseInt(idInfo[1]);
+        FailMessage failMessage = new FailMessage(failIpAddress, failPort);
+        this.socket.send(failMessage.toJSON(), MasterInfo.MASTER_IP_ADDRESS, MasterInfo.MASTER_PORT);
+        System.out.println("Server " + failIpAddress + ":" + failPort + "fails. Send Fail Message to Server Master");
     }
 }

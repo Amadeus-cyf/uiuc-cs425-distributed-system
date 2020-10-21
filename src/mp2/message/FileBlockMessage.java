@@ -1,4 +1,4 @@
-package mp2.model;
+package mp2.message;
 
 import mp2.constant.MsgContent;
 import mp2.constant.MsgKey;

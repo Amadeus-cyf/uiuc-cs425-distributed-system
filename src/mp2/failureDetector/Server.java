@@ -17,9 +17,9 @@ public class Server extends FailureDetector {
         super(ipAddress, port);
     }
 
-    public void run(String[] args) {
-        Server server = new Server(args[0], 3000);
-        server.join();
+    @Override
+    public void run() {
+        join();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         ExecutorService checkerThread = Executors.newSingleThreadExecutor();
@@ -27,7 +27,7 @@ public class Server extends FailureDetector {
             @Override
             public void run() {
                 while (true) {
-                    server.sender.send();
+                    sender.send();
                     try {
                         Thread.sleep(1000);
                     } catch (Exception e) {
@@ -39,12 +39,12 @@ public class Server extends FailureDetector {
         receiveThread.execute(new Runnable() {
             @Override
             public void run() {
-                server.receiver.start();
+                receiver.start();
             }
         });
-        server.checker = new TimeoutChecker(server.membershipList, server.modeBuilder, server.id);
-        checkerThread.execute(server.checker);
-        CommandHandler commandHandler = new CommandHandler(server);
+        this.checker = new TimeoutChecker(membershipList, modeBuilder, id, this.socket);
+        checkerThread.execute(this.checker);
+        CommandHandler commandHandler = new CommandHandler(this);
         Scanner scanner = new Scanner(System.in);
         while(true) {
             commandHandler.handleCommand(scanner);

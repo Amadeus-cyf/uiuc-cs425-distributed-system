@@ -1,4 +1,4 @@
-package mp2.model;
+package mp2.message;
 
 import mp2.constant.MsgContent;
 import mp2.constant.MsgKey;
@@ -25,12 +25,10 @@ public class GetResponse extends FileBlockMessage {
                 jsonObject.put(MsgKey.FILE_BLOCK, Base64.getEncoder().encodeToString(this.file));
             }
         }
-
         jsonObject.put(MsgKey.LOCAL_FILE_NAME, this.fileName);
         jsonObject.put(MsgKey.SDFS_FILE_NAME, this.sdfsFileName);
         jsonObject.put(MsgKey.BLOCK_NUM, this.blockNum);
         jsonObject.put(MsgKey.BLOCK_SEQ, this.blockSeq);
-
         return jsonObject;
     }
 }

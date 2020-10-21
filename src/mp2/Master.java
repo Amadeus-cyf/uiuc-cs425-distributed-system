@@ -1,6 +1,7 @@
 package mp2;
 
-import mp2.model.ServerInfo;
+import mp2.failureDetector.FailureDetector;
+import mp2.failureDetector.Introducer;
 import org.json.JSONObject;
 
 import java.util.*;
@@ -15,6 +16,7 @@ public class Master extends BaseServer {
     private Map<String, Set<ServerInfo>> fileStorageInfo;
     private String ipAddress;
     private int port;
+    private FailureDetector failureDetector;
 
     public Master() {
         this.ipAddress = MASTER_IP_ADDRESS;
@@ -22,6 +24,7 @@ public class Master extends BaseServer {
         this.messageMap = new HashMap<>();
         this.fileStatus = new HashMap<>();
         this.fileStorageInfo = new HashMap<>();
+        this.failureDetector = new Introducer();
     }
 
     public void run() {
@@ -36,6 +39,7 @@ public class Master extends BaseServer {
             }
         });
         Scanner scanner = new Scanner(System.in);
+        // this.failureDetector.run();
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {
             String line = scanner.nextLine();
@@ -47,6 +51,4 @@ public class Master extends BaseServer {
         Master server = new Master();
         server.run();
     }
-
-
 }

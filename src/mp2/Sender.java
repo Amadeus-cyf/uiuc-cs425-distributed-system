@@ -1,12 +1,7 @@
 package mp2;
 
-import mp2.constant.MsgKey;
-import mp2.model.*;
-import mp2.constant.MsgType;
+import mp2.message.*;
 
-
-import java.io.File;
-import java.util.Map;
 
 import static mp2.constant.MasterInfo.*;
 

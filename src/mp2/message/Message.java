@@ -1,4 +1,4 @@
-package mp2.model;
+package mp2.message;
 
 import org.json.JSONObject;
 

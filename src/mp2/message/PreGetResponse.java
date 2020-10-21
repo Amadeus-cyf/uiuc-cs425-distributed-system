@@ -1,4 +1,4 @@
-package mp2.model;
+package mp2.message;
 
 import mp2.constant.MsgKey;
 import mp2.constant.MsgType;
@@ -18,6 +18,7 @@ public class PreGetResponse extends Message {
         this.port = port;
     }
 
+    @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(MsgKey.MSG_TYPE, msgType);
@@ -25,7 +26,6 @@ public class PreGetResponse extends Message {
         jsonObject.put(MsgKey.PORT, port);
         jsonObject.put(MsgKey.SDFS_FILE_NAME, sdfsFileName);
         jsonObject.put(MsgKey.LOCAL_FILE_NAME, localFileName);
-
         return jsonObject;
     }
 }

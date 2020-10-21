@@ -1,28 +1,31 @@
-package mp2.model;
+package mp2.message;
 
+import mp2.ServerInfo;
 import mp2.constant.MsgKey;
 import mp2.constant.MsgType;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class PreGetRequest extends Message {
-    private String ipAddress;
-    private int port;
+import java.util.Set;
+
+public class PrePutResponse extends Message {
+    private Set<ServerInfo> servers;
     private String sdfsFileName;
     private String localFileName;
 
-    public PreGetRequest(String ipAddress, int port, String sdfsFileName, String localFileName) {
-        super(MsgType.PRE_GET_REQUEST);
-        this.ipAddress = ipAddress;
-        this.port = port;
+    public PrePutResponse(String sdfsFileName, String localFileName, Set<ServerInfo> servers) {
+        super(MsgType.PRE_PUT_RESPONSE);
+        this.servers = servers;
         this.sdfsFileName = sdfsFileName;
         this.localFileName = localFileName;
     }
 
+    @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(MsgKey.MSG_TYPE, msgType);
-        jsonObject.put(MsgKey.IP_ADDRESS, ipAddress);
-        jsonObject.put(MsgKey.PORT, port);
+        JSONArray jsonArray = new JSONArray(servers);
+        jsonObject.put(MsgKey.TARGET_SERVERS, jsonArray);
         jsonObject.put(MsgKey.SDFS_FILE_NAME, sdfsFileName);
         jsonObject.put(MsgKey.LOCAL_FILE_NAME, localFileName);
         return jsonObject;

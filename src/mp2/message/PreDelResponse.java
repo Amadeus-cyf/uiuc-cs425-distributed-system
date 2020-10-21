@@ -1,5 +1,6 @@
-package mp2.model;
+package mp2.message;
 
+import mp2.ServerInfo;
 import mp2.constant.MsgKey;
 import mp2.constant.MsgType;
 import org.json.JSONArray;
@@ -16,6 +17,7 @@ public class PreDelResponse extends Message {
         this.fileName = fileName;
     }
 
+    @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(MsgKey.MSG_TYPE, msgType);

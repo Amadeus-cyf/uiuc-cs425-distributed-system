@@ -1,8 +1,9 @@
 package mp2;
 
+import mp2.constant.FilePath;
 import mp2.constant.MsgKey;
 import mp2.constant.MsgType;
-import mp2.model.*;
+import mp2.message.*;
 import org.json.JSONObject;
 
 import java.io.File;
@@ -20,8 +21,6 @@ public class UdpSocket {
     private int port;
     private static Logger logger = Logger.getLogger(UdpSocket.class.getName());
     private final int BLOCK_SIZE = 4096;
-    private final String localPath = "local/";
-    private final String sdfsPath = "sdfs/";
     private Map<String, PriorityQueue<JSONObject>> fileBlockMap;
 
     public UdpSocket(String ipAddress, int port) {
@@ -81,6 +80,7 @@ public class UdpSocket {
             blockNum++;
         }
         System.out.println("Block NUM: " + blockNum);
+        // split file sent into blocks and send file blocks
         while(blockSeq < blockNum){
             try {
                 Thread.sleep(10);
@@ -116,9 +116,9 @@ public class UdpSocket {
         String fileName = null;                                 // the name of file we write received file blocks into
         String msgType = msgJson.getString(MsgKey.MSG_TYPE);
         if (msgType.equals(MsgType.PUT_REQUEST)) {
-            fileName = sdfsPath + msgJson.getString(MsgKey.SDFS_FILE_NAME);
+            fileName = FilePath.SDFS_ROOT_DIRECTORY + msgJson.getString(MsgKey.SDFS_FILE_NAME);
         } else if (msgType.equals(MsgType.GET_RESPONSE)) {
-            fileName = localPath + msgJson.getString(MsgKey.LOCAL_FILE_NAME);
+            fileName = FilePath.LOCAL_ROOT_DIRECTORY + msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         } else {
             return null;
         }
@@ -136,6 +136,7 @@ public class UdpSocket {
         System.out.println("receive from the local file:" + fileBlocks.size() + " " + blockNum);
         fileBlocks.add(msgJson);
         if (fileBlocks.size() >= blockNum) {
+            // the receiver has received all file blocks
             File file = new File(fileName);
             FileOutputStream fOut = null;
             try {
@@ -177,7 +178,6 @@ public class UdpSocket {
                 System.out.println("sending GET ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
                         ":" + port);
             }
-
             return file;
         }
         return null;

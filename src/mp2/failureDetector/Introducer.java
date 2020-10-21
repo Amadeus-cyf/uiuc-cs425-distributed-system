@@ -24,8 +24,8 @@ public class Introducer extends FailureDetector {
         this.membershipList.add(new Member(this.id, this.startingTime, this.heartbeatCounter));
     }
 
+    @Override
     public void run() {
-        Introducer server = new Introducer();
         ExecutorService sendThread= Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         ExecutorService checkerThread = Executors.newSingleThreadExecutor();
@@ -33,7 +33,7 @@ public class Introducer extends FailureDetector {
             @Override
             public void run() {
                 while (true) {
-                    server.sender.send();
+                    sender.send();
                     try {
                         Thread.sleep(1000);
                     } catch (Exception e) {
@@ -45,11 +45,11 @@ public class Introducer extends FailureDetector {
         receiveThread.execute(new Runnable() {
             @Override
             public void run() {
-                server.receiver.start();
+                receiver.start();
             }
         });
-        checkerThread.execute(new TimeoutChecker(server.membershipList, server.modeBuilder, server.id));
-        CommandHandler commandHandler = new CommandHandler(server);
+        checkerThread.execute(new TimeoutChecker(this.membershipList, this.modeBuilder, this.id, this.socket));
+        CommandHandler commandHandler = new CommandHandler(this);
         Scanner scanner = new Scanner(System.in);
         while(true) {
             commandHandler.handleCommand(scanner);

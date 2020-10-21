@@ -1,4 +1,4 @@
-package mp2.model;
+package mp2;
 
 public class ServerInfo {
     private String ipAddress;

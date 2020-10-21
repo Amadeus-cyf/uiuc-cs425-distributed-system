@@ -1,7 +1,6 @@
-package mp2.model;
+package mp2.message;
 
 import mp2.constant.MsgKey;
-import mp2.constant.MsgType;
 import org.json.JSONObject;
 
 public class Ack extends Message{
