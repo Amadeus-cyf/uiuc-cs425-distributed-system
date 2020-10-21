@@ -194,49 +194,10 @@ public class MasterReceiver extends Receiver {
             System.out.println(ackResponse.get(fileName).toString());
             Set<ServerInfo> serversAck = ackResponse.get(fileName);
             if (msgType.equals(MsgType.PUT_ACK)) {
-//                if (fileStorageInfo.get(fileName) == null) {
                 // either put success or replicate success
-                if (fileStorageInfo.get(fileName) == null || fileStorageInfo.get(fileName).size() == 0) {
-                    fileStorageInfo.put(fileName, serversAck);
-                } else {
-                    // handle replica case
-                    List<ServerInfo> updatedServers = new ArrayList<>(serversAck);
-                    boolean isReplicaAck = false;
-                    for (ServerInfo updatedServer : updatedServers) {
-                        if (updatedServer.getPort() == -1) {
-                            isReplicaAck = true;
-                            break;
-                        }
-                    }
-                    if (isReplicaAck) {
-                        for (ServerInfo updatedServer : updatedServers) {
-                            if (updatedServer.getPort() > 0) {
-                                fileStorageInfo.get(fileName).add(updatedServer);
-                                break;
-                            }
-                        }
-                    }
-                }
-                for (ServerInfo serverInfo : serversAck) {
-                    if (serverInfo.getPort() < 0) {
-                        continue;
-                    }
-                    if (serverStorageInfo.get(serverInfo) == null) {
-                        serverStorageInfo.put(serverInfo, new HashSet<>());
-                    }
-                    System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
-                    serverStorageInfo.get(serverInfo).add(fileName);
-                }
-//                }
+                handlePutAck(fileName, serversAck);
             } else if (msgType.equals(MsgType.DEL_ACK)) {
-                fileStorageInfo.remove(fileName);
-                for(ServerInfo serverInfo: serverStorageInfo.keySet()){
-                    System.out.println("DEL_ACK server info: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
-                }
-                for (ServerInfo serverInfo : serversAck) {
-                    System.out.println((serverStorageInfo.get(serverInfo) == null) + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
-                    serverStorageInfo.get(serverInfo).remove(fileName);
-                }
+                handleDelAck(fileName, serversAck);
             }
             System.out.println(fileName + ": " + fileStorageInfo.get(fileName));
             ackResponse.remove(fileName);
@@ -392,5 +353,46 @@ public class MasterReceiver extends Receiver {
             messageMap.put(fileName, queue);
         }
         messageMap.get(fileName).add(jsonObject);
+    }
+
+    private void handlePutAck(String fileName, Set<ServerInfo> serversAck) {
+        if (fileStorageInfo.get(fileName) == null || fileStorageInfo.get(fileName).size() == 0) {
+            fileStorageInfo.put(fileName, serversAck);
+        } else {
+            // handle replica case
+            List<ServerInfo> updatedServers = new ArrayList<>(serversAck);
+            boolean isReplicaAck = false;
+            for (ServerInfo updatedServer : updatedServers) {
+                if (updatedServer.getPort() == -1) {
+                    isReplicaAck = true;
+                    break;
+                }
+            }
+            if (isReplicaAck) {
+                for (ServerInfo updatedServer : updatedServers) {
+                    if (updatedServer.getPort() > 0) {
+                        fileStorageInfo.get(fileName).add(updatedServer);
+                        break;
+                    }
+                }
+            }
+        }
+        for (ServerInfo serverInfo : serversAck) {
+            if (serverInfo.getPort() < 0) {
+                continue;
+            }
+            if (serverStorageInfo.get(serverInfo) == null) {
+                serverStorageInfo.put(serverInfo, new HashSet<>());
+            }
+            System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+            serverStorageInfo.get(serverInfo).add(fileName);
+        }
+    }
+
+    private void handleDelAck(String fileName, Set<ServerInfo> serversAck) {
+        fileStorageInfo.remove(fileName);
+        for (ServerInfo serverInfo : serversAck) {
+            serverStorageInfo.get(serverInfo).remove(fileName);
+        }
     }
 }
