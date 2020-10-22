@@ -16,7 +16,7 @@ public class Server extends BaseServer {
 
     public void run() {
         UdpSocket socket = new UdpSocket(this.ipAddress, this.port);
-        FailureDetector failureDetector = new mp2.failureDetector.Server(this.ipAddress, this.port, socket);
+        FailureDetector failureDetector = new mp2.failureDetector.Server(this.ipAddress, this.port+1);
         Receiver receiver = new Receiver(this.ipAddress, this.port, socket);
         Sender sender = new Sender(this.ipAddress, this.port, false, socket);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
@@ -28,18 +28,19 @@ public class Server extends BaseServer {
         });
         Scanner scanner = new Scanner(System.in);
         System.out.println(this.ipAddress + ":" + this.port);
-        // this.failureDetector.run();
+        failureDetector.run();
+
         while(true) {
             String line = scanner.nextLine();
             sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
-            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
-            sender.sendPrePutRequest("random1.txt", "random_sdfs.txt");
-            sender.sendPreDelRequest("random_sdfs.txt");
+//            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
+            sender.sendPrePutRequest("random1.txt", "random1_sdfs.txt");
+//            sender.sendPreDelRequest("random_sdfs.txt");
         }
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3400);
+        Server server = new Server("localhost", 3600);
         server.run();
     }
 }

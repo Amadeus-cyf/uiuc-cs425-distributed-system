@@ -11,12 +11,13 @@ public class FailMessage extends Message {
     public FailMessage(String failIpAddress, int failPort) {
         super(MsgType.SERVER_FAIL);
         this.failIpAddress = failIpAddress;
-        this.failPort = failPort;
+        this.failPort = failPort-1;
     }
 
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
+        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
         jsonObject.put(MsgKey.IP_ADDRESS, failIpAddress);
         jsonObject.put(MsgKey.PORT, failPort);
         return jsonObject;

@@ -235,6 +235,7 @@ public class Receiver {
         int targetPort = msgJson.getInt(MsgKey.PORT);
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         File sdfsFile = new File(FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName);
+        System.out.println("receiveReplicateRequest: send " + sdfsFileName + " to " + targetIpAddress + ":" + targetPort);
         this.socket.sendFile(MsgType.PUT_REQUEST, sdfsFile, sdfsFileName, targetIpAddress, targetPort);
     }
 

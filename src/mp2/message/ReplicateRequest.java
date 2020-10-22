@@ -19,6 +19,7 @@ public class ReplicateRequest extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
+        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
         jsonObject.put(MsgKey.SDFS_FILE_NAME, fileName);
         jsonObject.put(MsgKey.IP_ADDRESS, targetIpAddress);
         jsonObject.put(MsgKey.PORT, targetPort);

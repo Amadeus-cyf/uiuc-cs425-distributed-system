@@ -17,7 +17,8 @@ public class JoinRequest extends Message{
         this.servers = new ArrayList<>();
         for (Member member: membershipList) {
             String[] idInfo = member.getId().split("_");
-            this.servers.add(new ServerInfo(idInfo[0], Integer.parseInt(idInfo[1])));
+            // we need to substract 1 for port number sending to the master
+            this.servers.add(new ServerInfo(idInfo[0], Integer.parseInt(idInfo[1])-1));
         }
 
     }

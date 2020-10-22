@@ -14,8 +14,8 @@ public class Server extends FailureDetector {
     private Long heartbeatCounter = 0L;
     private TimeoutChecker checker;
 
-    public Server(String ipAddress, int port, UdpSocket socket) {
-        super(ipAddress, port, socket);
+    public Server(String ipAddress, int port) {
+        super(ipAddress, port);
     }
 
     @Override
@@ -45,11 +45,6 @@ public class Server extends FailureDetector {
         });
         this.checker = new TimeoutChecker(membershipList, modeBuilder, id, this.socket);
         checkerThread.execute(this.checker);
-        CommandHandler commandHandler = new CommandHandler(this);
-        Scanner scanner = new Scanner(System.in);
-        while(true) {
-            commandHandler.handleCommand(scanner);
-        }
     }
 
     public void join() {

@@ -31,11 +31,6 @@ public class MasterReceiver extends Receiver {
         this.servers = new HashSet<>();
         this.serverStorageInfo = new HashMap<>();
         this.getReqNum = new HashMap<>();
-        this.servers.add(new ServerInfo(MASTER_IP_ADDRESS, MASTER_PORT));
-        this.servers.add(new ServerInfo("localhost", 3100));
-        this.servers.add(new ServerInfo("localhost", 3200));
-        this.servers.add(new ServerInfo("localhost", 3300));
-        this.servers.add(new ServerInfo("localhost", 3400));
     }
 
     public void start() {
@@ -80,6 +75,9 @@ public class MasterReceiver extends Receiver {
                 break;
             case(MsgType.SERVER_FAIL):
                 receiveFail(msgJson);
+                break;
+            case(MsgType.REPLICATE_REQUEST):
+                receiveReplicateRequest(msgJson);
                 break;
         }
     }
@@ -264,8 +262,8 @@ public class MasterReceiver extends Receiver {
                         }
                         // the replicate ack response will only receive 1 ack, thus, we need to add 3 more fake ack into the ack response
                         this.ackResponse.get(fileName).add(new ServerInfo("", -1));
-                        this.ackResponse.get(fileName).add(new ServerInfo("", -1));
-                        this.ackResponse.get(fileName).add(new ServerInfo("", -1));
+                        this.ackResponse.get(fileName).add(new ServerInfo("", -2));
+                        this.ackResponse.get(fileName).add(new ServerInfo("", -3));
                     }
                 }
             }
@@ -279,6 +277,7 @@ public class MasterReceiver extends Receiver {
             String ipAddress = server.getString("ipAddress");
             int port = server.getInt("port");
             ServerInfo serverInfo = new ServerInfo(ipAddress, port);
+            System.out.println("receive membershipList - loop serverList: " + ipAddress + port);
             if (!servers.contains(serverInfo)) {
                 servers.add(serverInfo);
                 this.serverStorageInfo.put(serverInfo, new HashSet<>());
@@ -298,29 +297,43 @@ public class MasterReceiver extends Receiver {
         } else {
             return;
         }
+        System.out.println("receiveFail: " + jsonObject.toString());
         Set<String> fileNames = serverStorageInfo.get(failServerInfo);
         serverStorageInfo.remove(failServerInfo);
         if (fileNames != null) {
+            System.out.println("receiveFail: " + fileNames);
             for (String fileName : fileNames) {
+                fileStorageInfo.get(fileName).remove(failServerInfo);
                 List<ServerInfo> serverStoreFile = new ArrayList<>(fileStorageInfo.get(fileName));
+
                 if (serverStoreFile.size() > 0) {
+                    System.out.println("receiveFail: " + serverStoreFile.size());
                     for (ServerInfo server : servers) {
                         if (!serverStoreFile.contains(server)) {
-                            fileStorageInfo.get(fileName).remove(failServerInfo);
+                            System.out.println("receiveFail: " + !serverStoreFile.contains(server));
 //                            fileStorageInfo.get(fileName).add(server);
 //                            serverStorageInfo.get(server).add(fileName);
                             ReplicateRequest replicateRequest = new ReplicateRequest(fileName, server.getIpAddress(), server.getPort());
+//                            System.out.println("receiveFail: fileName" + serverStoreFile.get(0).getIpAddress() + serverStoreFile.get(0).getPort());
                             if (fileStatus.get(fileName) == null || !fileStatus.get(fileName).isWriting) {
+                                System.out.println("receiveFail: not writing file" );
+                                fileStatus.put(fileName, new Status(false, true));
+                                System.out.println("send replicate request to :" + serverStoreFile.get(0).getIpAddress() + serverStoreFile.get(0).getPort() + replicateRequest.toJSON());
                                 this.socket.send(replicateRequest.toJSON(), serverStoreFile.get(0).getIpAddress(), serverStoreFile.get(0).getPort());
                                 // the replicate ack response will only receive 1 ack, thus, we need to add 3 more fake ack into the ack response
+                                if (this.ackResponse.get(fileName) == null) {
+                                    this.ackResponse.put(fileName, new HashSet<>());
+                                }
                                 this.ackResponse.get(fileName).add(new ServerInfo("", -1));
-                                this.ackResponse.get(fileName).add(new ServerInfo("", -1));
-                                this.ackResponse.get(fileName).add(new ServerInfo("", -1));
+                                this.ackResponse.get(fileName).add(new ServerInfo("", -2));
+                                this.ackResponse.get(fileName).add(new ServerInfo("", -3));
                             } else {
+                                System.out.println("receiveFail: " + "add fail server ack response to ack response to make ack number >= replica number");
                                 // add fail server ack response to ack response to make ack number >= replica number
                                 ackResponse.get(fileName).add(failServerInfo);
                                 addRequestToQueue(MsgType.PRE_PUT_REQUEST, replicateRequest.toJSON());
                             }
+                            break;
                         }
                     }
                 } else {
@@ -363,7 +376,7 @@ public class MasterReceiver extends Receiver {
             List<ServerInfo> updatedServers = new ArrayList<>(serversAck);
             boolean isReplicaAck = false;
             for (ServerInfo updatedServer : updatedServers) {
-                if (updatedServer.getPort() == -1) {
+                if (updatedServer.getPort() < 0) {
                     isReplicaAck = true;
                     break;
                 }

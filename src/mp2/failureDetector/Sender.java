@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import static mp2.constant.MasterInfo.MASTER_IP_ADDRESS;
+import static mp2.constant.MasterInfo.MASTER_PORT;
+import static mp2.constant.MasterFdInfo.MASTER_FD_IP_ADDRESS;
+import static mp2.constant.MasterFdInfo.MASTER_FD_PORT;
+
 public class Sender {
     private UdpSocket socket;
     private String ipAddress;
@@ -148,8 +153,8 @@ public class Sender {
 
     public void sendJoinRequest() {
         JoinSystemHeartBeat joinSystemHeartBeat = new JoinSystemHeartBeat(this.id);
-        //logger.warning("sendJoinRequest: sends " + joinSystemHeartBeat.toJSON() + "to Introducer");
-        this.socket.send(joinSystemHeartBeat.toJSON(), Introducer.IP_ADDRESS, Introducer.PORT);
+//        logger.warning("sendJoinRequest: sends " + joinSystemHeartBeat.toJSON() + "to Introducer");
+        this.socket.send(joinSystemHeartBeat.toJSON(), MASTER_FD_IP_ADDRESS, MASTER_FD_PORT);
     }
 
     public void switchMode(String mode) {

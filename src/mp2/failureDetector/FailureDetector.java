@@ -18,10 +18,10 @@ public abstract class FailureDetector {
     protected volatile StringBuilder statusBuilder;
     protected String status = Status.RUNNING;
 
-    protected FailureDetector(String ipAddress, int port, UdpSocket socket) {
+    protected FailureDetector(String ipAddress, int port) {
         this.ipAddress = ipAddress;
         this.port = port;
-        this.socket = socket;
+        this.socket = new UdpSocket(this.ipAddress, this.port);
         this.membershipList = new ArrayList<>();
         this.modeBuilder = new StringBuilder();
         this.modeBuilder.append(Mode.GOSSIP);

@@ -8,6 +8,8 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static mp2.constant.MasterFdInfo.MASTER_FD_IP_ADDRESS;
+import static mp2.constant.MasterFdInfo.MASTER_FD_PORT;
 import static mp2.constant.MasterInfo.*;
 
 public class Master extends BaseServer {
@@ -27,7 +29,7 @@ public class Master extends BaseServer {
 
     public void run() {
         UdpSocket socket = new UdpSocket(this.ipAddress, this.port);
-        FailureDetector failureDetector = new Introducer(socket);
+        FailureDetector failureDetector = new Introducer(MASTER_FD_IP_ADDRESS, MASTER_FD_PORT);
         Receiver receiver = new MasterReceiver(this.ipAddress, this.port, socket, messageMap, fileStatus, fileStorageInfo);
         Sender sender = new Sender(this.ipAddress, this.port, true, socket);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
@@ -38,7 +40,7 @@ public class Master extends BaseServer {
             }
         });
         Scanner scanner = new Scanner(System.in);
-        // this.failureDetector.run();
+        failureDetector.run();
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {
             String line = scanner.nextLine();

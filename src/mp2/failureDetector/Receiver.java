@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 
 import static mp2.constant.MasterInfo.MASTER_IP_ADDRESS;
 import static mp2.constant.MasterInfo.MASTER_PORT;
+import static mp2.constant.MasterFdInfo.MASTER_FD_IP_ADDRESS;
+import static mp2.constant.MasterFdInfo.MASTER_FD_PORT;
 
 public class Receiver {
     private String id;
@@ -163,7 +165,8 @@ public class Receiver {
      * handle message request for joining the system
      */
     private void receiveJoinRequest(JSONObject request) {
-        if (!this.ipAddress.equals(Introducer.IP_ADDRESS) || this.port != Introducer.PORT) {
+        System.out.println(this.ipAddress + this.port);
+        if (!this.ipAddress.equals(MASTER_FD_IP_ADDRESS) || this.port != MASTER_FD_PORT) {
             return;
         }
         String senderId = request.getString("id");
@@ -186,8 +189,6 @@ public class Receiver {
             //logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
         }
-        JSONArray jsonArray = new JSONArray(membershipList);
-        System.out.println(jsonArray.toString());
         Message joinRequest = new JoinRequest(membershipList);
         // send the new membership list to the master for the sdfs file system
         this.socket.send(joinRequest.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
