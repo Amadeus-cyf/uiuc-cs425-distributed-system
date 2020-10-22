@@ -29,6 +29,10 @@ public abstract class FailureDetector {
         this.statusBuilder.append(Status.RUNNING);
     }
 
+    public List<Member> getMembershipList() {
+        return this.membershipList;
+    }
+
     protected String createId() {
         StringBuilder sb = new StringBuilder();
         sb.append(this.ipAddress);
@@ -39,7 +43,7 @@ public abstract class FailureDetector {
         return sb.toString();
     }
 
-    protected StringBuilder getModeBuilder() {
+    public StringBuilder getModeBuilder() {
         return this.modeBuilder;
     }
 

@@ -27,16 +27,16 @@ public class Server extends BaseServer {
             }
         });
         Scanner scanner = new Scanner(System.in);
+        CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner);
         System.out.println(this.ipAddress + ":" + this.port);
         failureDetector.run();
-
         while(true) {
-            String line = scanner.nextLine();
-            sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
-            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
-            sender.sendPrePutRequest("random1.txt", "random1_sdfs.txt");
-            sender.sendPreDelRequest("random_sdfs.txt");
-            sender.sendLsRequest("random1_sdfs.txt");
+            commandHandler.handleCommand();
+//            sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
+//            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
+//            sender.sendPrePutRequest("random1.txt", "random1_sdfs.txt");
+//            sender.sendPreDelRequest("random_sdfs.txt");
+//            sender.sendLsRequest("random1_sdfs.txt");
         }
     }
 

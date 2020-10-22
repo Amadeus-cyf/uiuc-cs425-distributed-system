@@ -8,10 +8,12 @@ import org.json.JSONObject;
 
 import java.net.DatagramPacket;
 import java.util.*;
+import java.util.logging.Logger;
 
 import static mp2.constant.MasterInfo.*;
 
 public class MasterReceiver extends Receiver {
+    private Logger logger = Logger.getLogger(MasterReceiver.class.getName());
     private Map<String, Queue<JSONObject>> messageMap;
     private Map<String, Status> fileStatus;                      // the first of boolean array isReading, the second is isWriting
     private Map<String, Set<ServerInfo>> fileStorageInfo;
@@ -23,9 +25,9 @@ public class MasterReceiver extends Receiver {
 
     public MasterReceiver(String ipAddress, int port, UdpSocket socket) {
         super(ipAddress, port, socket);
-        this.messageMap = messageMap;
-        this.fileStatus = fileStatus;
-        this.fileStorageInfo = fileStorageInfo;
+        this.messageMap = new HashMap<>();
+        this.fileStatus = new HashMap<>();
+        this.fileStorageInfo = new HashMap<>();
         this.messageMap = new HashMap<>();
         this.fileStatus = new HashMap<>();
         this.fileStorageInfo = new HashMap<>();
@@ -48,7 +50,7 @@ public class MasterReceiver extends Receiver {
     private void receive(String msg) {
         JSONObject msgJson = new JSONObject(msg);
         String msgType = msgJson.getString(MsgKey.MSG_TYPE);
-        System.out.println("receive " + msgType);
+        logger.info("Master Receiver: Receive " + msgType);
         switch(msgType) {
             case(MsgType.PRE_GET_REQUEST):
             case(MsgType.PRE_PUT_REQUEST):
@@ -105,7 +107,7 @@ public class MasterReceiver extends Receiver {
     private void receiveRequest(JSONObject jsonObject){
         String fileName = jsonObject.getString(MsgKey.SDFS_FILE_NAME);
         String msgType = jsonObject.getString(MsgKey.MSG_TYPE);
-        System.out.println("MASTER: RECEIVE " + msgType);
+        logger.info("MASTER RECEIVE: RECEIVE REQUEST " + msgType);
         Status currentStatus = fileStatus.get(fileName);
         if (currentStatus == null || !currentStatus.isWriting) {
             Set<ServerInfo> targetServers = fileStorageInfo.get(fileName);
@@ -121,7 +123,7 @@ public class MasterReceiver extends Receiver {
                         String localFileName = jsonObject.getString(MsgKey.LOCAL_FILE_NAME);
                         PrePutResponse prePutResponse = new PrePutResponse(fileName, localFileName, targetServers);
                         this.socket.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
-                        System.out.println("Master: SEND PRE_PUT_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
+                        logger.info("Master: SEND PRE_PUT_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
                     }
                 } else if (msgType.equals(MsgType.PRE_DEL_REQUEST)) {
                     if (currentStatus != null && currentStatus.isReading) {
@@ -130,7 +132,7 @@ public class MasterReceiver extends Receiver {
                         fileStatus.put(fileName, new Status(false, true));
                         PreDelResponse preDelResponse = new PreDelResponse(fileName, targetServers);
                         this.socket.send(preDelResponse.toJSON(), targetIpAddress, targetPort);
-                        System.out.println("Master: SEND PRE_DEL_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
+                        logger.info("Master: SEND PRE_DEL_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
                     }
                 } else if (msgType.equals(MsgType.PRE_GET_REQUEST)) {
                     if (currentStatus != null && currentStatus.isReading) {
@@ -144,7 +146,7 @@ public class MasterReceiver extends Receiver {
                             this.socket.send(preGetResponse.toJSON(), targetIpAddress, targetPort);
                             break;
                         }
-                        System.out.println("Master: SEND PRE_GET_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
+                        logger.info("Master: SEND PRE_GET_RESPONSE BACK TO Server " + targetIpAddress + ":" + targetPort);
                         getReqNum.put(fileName, 1);
                     }
                 }
@@ -153,8 +155,7 @@ public class MasterReceiver extends Receiver {
                     // use hash to find server to store new files
                     fileStatus.put(fileName, new Status(false, true));
                     int serverIdx = (hash(fileName) % servers.size());
-                    System.out.println(hash(fileName) + " " + servers.size());
-                    System.out.println("server Idx: " + serverIdx);
+                    logger.info("server Idx: " + serverIdx);
                     Set<ServerInfo> serversArranged = new HashSet<>();
                     List<ServerInfo> serverInfos = new ArrayList<>(servers);
                     if (serverIdx <= serverInfos.size() - REPLICA_NUM) {
@@ -173,13 +174,13 @@ public class MasterReceiver extends Receiver {
                         }
                     }
                     for (ServerInfo serverInfo : serversArranged) {
-                        System.out.println("Master: ASSIGN FILE: " + fileName + " TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                        logger.info("Master: ASSIGN FILE: " + fileName + " TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                     }
                     fileStorageInfo.put(fileName, serversArranged);
                     String localFileName = jsonObject.getString(MsgKey.LOCAL_FILE_NAME);
                     PrePutResponse prePutResponse = new PrePutResponse(fileName, localFileName, serversArranged);
                     this.socket.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
-                    System.out.println("SEND PRE PUT RESPONSE TO " + targetIpAddress + ":" + targetPort);
+                    logger.info("SEND PRE PUT RESPONSE TO " + targetIpAddress + ":" + targetPort);
                 }
             }
         } else {
@@ -200,13 +201,11 @@ public class MasterReceiver extends Receiver {
         String ipAddress = jsonObject.getString(MsgKey.IP_ADDRESS);
         int port = jsonObject.getInt(MsgKey.PORT);
         ackResponse.get(fileName).add(new ServerInfo(ipAddress, port));
-        System.out.println(ipAddress + ":" + port);
-        System.out.println(ackResponse.get(fileName));
         String msgType = jsonObject.getString(MsgKey.MSG_TYPE);
+        logger.info("Receive" + msgType + " ACK Response from Server " + ipAddress + ":" + port);
         int numGetReq = getReqNum.get(fileName) == null ? 0 : getReqNum.get(fileName);
         int currentAckNum = ackResponse.get(fileName).size();
         if ((msgType.equals(MsgType.GET_ACK) && currentAckNum >= numGetReq) || (currentAckNum >= Math.min(REPLICA_NUM, servers.size()))) {
-            System.out.println(ackResponse.get(fileName).toString());
             Set<ServerInfo> serversAck = ackResponse.get(fileName);
             if (msgType.equals(MsgType.PUT_ACK)) {
                 // either put success or replicate success
@@ -214,7 +213,7 @@ public class MasterReceiver extends Receiver {
             } else if (msgType.equals(MsgType.DEL_ACK)) {
                 handleDelAck(fileName, serversAck);
             }
-            System.out.println(fileName + ": " + fileStorageInfo.get(fileName));
+            logger.info(fileName + ": " + fileStorageInfo.get(fileName));
             ackResponse.remove(fileName);
             fileStatus.put(fileName, new Status(false, false));
             Queue<JSONObject> messageQueue = messageMap.get(fileName);
@@ -244,7 +243,7 @@ public class MasterReceiver extends Receiver {
                         } else {
                             getReqNum.put(fileName, getReqNum.get(fileName) + 1);
                         }
-                        System.out.println("RECEIVE ACK : SEND PRE GET RESPONSE TO SERVER " + targetIpAddress + ":" + targetPort);
+                        logger.info("RECEIVE ACK : SEND PRE GET RESPONSE TO SERVER " + targetIpAddress + ":" + targetPort);
                     } else if (currentMsgType.equals(MsgType.PRE_PUT_REQUEST)) {
                         // send all server ip and port back to the querying server
                         Status currentStatus = fileStatus.get(fileName);
@@ -255,7 +254,7 @@ public class MasterReceiver extends Receiver {
                             this.socket.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
                             fileStatus.put(fileName, new Status(false, true));
                             for (ServerInfo serverInfo : targetServers) {
-                                System.out.println("RECEIVE ACK: SEND PRE PUT RESPONSE TO " + serverInfo.getIpAddress() + " : " + serverInfo.getPort());
+                                logger.info("RECEIVE ACK: SEND PRE PUT RESPONSE TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                             }
                         }
                         break;
@@ -267,7 +266,7 @@ public class MasterReceiver extends Receiver {
                             this.socket.send(preDelResponse.toJSON(), targetIpAddress, targetPort);
                             fileStatus.put(fileName, new Status(false, true));
                             for (ServerInfo serverInfo : targetServers) {
-                                System.out.println("RECEIVE ACK: SEND PRE DEL RESPONSE TO " + targetServers);
+                                logger.info("RECEIVE ACK: SEND PRE DEL RESPONSE TO Server " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                             }
                         }
                         break;
@@ -291,10 +290,10 @@ public class MasterReceiver extends Receiver {
         JSONArray serverList = jsonObject.getJSONArray(MsgKey.MEMBERSHIP_LIST);
         for (int i = 0; i < serverList.length(); i++) {
             JSONObject server = serverList.getJSONObject(i);
-            String ipAddress = server.getString("ipAddress");
-            int port = server.getInt("port");
+            String ipAddress = server.getString(MsgKey.IP_ADDRESS);
+            int port = server.getInt(MsgKey.PORT);
             ServerInfo serverInfo = new ServerInfo(ipAddress, port);
-            System.out.println("receive membershipList - loop serverList: " + ipAddress + port);
+            logger.info("receive membershipList - loop serverList: " + ipAddress + port);
             if (!servers.contains(serverInfo)) {
                 servers.add(serverInfo);
                 this.serverStorageInfo.put(serverInfo, new HashSet<>());
@@ -314,28 +313,24 @@ public class MasterReceiver extends Receiver {
         } else {
             return;
         }
-        System.out.println("receiveFail: " + jsonObject.toString());
+        logger.info("Receive Failure: " + jsonObject.toString());
         Set<String> fileNames = serverStorageInfo.get(failServerInfo);
         serverStorageInfo.remove(failServerInfo);
         if (fileNames != null) {
-            System.out.println("receiveFail: " + fileNames);
             for (String fileName : fileNames) {
                 fileStorageInfo.get(fileName).remove(failServerInfo);
                 List<ServerInfo> serverStoreFile = new ArrayList<>(fileStorageInfo.get(fileName));
 
                 if (serverStoreFile.size() > 0) {
-                    System.out.println("receiveFail: " + serverStoreFile.size());
+                    logger.info("Receive Failure: " + serverStoreFile.size());
                     for (ServerInfo server : servers) {
                         if (!serverStoreFile.contains(server)) {
-                            System.out.println("receiveFail: " + !serverStoreFile.contains(server));
-//                            fileStorageInfo.get(fileName).add(server);
-//                            serverStorageInfo.get(server).add(fileName);
+                            logger.info("Receive Failure: " + !serverStoreFile.contains(server));
                             ReplicateRequest replicateRequest = new ReplicateRequest(fileName, server.getIpAddress(), server.getPort());
-//                            System.out.println("receiveFail: fileName" + serverStoreFile.get(0).getIpAddress() + serverStoreFile.get(0).getPort());
                             if (fileStatus.get(fileName) == null || !fileStatus.get(fileName).isWriting) {
-                                System.out.println("receiveFail: not writing file" );
+                                logger.info("Receive Failure: not writing file" );
                                 fileStatus.put(fileName, new Status(false, true));
-                                System.out.println("send replicate request to :" + serverStoreFile.get(0).getIpAddress() + serverStoreFile.get(0).getPort() + replicateRequest.toJSON());
+                                logger.info("Send replicate request to :" + serverStoreFile.get(0).getIpAddress() + serverStoreFile.get(0).getPort() + replicateRequest.toJSON());
                                 this.socket.send(replicateRequest.toJSON(), serverStoreFile.get(0).getIpAddress(), serverStoreFile.get(0).getPort());
                                 // the replicate ack response will only receive 1 ack, thus, we need to add 3 more fake ack into the ack response
                                 if (this.ackResponse.get(fileName) == null) {
@@ -345,7 +340,6 @@ public class MasterReceiver extends Receiver {
                                 this.ackResponse.get(fileName).add(new ServerInfo("", -2));
                                 this.ackResponse.get(fileName).add(new ServerInfo("", -3));
                             } else {
-                                System.out.println("receiveFail: " + "add fail server ack response to ack response to make ack number >= replica number");
                                 // add fail server ack response to ack response to make ack number >= replica number
                                 ackResponse.get(fileName).add(failServerInfo);
                                 addRequestToQueue(MsgType.PRE_PUT_REQUEST, replicateRequest.toJSON());
@@ -354,23 +348,16 @@ public class MasterReceiver extends Receiver {
                         }
                     }
                 } else {
-                    System.out.println("REPLICATE FOR FAILURE: NO SERVER STORE THE FILE");
+                    logger.warning("REPLICATE FOR FAILURE: NO SERVER STORE THE FILE");
                 }
             }
         } else {
-            System.out.println("REPLICATE FOR FAILURE: THERE IS NO SUCH SERVER");
+            logger.warning("REPLICATE FOR FAILURE: THERE IS NO SUCH SERVER");
         }
     }
 
     private int hash (String fileName){
         return Math.abs(fileName.hashCode());
-    }
-
-    /*
-     * whether a server is the master
-     */
-    private Boolean isMaster(ServerInfo serverInfo) {
-        return serverInfo.getIpAddress().equals(MASTER_IP_ADDRESS) && serverInfo.getPort() == MASTER_PORT;
     }
 
     /*
@@ -414,7 +401,7 @@ public class MasterReceiver extends Receiver {
             if (serverStorageInfo.get(serverInfo) == null) {
                 serverStorageInfo.put(serverInfo, new HashSet<>());
             }
-            System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+            logger.info("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
             serverStorageInfo.get(serverInfo).add(fileName);
         }
     }
@@ -440,11 +427,11 @@ public class MasterReceiver extends Receiver {
         }else{
             Set<ServerInfo> servers = this.fileStorageInfo.get(fileName);
             if(targetIpAddress.equals(MASTER_IP_ADDRESS) && targetPort==MASTER_PORT){
-                System.out.println("List all the servers stored the file " + fileName + ":");
+                logger.info("List all the servers stored the file " + fileName + ":");
                 for (ServerInfo server : servers) {
                     String replicaIpAddress = server.getIpAddress();
                     int replicaPort = server.getPort();
-                    System.out.println(replicaIpAddress + ":" + replicaPort);
+                    logger.info(replicaIpAddress + ":" + replicaPort);
                 }
                 return;
             }

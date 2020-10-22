@@ -2,8 +2,6 @@ package mp2;
 
 import mp2.failureDetector.FailureDetector;
 import mp2.failureDetector.Introducer;
-import org.json.JSONObject;
-
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,14 +32,15 @@ public class Master extends BaseServer {
             }
         });
         Scanner scanner = new Scanner(System.in);
+        CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner);
         failureDetector.run();
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {
-            String line = scanner.nextLine();
-            sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
-            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
-            sender.sendPrePutRequest("random1.txt", "random_sdfs.txt");
-            sender.sendPreDelRequest("random_sdfs.txt");
+            commandHandler.handleCommand();
+//            sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
+//            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
+//            sender.sendPrePutRequest("random1.txt", "random_sdfs.txt");
+//            sender.sendPreDelRequest("random_sdfs.txt");
 //            sender.sendLsRequest("random_sdfs.txt");
 //            sender.sendStoreRequest();
         }
