@@ -14,6 +14,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static mp2.constant.MasterInfo.*;
+import static mp2.constant.MsgContent.FILE_NOT_FOUND;
 
 public class Receiver {
     private Logger logger = Logger.getLogger(Receiver.class.getName());
@@ -75,6 +76,9 @@ public class Receiver {
             case(MsgType.STORE_REQUEST):
                 receiveStoreRequest();
                 break;
+            case(MsgType.ERROR_RESPONSE):
+                receiveErrorResponse();
+                break;
         }
     }
 
@@ -109,9 +113,9 @@ public class Receiver {
             logger.info("Receive PrePutResponse: " + (i + 1) + "replica send to " + targetIpAddress + ":" + targetPort);
             // judge if we are sending the file to the server itself
             if(targetIpAddress.equals(this.ipAddress) && targetPort == this.port){
-                files.add(new File(sdfsFileName));
                 String inputName = FilePath.LOCAL_ROOT_DIRECTORY + localFileName;
                 String outputName = FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName;
+                files.add(new File(outputName));
                 writeFile(inputName,outputName);
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.PUT_ACK);
                 this.socket.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
@@ -135,7 +139,7 @@ public class Receiver {
             // judge if we are sending the file to the server itself
             if(this.ipAddress.equals(targetIpAddress) && this.port == targetPort) {
                 File file = new File(FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName);
-                files.remove(file.getName()); // remove from the file list
+                files.remove(file); // remove from the file list
                 file.delete(); // delete the sdfs file on the disk
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.DEL_ACK);
                 this.socket.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
@@ -192,14 +196,11 @@ public class Receiver {
     }
 
     protected void receiveGetResponse(JSONObject msgJson) {
-        if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.FILE_NOT_FOUND)) {
-            logger.info("Receive Get Response " + MsgContent.FILE_NOT_FOUND);
+        if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(FILE_NOT_FOUND)) {
+            logger.info("Receive Get Response " + FILE_NOT_FOUND);
             return;
         }
-        File file = this.socket.receiveFile(msgJson);
-        if (file != null) {
-            this.files.add(file);
-        }
+        this.socket.receiveFile(msgJson);
     }
 
     protected void receivePutRequest(JSONObject msgJson){
@@ -228,7 +229,7 @@ public class Receiver {
                 return;
             }
         }
-        logger.info("Receiver, receive delete request: " + MsgContent.FILE_NOT_FOUND);
+        logger.info("Receiver, receive delete request: " + FILE_NOT_FOUND);
     }
 
     /*
@@ -247,17 +248,21 @@ public class Receiver {
         JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         int len = servers.length();
-        logger.info("Receive Ls Response: List all the servers stored the file " + fileName + ":");
+        System.out.println("List all the servers stored the file " + fileName + ":");
         for (int i = 0; i < len; i ++) {
             JSONObject server = servers.getJSONObject(i);
             String replicaIpAddress = server.getString("ipAddress");
             int replicaPort = server.getInt("port");
-            logger.info("Receive Ls Response: Replicate server is " + replicaIpAddress + ":" + replicaPort);
+            System.out.println("Receive Ls Response: Replicate server is " + replicaIpAddress + ":" + replicaPort);
         }
     }
 
     protected void receiveStoreRequest() {
         logger.info("Print all stored sdfs files on this server: " + files.toString());
+    }
+
+    protected void receiveErrorResponse(){
+        logger.info("Ls Error Response " + FILE_NOT_FOUND);
     }
 
 

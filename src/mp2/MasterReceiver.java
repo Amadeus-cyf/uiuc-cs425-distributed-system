@@ -28,9 +28,6 @@ public class MasterReceiver extends Receiver {
         this.messageMap = new HashMap<>();
         this.fileStatus = new HashMap<>();
         this.fileStorageInfo = new HashMap<>();
-        this.messageMap = new HashMap<>();
-        this.fileStatus = new HashMap<>();
-        this.fileStorageInfo = new HashMap<>();
         this.ackResponse = new HashMap<>();
         this.servers = new HashSet<>();
         this.serverStorageInfo = new HashMap<>();
@@ -97,6 +94,9 @@ public class MasterReceiver extends Receiver {
                 break;
             case(MsgType.STORE_REQUEST):
                 receiveStoreRequest();
+                break;
+            case(MsgType.ERROR_RESPONSE):
+                receiveErrorResponse();
                 break;
         }
     }
@@ -420,18 +420,20 @@ public class MasterReceiver extends Receiver {
         String targetIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int targetPort = msgJson.getInt(MsgKey.PORT);
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        System.out.println("ls filename:" + fileName);
         // check if the target server is the master
         if(this.fileStorageInfo.get(fileName) == null){
+            logger.info("get filename == null");
             Message errorMsg = new ErrorResponse(fileName);
             this.socket.send(errorMsg.toJSON(), targetIpAddress, targetPort);
         }else{
             Set<ServerInfo> servers = this.fileStorageInfo.get(fileName);
             if(targetIpAddress.equals(MASTER_IP_ADDRESS) && targetPort==MASTER_PORT){
-                logger.info("List all the servers stored the file " + fileName + ":");
+                System.out.println("List all the servers stored the file " + fileName + ":");
                 for (ServerInfo server : servers) {
                     String replicaIpAddress = server.getIpAddress();
                     int replicaPort = server.getPort();
-                    logger.info(replicaIpAddress + ":" + replicaPort);
+                    System.out.println(replicaIpAddress + ":" + replicaPort);
                 }
                 return;
             }

@@ -66,7 +66,7 @@ public class CommandHandler {
                     this.sender.sendLsRequest(commandList[1]);
                 }
             } else if (commandList[0].equals(Command.STORAGE)) {
-                if (commandList.length != 2) {
+                if (commandList.length != 1) {
                     logger.warning("Incorrect input type for storage");
                 } else {
                     this.sender.sendStoreRequest();

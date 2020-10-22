@@ -15,6 +15,7 @@ public class LsResponse extends Message{
     public LsResponse(Set<ServerInfo> servers, String fileName) {
         super(MsgType.LS_RESPONSE);
         this.servers = servers;
+        this.fileName = fileName;
     }
 
     @Override
