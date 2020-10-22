@@ -21,12 +21,14 @@ public class MasterReceiver extends Receiver {
     private Set<ServerInfo> servers;
     private final int REPLICA_NUM = 4;
 
-    public MasterReceiver(String ipAddress, int port, UdpSocket socket, Map<String, Queue<JSONObject>> messageMap,
-                          Map<String, Status> fileStatus, Map<String, Set<ServerInfo>> fileStorageInfo) {
+    public MasterReceiver(String ipAddress, int port, UdpSocket socket) {
         super(ipAddress, port, socket);
         this.messageMap = messageMap;
         this.fileStatus = fileStatus;
         this.fileStorageInfo = fileStorageInfo;
+        this.messageMap = new HashMap<>();
+        this.fileStatus = new HashMap<>();
+        this.fileStorageInfo = new HashMap<>();
         this.ackResponse = new HashMap<>();
         this.servers = new HashSet<>();
         this.serverStorageInfo = new HashMap<>();
@@ -43,7 +45,7 @@ public class MasterReceiver extends Receiver {
         }
     }
 
-    public void receive(String msg) {
+    private void receive(String msg) {
         JSONObject msgJson = new JSONObject(msg);
         String msgType = msgJson.getString(MsgKey.MSG_TYPE);
         System.out.println("receive " + msgType);
@@ -52,6 +54,15 @@ public class MasterReceiver extends Receiver {
             case(MsgType.PRE_PUT_REQUEST):
             case(MsgType.PRE_DEL_REQUEST):
                 receiveRequest(msgJson);
+                break;
+            case(MsgType.PRE_GET_RESPONSE):
+                receivePreGetResponse(msgJson);
+                break;
+            case(MsgType.PRE_PUT_RESPONSE):
+                receivePrePutResponse(msgJson);
+                break;
+            case(MsgType.PRE_DEL_RESPONSE):
+                receivePreDelResponse(msgJson);
                 break;
             case(MsgType.PUT_ACK):
             case(MsgType.GET_ACK):
@@ -78,6 +89,12 @@ public class MasterReceiver extends Receiver {
                 break;
             case(MsgType.REPLICATE_REQUEST):
                 receiveReplicateRequest(msgJson);
+                break;
+            case(MsgType.LS_REQUEST):
+                receiveLsRequest(msgJson);
+                break;
+            case(MsgType.STORE_REQUEST):
+                receiveStoreRequest();
                 break;
         }
     }
@@ -174,7 +191,7 @@ public class MasterReceiver extends Receiver {
     /*
     * receive all ack responses
      */
-    public void receiveACK (JSONObject jsonObject){
+    private void receiveACK (JSONObject jsonObject){
         String fileName = jsonObject.getString(MsgKey.SDFS_FILE_NAME);
         if (ackResponse.get(fileName) == null) {
             Set<ServerInfo> receivedAck = new HashSet<>();
@@ -270,7 +287,7 @@ public class MasterReceiver extends Receiver {
         }
     }
 
-    public void receiveMembership (JSONObject jsonObject){
+    private void receiveMembership (JSONObject jsonObject){
         JSONArray serverList = jsonObject.getJSONArray(MsgKey.MEMBERSHIP_LIST);
         for (int i = 0; i < serverList.length(); i++) {
             JSONObject server = serverList.getJSONObject(i);
@@ -288,7 +305,7 @@ public class MasterReceiver extends Receiver {
     /*
     * receive fail message of some server, and send replicate request to servers containing data stored on the failed server
      */
-    public void receiveFail(JSONObject jsonObject) {
+    private void receiveFail(JSONObject jsonObject) {
         String ipAddress = jsonObject.getString(MsgKey.IP_ADDRESS);
         int port = jsonObject.getInt(MsgKey.PORT);
         ServerInfo failServerInfo = new ServerInfo(ipAddress, port);
@@ -406,6 +423,33 @@ public class MasterReceiver extends Receiver {
         fileStorageInfo.remove(fileName);
         for (ServerInfo serverInfo : serversAck) {
             serverStorageInfo.get(serverInfo).remove(fileName);
+        }
+    }
+
+    /*
+     * master receive the ls request from the query server
+     */
+    private void receiveLsRequest(JSONObject msgJson) {
+        String targetIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
+        int targetPort = msgJson.getInt(MsgKey.PORT);
+        String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        // check if the target server is the master
+        if(this.fileStorageInfo.get(fileName) == null){
+            Message errorMsg = new ErrorResponse(fileName);
+            this.socket.send(errorMsg.toJSON(), targetIpAddress, targetPort);
+        }else{
+            Set<ServerInfo> servers = this.fileStorageInfo.get(fileName);
+            if(targetIpAddress.equals(MASTER_IP_ADDRESS) && targetPort==MASTER_PORT){
+                System.out.println("List all the servers stored the file " + fileName + ":");
+                for (ServerInfo server : servers) {
+                    String replicaIpAddress = server.getIpAddress();
+                    int replicaPort = server.getPort();
+                    System.out.println(replicaIpAddress + ":" + replicaPort);
+                }
+                return;
+            }
+            Message lsResponse = new LsResponse(servers, fileName);
+            this.socket.send(lsResponse.toJSON(), targetIpAddress, targetPort);
         }
     }
 }

@@ -38,7 +38,15 @@ public class Sender {
         System.out.println("Pre Delete request send to master " + MASTER_IP_ADDRESS + ":" + MASTER_PORT);
     }
 
-    public void storeRequest() {
+    public void sendLsRequest(String sdfsFileName) {
+        Message request = new LsRequest(this.ipAddress, this.port, sdfsFileName);
+        this.socket.send(request.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+        System.out.println("lsRequest sends to master");
+    }
 
+    public void sendStoreRequest() {
+        Message request = new StoreRequest();
+        this.socket.send(request.toJSON(), this.ipAddress, this.port);
+        System.out.println("Receive store request");
     }
 }

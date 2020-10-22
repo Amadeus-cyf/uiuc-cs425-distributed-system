@@ -33,14 +33,15 @@ public class Server extends BaseServer {
         while(true) {
             String line = scanner.nextLine();
             sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
-//            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
+            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
             sender.sendPrePutRequest("random1.txt", "random1_sdfs.txt");
-//            sender.sendPreDelRequest("random_sdfs.txt");
+            sender.sendPreDelRequest("random_sdfs.txt");
+            sender.sendLsRequest("random1_sdfs.txt");
         }
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3600);
+        Server server = new Server("localhost", 3400);
         server.run();
     }
 }

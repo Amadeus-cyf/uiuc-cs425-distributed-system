@@ -7,6 +7,9 @@ public class MsgType {
     public static final String PUT_RESPONSE = "PUT_RESPONSE";
     public static final String DEL_REQUEST = "DEL_REQUEST";
     public static final String ERROR_RESPONSE = "ERROR_RESPONSE";
+    public static final String LS_REQUEST = "LS_REQUEST";
+    public static final String LS_RESPONSE = "LS_RESPONSE";
+    public static final String STORE_REQUEST = "STORE_REQUEST";
 
     // PRE_REQUSET are messages sent to master for file storing info
     public static final String PRE_GET_REQUEST = "PRE_GET_REQUEST";

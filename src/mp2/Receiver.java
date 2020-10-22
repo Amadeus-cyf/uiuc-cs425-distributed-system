@@ -67,10 +67,16 @@ public class Receiver {
             case(MsgType.REPLICATE_REQUEST):
                 receiveReplicateRequest(msgJson);
                 break;
+            case(MsgType.LS_RESPONSE):
+                receiveLsResponse(msgJson);
+                break;
+            case(MsgType.STORE_REQUEST):
+                receiveStoreRequest();
+                break;
         }
     }
 
-    private void receivePreGetResponse(JSONObject msgJson) {
+    protected void receivePreGetResponse(JSONObject msgJson) {
         System.out.println("Receive Pre Get Response from master");
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
@@ -88,13 +94,13 @@ public class Receiver {
         }
     }
 
-    private void receivePrePutResponse(JSONObject msgJson) {
+    protected void receivePrePutResponse(JSONObject msgJson) {
         System.out.println("Receive Pre Put Response from master");
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         int len = servers.length();
-        System.out.println(servers.toString());
+//        System.out.println(servers.toString());
         for (int i = 0; i < len; i ++) {
             JSONObject server = servers.getJSONObject(i);
             String targetIpAddress = server.getString("ipAddress");
@@ -115,7 +121,7 @@ public class Receiver {
         }
     }
 
-    private void receivePreDelResponse(JSONObject msgJson) {
+    protected void receivePreDelResponse(JSONObject msgJson) {
         System.out.println("Receive Pre Delete Response from master");
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
@@ -140,13 +146,13 @@ public class Receiver {
 
     }
 
-    public void sendGetRequest(String localFileName, String sdfsFilename, String targetIpAddress, int targetPort) {
+    private void sendGetRequest(String localFileName, String sdfsFilename, String targetIpAddress, int targetPort) {
         Message getRequest = new GetRequest(sdfsFilename, localFileName, this.ipAddress, this.port);
         this.socket.send(getRequest.toJSON(), targetIpAddress, targetPort);
         System.out.println("Send Get Request to server " + targetIpAddress + ":" + targetPort);
     }
 
-    public void sendPutRequest(String localFileName, String sdfsFileName, String targetIpAddress, int targetPort) {
+    private void sendPutRequest(String localFileName, String sdfsFileName, String targetIpAddress, int targetPort) {
         File localFile = new File(FilePath.LOCAL_ROOT_DIRECTORY + localFileName);
         if (localFile.exists()) {
             this.socket.sendFile(MsgType.PUT_REQUEST, localFile, sdfsFileName, targetIpAddress, targetPort);
@@ -156,7 +162,7 @@ public class Receiver {
         }
     }
 
-    public void sendDeleteRequest(String sdfsFileName, String targetIpAddress, int targetPort) {
+    private void sendDeleteRequest(String sdfsFileName, String targetIpAddress, int targetPort) {
         Message request = new DeleteRequest(sdfsFileName, targetIpAddress, targetPort);
         this.socket.send(request.toJSON(), targetIpAddress, targetPort);
         System.out.println("Delete request of file " + sdfsFileName + " send to " + targetIpAddress + " " + targetPort);
@@ -185,7 +191,6 @@ public class Receiver {
     }
 
     protected void receiveGetResponse(JSONObject msgJson) {
-        System.out.println("receive get response");
         if (msgJson.get(MsgKey.FILE_BLOCK) != null && msgJson.get(MsgKey.FILE_BLOCK).equals(MsgContent.FILE_NOT_FOUND)) {
             System.out.println("No such file");
             return;
@@ -202,7 +207,6 @@ public class Receiver {
         if (file != null) {
             this.files.add(file);
         }
-        System.out.println(files.size());
     }
 
     protected void receiveDeleteRequest(JSONObject msgJson) {
@@ -239,6 +243,24 @@ public class Receiver {
         this.socket.sendFile(MsgType.PUT_REQUEST, sdfsFile, sdfsFileName, targetIpAddress, targetPort);
     }
 
+    protected void receiveLsResponse(JSONObject msgJson) {
+        JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
+        String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        int len = servers.length();
+        System.out.println("List all the servers stored the file " + fileName + ":");
+        for (int i = 0; i < len; i ++) {
+            JSONObject server = servers.getJSONObject(i);
+            String replicaIpAddress = server.getString("ipAddress");
+            int replicaPort = server.getInt("port");
+            System.out.println(replicaIpAddress + ":" + replicaPort);
+        }
+    }
+
+    protected void receiveStoreRequest() {
+        System.out.println("Print all stored sdfs files on this server: " + files.toString());
+    }
+
+
     /*
      * turn bytes into string
      */
@@ -256,7 +278,7 @@ public class Receiver {
     /*
     * writing a file from the input to the ouput
      */
-    private void writeFile(String inputFilePath, String outputFilePath) {
+    protected void writeFile(String inputFilePath, String outputFilePath) {
         FileInputStream in = null;
         try {
             in = new FileInputStream(inputFilePath);
