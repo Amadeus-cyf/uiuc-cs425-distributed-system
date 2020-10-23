@@ -8,6 +8,8 @@ import org.json.JSONObject;
 
 import java.net.DatagramPacket;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import static mp2.constant.MasterInfo.*;
@@ -22,6 +24,7 @@ public class MasterReceiver extends Receiver {
     private Map<String, Integer> getReqNum;                     // record current processing get request number for each file
     private Set<ServerInfo> servers;
     private final int REPLICA_NUM = 4;
+    private Set<ServerInfo> failServers;
 
     public MasterReceiver(String ipAddress, int port, UdpSocket socket) {
         super(ipAddress, port, socket);
@@ -32,9 +35,24 @@ public class MasterReceiver extends Receiver {
         this.servers = new HashSet<>();
         this.serverStorageInfo = new HashMap<>();
         this.getReqNum = new HashMap<>();
+        this.failServers = new HashSet<>();
     }
 
     public void start() {
+        ExecutorService replicaThread = Executors.newSingleThreadExecutor();
+        replicaThread.execute(new Runnable() {
+            @Override
+            public void run() {
+                while(true) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    replicateFile();
+                }
+            }
+        });
         while (true) {
             byte[] buffer = new byte[BLOCK_SIZE * 2];
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
@@ -42,7 +60,7 @@ public class MasterReceiver extends Receiver {
             String msg = readBytes(buffer, receivedPacket.getLength());
             receive(msg);
         }
-    }
+}
 
     private void receive(String msg) {
         JSONObject msgJson = new JSONObject(msg);
@@ -205,7 +223,9 @@ public class MasterReceiver extends Receiver {
         logger.info("Receive" + msgType + " ACK Response from Server " + ipAddress + ":" + port);
         int numGetReq = getReqNum.get(fileName) == null ? 0 : getReqNum.get(fileName);
         int currentAckNum = ackResponse.get(fileName).size();
+        // check whether the ack number is enough
         if ((msgType.equals(MsgType.GET_ACK) && currentAckNum >= numGetReq) || (currentAckNum >= Math.min(REPLICA_NUM, servers.size()))) {
+            getReqNum.remove(fileName);
             Set<ServerInfo> serversAck = ackResponse.get(fileName);
             if (msgType.equals(MsgType.PUT_ACK)) {
                 // either put success or replicate success
@@ -276,10 +296,11 @@ public class MasterReceiver extends Receiver {
                         if (this.ackResponse.get(fileName) == null) {
                             this.ackResponse.put(fileName, new HashSet<>());
                         }
-                        // the replicate ack response will only receive 1 ack, thus, we need to add 3 more fake ack into the ack response
-                        this.ackResponse.get(fileName).add(new ServerInfo("", -1));
-                        this.ackResponse.get(fileName).add(new ServerInfo("", -2));
-                        this.ackResponse.get(fileName).add(new ServerInfo("", -3));
+                        // the replicate ack response will receive ack < REPLICA NUM, thus, we need to add fake ack into the ack response
+                        JSONArray newServers = json.getJSONArray(MsgKey.TARGET_SERVERS);
+                        for (int i = REPLICA_NUM; i > newServers.length(); i--) {
+                            this.ackResponse.get(fileName).add(new ServerInfo("", i * -1));
+                        }
                     }
                 }
             }
@@ -301,59 +322,92 @@ public class MasterReceiver extends Receiver {
         }
     }
 
-    /*
-    * receive fail message of some server, and send replicate request to servers containing data stored on the failed server
-     */
     private void receiveFail(JSONObject jsonObject) {
-        String ipAddress = jsonObject.getString(MsgKey.IP_ADDRESS);
-        int port = jsonObject.getInt(MsgKey.PORT);
-        ServerInfo failServerInfo = new ServerInfo(ipAddress, port);
-        if (servers.contains(failServerInfo)) {
-            servers.remove(failServerInfo);
-        } else {
+        logger.info("Receive Failure: " + jsonObject.toString());
+        failServers.add(new ServerInfo(jsonObject.getString(MsgKey.IP_ADDRESS), jsonObject.getInt(MsgKey.PORT)));
+    }
+
+    /*
+    * replicate all files stored on all current failed servers
+     */
+    private void replicateFile() {
+        if (failServers == null || failServers.size() == 0) {
             return;
         }
-        logger.info("Receive Failure: " + jsonObject.toString());
-        Set<String> fileNames = serverStorageInfo.get(failServerInfo);
-        serverStorageInfo.remove(failServerInfo);
-        if (fileNames != null) {
+        for (ServerInfo failServer : failServers) {
+            System.out.println("REPLICATE FILE: Fail of " + failServer.getIpAddress() + ":" + failServer.getPort());
+        }
+        Map<String, Integer> fileReplicaNum = new HashMap<>();          // map file name to number of replica needed
+        for (ServerInfo failServerInfo : failServers) {
+            Set<String> fileNames = serverStorageInfo.get(failServerInfo);
+            serverStorageInfo.remove(failServerInfo);
+            servers.remove(failServerInfo);
             for (String fileName : fileNames) {
-                fileStorageInfo.get(fileName).remove(failServerInfo);
-                List<ServerInfo> serverStoreFile = new ArrayList<>(fileStorageInfo.get(fileName));
-
-                if (serverStoreFile.size() > 0) {
-                    logger.info("Receive Failure: " + serverStoreFile.size());
-                    for (ServerInfo server : servers) {
-                        if (!serverStoreFile.contains(server)) {
-                            logger.info("Receive Failure: " + !serverStoreFile.contains(server));
-                            ReplicateRequest replicateRequest = new ReplicateRequest(fileName, server.getIpAddress(), server.getPort());
-                            if (fileStatus.get(fileName) == null || !fileStatus.get(fileName).isWriting) {
-                                logger.info("Receive Failure: not writing file" );
-                                fileStatus.put(fileName, new Status(false, true));
-                                logger.info("Send replicate request to :" + serverStoreFile.get(0).getIpAddress() + serverStoreFile.get(0).getPort() + replicateRequest.toJSON());
-                                this.socket.send(replicateRequest.toJSON(), serverStoreFile.get(0).getIpAddress(), serverStoreFile.get(0).getPort());
-                                // the replicate ack response will only receive 1 ack, thus, we need to add 3 more fake ack into the ack response
-                                if (this.ackResponse.get(fileName) == null) {
-                                    this.ackResponse.put(fileName, new HashSet<>());
-                                }
-                                this.ackResponse.get(fileName).add(new ServerInfo("", -1));
-                                this.ackResponse.get(fileName).add(new ServerInfo("", -2));
-                                this.ackResponse.get(fileName).add(new ServerInfo("", -3));
-                            } else {
-                                // add fail server ack response to ack response to make ack number >= replica number
-                                ackResponse.get(fileName).add(failServerInfo);
-                                addRequestToQueue(MsgType.PRE_PUT_REQUEST, replicateRequest.toJSON());
-                            }
-                            break;
-                        }
-                    }
+                if (fileReplicaNum.get(fileName) == null) {
+                    fileReplicaNum.put(fileName, 1);
                 } else {
-                    logger.warning("REPLICATE FOR FAILURE: NO SERVER STORE THE FILE");
+                    fileReplicaNum.put(fileName, fileReplicaNum.get(fileName) + 1);
                 }
             }
-        } else {
-            logger.warning("REPLICATE FOR FAILURE: THERE IS NO SUCH SERVER");
         }
+        for (Map.Entry<String, Integer> entry : fileReplicaNum.entrySet()) {
+            String fileName = entry.getKey();
+            int replicaNum = entry.getValue();
+            int temp = replicaNum;
+            Set<ServerInfo> serverStoreFile = fileStorageInfo.get(fileName);
+            // find new servers where replicas are assigned to
+            Set<ServerInfo> assignedServers = new HashSet<>();
+            for (ServerInfo server : servers) {
+                if (failServers.contains(server)) {
+                    fileStorageInfo.get(fileName).remove(server);
+                    continue;
+                }
+                if (!serverStoreFile.contains(fileName)) {
+                    assignedServers.add(server);
+                    temp--;
+                }
+                if (temp <= 0) {
+                    break;
+                }
+            }
+            // find the running server contains the file
+            ServerInfo targetServer = null;
+            for (ServerInfo serverInfo : serverStoreFile) {
+                if (!failServers.contains(serverInfo)) {
+                    targetServer = serverInfo;
+                    break;
+                }
+            }
+            if (targetServer == null) {
+                logger.info("NO SERVER STORE THE FILE");
+                return;
+            }
+            ReplicateRequest replicateRequest = new ReplicateRequest(fileName, servers);
+            // check whether we could do replicate immediately
+            if (fileStatus.get(fileName) == null || !(fileStatus.get(fileName).isWriting)) {
+                // the file is currently not writing
+                System.out.println("REPLICATE FILE: WRITE IS AVAILABLE");
+                fileStatus.put(fileName, new Status(false, true));
+                this.socket.send(replicateRequest.toJSON(), targetServer.getIpAddress(), targetServer.getPort());
+                if (this.ackResponse.get(fileName) == null) {
+                    this.ackResponse.put(fileName, new HashSet<>());
+                }
+                // add fake ack response since number of replicate request is smaller than replica num
+                for (int i = REPLICA_NUM; i > replicaNum; i--) {
+                    this.ackResponse.get(fileName).add(new ServerInfo("", i * -1));
+                }
+            } else {
+                // the file is currently writing
+                // add fake write ack response of those failed servers
+                System.out.println("REPLICATE FILE: WRITE IS NOT AVAILABLE");
+                for (int i = 0; i < replicaNum; i++) {
+                    ackResponse.get(fileName).add(new ServerInfo("", i));
+                }
+                // add the replicate request to message queue
+                addRequestToQueue(MsgType.REPLICATE_REQUEST, replicateRequest.toJSON());
+            }
+        }
+        failServers.clear();
     }
 
     private int hash (String fileName){
@@ -373,36 +427,19 @@ public class MasterReceiver extends Receiver {
     }
 
     private void handlePutAck(String fileName, Set<ServerInfo> serversAck) {
-        if (fileStorageInfo.get(fileName) == null || fileStorageInfo.get(fileName).size() == 0) {
-            fileStorageInfo.put(fileName, serversAck);
-        } else {
-            // handle replica case
-            List<ServerInfo> updatedServers = new ArrayList<>(serversAck);
-            boolean isReplicaAck = false;
-            for (ServerInfo updatedServer : updatedServers) {
-                if (updatedServer.getPort() < 0) {
-                    isReplicaAck = true;
-                    break;
-                }
-            }
-            if (isReplicaAck) {
-                for (ServerInfo updatedServer : updatedServers) {
-                    if (updatedServer.getPort() > 0) {
-                        fileStorageInfo.get(fileName).add(updatedServer);
-                        break;
-                    }
-                }
-            }
+        if (fileStorageInfo.get(fileName) == null) {
+            fileStorageInfo.put(fileName, new HashSet<>());
         }
         for (ServerInfo serverInfo : serversAck) {
-            if (serverInfo.getPort() < 0) {
-                continue;
+            // check whether the ack is a fake ack
+            if (!serverInfo.getIpAddress().equals("")) {
+                fileStorageInfo.get(fileName).add(serverInfo);
+                if (serverStorageInfo.get(serverInfo) == null) {
+                    serverStorageInfo.put(serverInfo, new HashSet<>());
+                }
+                logger.info("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                serverStorageInfo.get(serverInfo).add(fileName);
             }
-            if (serverStorageInfo.get(serverInfo) == null) {
-                serverStorageInfo.put(serverInfo, new HashSet<>());
-            }
-            logger.info("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
-            serverStorageInfo.get(serverInfo).add(fileName);
         }
     }
 

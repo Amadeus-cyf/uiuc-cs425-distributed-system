@@ -236,12 +236,16 @@ public class Receiver {
     * send the sdfs file copy to the target server
      */
     protected void receiveReplicateRequest(JSONObject msgJson) {
-        String targetIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
-        int targetPort = msgJson.getInt(MsgKey.PORT);
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        JSONArray targetServers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         File sdfsFile = new File(FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName);
-        logger.info("Receive Replicate Request: send " + sdfsFileName + " to " + targetIpAddress + ":" + targetPort);
-        this.socket.sendFile(MsgType.PUT_REQUEST, sdfsFile, sdfsFileName, targetIpAddress, targetPort);
+        for (int i = 0; i < targetServers.length(); i++) {
+            JSONObject server = targetServers.getJSONObject(i);
+            String targetIpAddress = server.getString(MsgKey.IP_ADDRESS);
+            int targetPort = server.getInt(MsgKey.PORT);
+            logger.info("Receive Replicate Request: send " + sdfsFileName + " to " + targetIpAddress + ":" + targetPort);
+            this.socket.sendFile(MsgType.PUT_REQUEST, sdfsFile, sdfsFileName, targetIpAddress, targetPort);
+        }
     }
 
     protected void receiveLsResponse(JSONObject msgJson) {
