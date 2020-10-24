@@ -22,7 +22,7 @@ public class MasterReceiver extends Receiver {
     private Map<ServerInfo, Set<String>> serverStorageInfo;      // all file names a server store
     private Map<String, Set<ServerInfo>> ackResponse;
     private Map<String, Integer> getReqNum;                     // record current processing get request number for each file
-    private Set<ServerInfo> servers;
+    public Set<ServerInfo> servers;
     private final int REPLICA_NUM = 4;
     private Set<ServerInfo> failServers;
 
@@ -45,7 +45,7 @@ public class MasterReceiver extends Receiver {
             public void run() {
                 while(true) {
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(3000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -249,6 +249,7 @@ public class MasterReceiver extends Receiver {
                     String targetIpAddress = json.getString(MsgKey.IP_ADDRESS);
                     String sdfsFileName = json.getString(MsgKey.SDFS_FILE_NAME);
                     int targetPort = json.getInt(MsgKey.PORT);
+                    System.out.println("receiveACK: " + json.toString());
                     if (currentMsgType.equals(MsgType.PRE_GET_REQUEST)) {
                         fileStatus.put(fileName, new Status(true, false, false));
                         messageQueue.poll();
@@ -293,8 +294,9 @@ public class MasterReceiver extends Receiver {
                         break;
                     } else if (currentMsgType.equals(MsgType.REPLICATE_REQUEST)) {
                         System.out.println("SEND REPLICATE REQUEST");
+                        messageQueue.poll();
                         this.socket.send(json, targetIpAddress, targetPort);
-                        fileStatus.put(fileName, new Status(false, false, true));
+                        fileStatus.put(fileName, new Status(false, true, true));
                         if (this.ackResponse.get(fileName) == null) {
                             this.ackResponse.put(fileName, new HashSet<>());
                         }
@@ -328,13 +330,16 @@ public class MasterReceiver extends Receiver {
         logger.info("Receive Failure: " + jsonObject.toString());
         String failIpAddress = jsonObject.getString(MsgKey.IP_ADDRESS);
         int failPort = jsonObject.getInt(MsgKey.PORT);
-        if (servers.contains(new ServerInfo(failIpAddress, failPort))) {
-            failServers.add(new ServerInfo(jsonObject.getString(MsgKey.IP_ADDRESS), jsonObject.getInt(MsgKey.PORT)));
+        ServerInfo failServerInfo = new ServerInfo(failIpAddress, failPort);
+        if (servers.contains(failServerInfo) && !failServers.contains(failServerInfo)) {
+            System.out.println("receiveFail: fail server " + failServerInfo.getIpAddress() + ":" + failServerInfo.getPort());
+            servers.remove(failServerInfo);
+            failServers.add(failServerInfo);
         }
     }
 
     /*
-    * replicate all files stored on all current failed servers
+     * replicate all files stored on all current failed servers
      */
     private void replicateFile() {
         if (failServers == null || failServers.size() == 0) {
@@ -351,6 +356,7 @@ public class MasterReceiver extends Receiver {
                 continue;
             }
             serverStorageInfo.remove(failServerInfo);
+            // get number of replica need for each file stored on fail servers
             for (String fileName : fileNames) {
                 if (fileReplicaNum.get(fileName) == null) {
                     fileReplicaNum.put(fileName, 1);
@@ -362,43 +368,43 @@ public class MasterReceiver extends Receiver {
         for (Map.Entry<String, Integer> entry : fileReplicaNum.entrySet()) {
             String fileName = entry.getKey();
             int replicaNum = entry.getValue();
-            int temp = replicaNum;
-            Set<ServerInfo> serverStoreFile = fileStorageInfo.get(fileName);
+            // remove fail server from file storage
+            for (ServerInfo serverInfo : failServers) {
+                fileStorageInfo.get(fileName).remove(serverInfo);
+            }
+            List<ServerInfo> serverStoreFile = new ArrayList<>(fileStorageInfo.get(fileName));
             // find new servers where replicas are assigned to
             Set<ServerInfo> assignedServers = new HashSet<>();
-            for (ServerInfo server : servers) {
-                if (failServers.contains(server)) {
-                    System.out.println("FOUND FAIL SERVERS " + server.getIpAddress() + ":" + server.getPort());
-                    servers.remove(server);
-                    fileStorageInfo.get(fileName).remove(server);
-                    continue;
-                }
-                if (!serverStoreFile.contains(fileName)) {
+            /*for (ServerInfo server : servers) {
+                if (!serverStoreFile.contains(server)) {
                     assignedServers.add(server);
                     temp--;
                 }
                 if (temp <= 0) {
                     break;
                 }
+            }*/
+            while (assignedServers.size() < replicaNum) {
+                assignedServers.add(getReplicaTarget(fileName));
             }
             // find the running server contains the file
             ServerInfo targetServer = null;
-            for (ServerInfo serverInfo : serverStoreFile) {
-                if (!failServers.contains(serverInfo)) {
-                    targetServer = serverInfo;
-                    break;
-                }
+            if (serverStoreFile.size() > 0) {
+                Random r = new Random();
+                int randomIdx = r.nextInt(serverStoreFile.size());
+                targetServer = serverStoreFile.get(randomIdx);
             }
             if (targetServer == null) {
                 logger.info("NO SERVER STORE THE FILE");
                 return;
             }
-            ReplicateRequest replicateRequest = new ReplicateRequest(fileName, servers);
+            ReplicateRequest replicateRequest = new ReplicateRequest(fileName, assignedServers, targetServer.getIpAddress(), targetServer.getPort());
+            System.out.println("replicate Request: " + replicateRequest.toJSON().toString());
             // check whether we could do replicate immediately
             if (fileStatus.get(fileName) == null || !(fileStatus.get(fileName).isWriting)) {
                 // the file is currently not writing
                 System.out.println("REPLICATE FILE: WRITE IS AVAILABLE");
-                fileStatus.put(fileName, new Status(false, false, true));
+                fileStatus.put(fileName, new Status(false, true, true));
                 this.socket.send(replicateRequest.toJSON(), targetServer.getIpAddress(), targetServer.getPort());
                 if (this.ackResponse.get(fileName) == null) {
                     this.ackResponse.put(fileName, new HashSet<>());
@@ -415,11 +421,12 @@ public class MasterReceiver extends Receiver {
                     ackResponse.get(fileName).add(new ServerInfo("", i));
                 }
                 // add the replicate request to message queue
-                addRequestToQueue(MsgType.REPLICATE_REQUEST, replicateRequest.toJSON());
+                addRequestToQueue(fileName, replicateRequest.toJSON());
             }
         }
         failServers.clear();
     }
+
 
     private int hash (String fileName){
         return Math.abs(fileName.hashCode());
@@ -488,5 +495,17 @@ public class MasterReceiver extends Receiver {
             Message lsResponse = new LsResponse(servers, fileName);
             this.socket.send(lsResponse.toJSON(), targetIpAddress, targetPort);
         }
+    }
+
+    private ServerInfo getReplicaTarget(String fileName){
+        Random r = new Random();
+        int randomIdx = r.nextInt(servers.size());
+        Set<ServerInfo> serversHasFile = fileStorageInfo.get(fileName);
+        List<ServerInfo> serverList = new ArrayList<>(servers);
+        while(serversHasFile.contains(serverList.get(randomIdx))) {
+            randomIdx = r.nextInt(servers.size());
+        }
+        fileStorageInfo.get(fileName).add(serverList.get(randomIdx));
+        return serverList.get(randomIdx);
     }
 }

@@ -32,7 +32,7 @@ public class Master extends BaseServer {
             }
         });
         Scanner scanner = new Scanner(System.in);
-        CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner);
+        CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner, receiver);
         failureDetector.run();
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {

@@ -133,7 +133,7 @@ public class UdpSocket {
             fileBlockMap.put(fileName, fileBlocks);
         }
         int blockNum = msgJson.getInt(MsgKey.BLOCK_NUM);
-//        System.out.println("receive from the local file:" + fileBlocks.size() + " " + blockNum);
+        System.out.println("receive from the local file:" + fileBlocks.size() + " " + blockNum);
         fileBlocks.add(msgJson);
         if (fileBlocks.size() >= blockNum) {
             // the receiver has received all file blocks

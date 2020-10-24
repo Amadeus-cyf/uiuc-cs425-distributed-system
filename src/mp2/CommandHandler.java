@@ -14,11 +14,13 @@ public class CommandHandler {
     private FailureDetector failureDetector;
     private Sender sender;
     private Scanner scanner;
+    private Receiver receiver;
 
-    public CommandHandler(Sender sender, FailureDetector failureDetector, Scanner scanner) {
+    public CommandHandler(Sender sender, FailureDetector failureDetector, Scanner scanner, Receiver receiver) {
         this.sender = sender;
         this.failureDetector = failureDetector;
         this.scanner = scanner;
+        this.receiver = receiver;
     }
 
     public void handleCommand() {
@@ -38,6 +40,10 @@ public class CommandHandler {
         } else if (command.equals(Command.REJOIN)) {
             if(this.failureDetector instanceof mp2.failureDetector.Server) {
                 ((Server) this.failureDetector).rejoin();
+            }
+        } else if(command.equals(Command.SERVERS)) {
+            if(this.receiver instanceof MasterReceiver) {
+                logger.info("Current alive servers: " + ((MasterReceiver) this.receiver).servers);
             }
         } else {
             String[] commandList = command.split(" ");

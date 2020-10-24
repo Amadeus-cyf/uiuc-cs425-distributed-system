@@ -10,4 +10,5 @@ public class Command {
     public static final String DELETE = "delete";
     public static final String LS = "ls";
     public static final String STORAGE = "storage";
+    public static final String SERVERS = "servers";
 }

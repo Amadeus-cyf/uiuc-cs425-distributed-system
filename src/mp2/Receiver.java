@@ -244,6 +244,11 @@ public class Receiver {
             String targetIpAddress = server.getString(MsgKey.IP_ADDRESS);
             int targetPort = server.getInt(MsgKey.PORT);
             logger.info("Receive Replicate Request: send " + sdfsFileName + " to " + targetIpAddress + ":" + targetPort);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             this.socket.sendFile(MsgType.PUT_REQUEST, sdfsFile, sdfsFileName, targetIpAddress, targetPort);
         }
     }

@@ -1,7 +1,9 @@
 package mp2;
 import mp2.failureDetector.FailureDetector;
 
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,7 +29,7 @@ public class Server extends BaseServer {
             }
         });
         Scanner scanner = new Scanner(System.in);
-        CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner);
+        CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner, receiver);
         System.out.println(this.ipAddress + ":" + this.port);
         failureDetector.run();
         while(true) {
@@ -41,7 +43,7 @@ public class Server extends BaseServer {
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3400);
+        Server server = new Server("localhost", 3600);
         server.run();
     }
 }
