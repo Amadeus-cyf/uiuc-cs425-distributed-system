@@ -1,7 +1,6 @@
 package mp2;
 
 import mp2.constant.FilePath;
-import mp2.constant.MsgContent;
 import mp2.constant.MsgKey;
 import mp2.constant.MsgType;
 import mp2.message.*;
@@ -11,6 +10,9 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.DatagramPacket;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import static mp2.constant.MasterInfo.*;
@@ -22,7 +24,7 @@ public class Receiver {
     protected int port;
     protected Set<File> files;
     protected UdpSocket socket;
-    protected final int BLOCK_SIZE = 4096;
+    protected final int BLOCK_SIZE = 1024 * 16;
 
     public Receiver(String ipAddress, int port, UdpSocket socket) {
         this.ipAddress = ipAddress;
@@ -106,23 +108,34 @@ public class Receiver {
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         int len = servers.length();
-        for (int i = 0; i < len; i ++) {
-            JSONObject server = servers.getJSONObject(i);
-            String targetIpAddress = server.getString("ipAddress");
-            int targetPort = server.getInt("port");
-            logger.info("Receive PrePutResponse: " + (i + 1) + "replica send to " + targetIpAddress + ":" + targetPort);
-            // judge if we are sending the file to the server itself
-            if(targetIpAddress.equals(this.ipAddress) && targetPort == this.port){
-                String inputName = FilePath.LOCAL_ROOT_DIRECTORY + localFileName;
-                String outputName = FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName;
-                files.add(new File(outputName));
-                writeFile(inputName,outputName);
-                Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.PUT_ACK);
-                this.socket.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
-                logger.info("Sending PUT ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress + ":" + port);
-            } else{
-                sendPutRequest(localFileName, sdfsFileName, targetIpAddress, targetPort);
-            }
+        AtomicInteger i = new AtomicInteger(0);
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        while (i.get() < len) {
+            executorService.execute(new Runnable() {
+                public void run() {
+                    if (i.get() >= len) {
+                        return;
+                    }
+                    JSONObject server = servers.getJSONObject(i.get());
+                    i.incrementAndGet();
+                    String targetIpAddress = server.getString("ipAddress");
+                    int targetPort = server.getInt("port");
+                    // judge if we are sending the file to the server itself
+                    if(targetIpAddress.equals(ipAddress) && targetPort == port){
+                        String inputName = FilePath.LOCAL_ROOT_DIRECTORY + localFileName;
+                        String outputName = FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName;
+                        files.add(new File(outputName));
+                        writeFile(inputName,outputName);
+                        Message ack = new Ack(sdfsFileName, ipAddress, port, MsgType.PUT_ACK);
+                        socket.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+                        logger.info("Sending PUT ACK message to master: sdfsFileName" + sdfsFileName +
+                                " from server" + ipAddress + ":" + port);
+                    } else{
+                        sendPutRequest(localFileName, sdfsFileName, targetIpAddress, targetPort);
+                        System.out.println("PUT REQUEST SEND");
+                    }
+                }
+            });
         }
     }
 
@@ -239,17 +252,28 @@ public class Receiver {
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         JSONArray targetServers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         File sdfsFile = new File(FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName);
-        for (int i = 0; i < targetServers.length(); i++) {
-            JSONObject server = targetServers.getJSONObject(i);
-            String targetIpAddress = server.getString(MsgKey.IP_ADDRESS);
-            int targetPort = server.getInt(MsgKey.PORT);
-            logger.info("Receive Replicate Request: send " + sdfsFileName + " to " + targetIpAddress + ":" + targetPort);
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            this.socket.sendFile(MsgType.PUT_REQUEST, sdfsFile, sdfsFileName, targetIpAddress, targetPort);
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        AtomicInteger i = new AtomicInteger(0);
+        while(i.get() < targetServers.length()) {
+           executorService.execute(new Runnable() {
+               @Override
+               public void run() {
+                   if (i.get() >= targetServers.length()) {
+                       return;
+                   }
+                   JSONObject server = targetServers.getJSONObject(i.get());
+                   i.incrementAndGet();
+                   String targetIpAddress = server.getString(MsgKey.IP_ADDRESS);
+                   int targetPort = server.getInt(MsgKey.PORT);
+                   logger.info("Receive Replicate Request: send " + sdfsFileName + " to " + targetIpAddress + ":" + targetPort);
+                   try {
+                       Thread.sleep(1000);
+                   } catch (InterruptedException e) {
+                       e.printStackTrace();
+                   }
+                   socket.sendFile(MsgType.PUT_REQUEST, sdfsFile, sdfsFileName, targetIpAddress, targetPort);
+               }
+           });
         }
     }
 
@@ -267,7 +291,7 @@ public class Receiver {
     }
 
     protected void receiveStoreRequest() {
-        logger.info("Print all stored sdfs files on this server: " + files.toString());
+        System.out.println("Print all stored sdfs files on this server: " + files.toString());
     }
 
     protected void receiveErrorResponse(){

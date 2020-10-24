@@ -83,10 +83,10 @@ public class CommandHandler {
         }
     }
 
-    public void printMembershipList(JSONArray jsonArray) {
+    private void printMembershipList(JSONArray jsonArray) {
         for (int i = 0; i < jsonArray.length(); i++) {
-            Object obj = jsonArray.get(i);
-            logger.info(obj.toString());
+            Object member = jsonArray.get(i);
+            System.out.println(member.toString());
         }
     }
 }

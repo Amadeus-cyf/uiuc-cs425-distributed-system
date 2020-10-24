@@ -11,7 +11,6 @@ import java.io.FileOutputStream;
 import java.net.*;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.logging.Logger;
 
 import static mp2.constant.MasterInfo.*;
 
@@ -19,8 +18,7 @@ public class UdpSocket {
     private DatagramSocket socket;
     private String ipAddress;
     private int port;
-    private static Logger logger = Logger.getLogger(UdpSocket.class.getName());
-    private final int BLOCK_SIZE = 4096;
+    private final int BLOCK_SIZE = 1024 * 16;
     private Map<String, PriorityQueue<JSONObject>> fileBlockMap;
 
     public UdpSocket(String ipAddress, int port) {
@@ -83,7 +81,7 @@ public class UdpSocket {
         // split file sent into blocks and send file blocks
         while(blockSeq < blockNum){
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (Exception e) {
 
             }

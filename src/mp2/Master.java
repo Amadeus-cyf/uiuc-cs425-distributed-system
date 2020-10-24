@@ -37,12 +37,6 @@ public class Master extends BaseServer {
         System.out.println(this.ipAddress + ":" + this.port);
         while(true) {
             commandHandler.handleCommand();
-//            sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
-//            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
-//            sender.sendPrePutRequest("random1.txt", "random_sdfs.txt");
-//            sender.sendPreDelRequest("random_sdfs.txt");
-//            sender.sendLsRequest("random_sdfs.txt");
-//            sender.sendStoreRequest();
         }
     }
 

@@ -1,9 +1,7 @@
 package mp2;
 import mp2.failureDetector.FailureDetector;
 
-import java.util.HashSet;
 import java.util.Scanner;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,13 +30,8 @@ public class Server extends BaseServer {
         CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner, receiver);
         System.out.println(this.ipAddress + ":" + this.port);
         failureDetector.run();
-        while(true) {
+        while (true) {
             commandHandler.handleCommand();
-//            sender.sendPrePutRequest("random.txt", "random_sdfs.txt");
-//            sender.sendPreGetRequest("random_sdfs.txt", "random_copy.txt");
-//            sender.sendPrePutRequest("random1.txt", "random1_sdfs.txt");
-//            sender.sendPreDelRequest("random_sdfs.txt");
-//            sender.sendLsRequest("random1_sdfs.txt");
         }
     }
 

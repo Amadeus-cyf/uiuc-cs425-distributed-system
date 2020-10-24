@@ -36,16 +36,13 @@ public class MasterReceiver extends Receiver {
         this.serverStorageInfo = new HashMap<>();
         this.getReqNum = new HashMap<>();
         this.failServers = new HashSet<>();
-    }
-
-    public void start() {
         ExecutorService replicaThread = Executors.newSingleThreadExecutor();
         replicaThread.execute(new Runnable() {
             @Override
             public void run() {
                 while(true) {
                     try {
-                        Thread.sleep(3000);
+                        Thread.sleep(6000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -53,6 +50,9 @@ public class MasterReceiver extends Receiver {
                 }
             }
         });
+    }
+
+    public void start() {
         while (true) {
             byte[] buffer = new byte[BLOCK_SIZE * 2];
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
@@ -296,7 +296,7 @@ public class MasterReceiver extends Receiver {
                         System.out.println("SEND REPLICATE REQUEST");
                         messageQueue.poll();
                         this.socket.send(json, targetIpAddress, targetPort);
-                        fileStatus.put(fileName, new Status(false, true, true));
+                        fileStatus.put(fileName, new Status(false, false, true));
                         if (this.ackResponse.get(fileName) == null) {
                             this.ackResponse.put(fileName, new HashSet<>());
                         }
@@ -403,8 +403,8 @@ public class MasterReceiver extends Receiver {
             // check whether we could do replicate immediately
             if (fileStatus.get(fileName) == null || !(fileStatus.get(fileName).isWriting)) {
                 // the file is currently not writing
-                System.out.println("REPLICATE FILE: WRITE IS AVAILABLE");
-                fileStatus.put(fileName, new Status(false, true, true));
+                System.out.println("REPLICATE FILE: WRITE IS AVAILABLE " + fileName);
+                fileStatus.put(fileName, new Status(false,  false, true));
                 this.socket.send(replicateRequest.toJSON(), targetServer.getIpAddress(), targetServer.getPort());
                 if (this.ackResponse.get(fileName) == null) {
                     this.ackResponse.put(fileName, new HashSet<>());
@@ -416,7 +416,7 @@ public class MasterReceiver extends Receiver {
             } else {
                 // the file is currently writing
                 // add fake write ack response of those failed servers
-                System.out.println("REPLICATE FILE: WRITE IS NOT AVAILABLE");
+                System.out.println("REPLICATE FILE: WRITE IS NOT AVAILABLE " + fileName);
                 for (int i = 0; i < replicaNum; i++) {
                     ackResponse.get(fileName).add(new ServerInfo("", i));
                 }
