@@ -107,10 +107,7 @@ public class CommandHandler {
                     System.out.println(filePath);
                     try {
                         String s = null;
-                        System.out.println("more " + ROOT + filePath);
                         Process p = Runtime.getRuntime().exec("cat " + ROOT + filePath);
-                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
-                        bw.write("yes");
                         BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
                         while ((s = br.readLine()) != null) {
                             System.out.println(s);
@@ -143,8 +140,7 @@ public class CommandHandler {
                         System.out.println("Two files have different sizes");
                     }
                 }
-            }
-            else {
+            } else {
                 logger.warning("Command not found");
             }
         }
