@@ -6,6 +6,9 @@ import mp2.failureDetector.Mode;
 import mp2.failureDetector.Server;
 import org.json.JSONArray;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
@@ -83,10 +86,22 @@ public class CommandHandler {
                 } else {
                     String filePath1 = commandList[1];
                     String filePath2 = commandList[2];
-                    Process p = Runtime.getRuntime().exec("diff " + filePath1 + " " + filePath2);
+                    Process p = null;
+                    try {
+                        p = Runtime.getRuntime().exec("diff " + filePath1 + " " + filePath2);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    while ((s = stdInput.readLine()) != null) {
+                    while (true) {
+                        String s = null;
+                        try {
+                            if (!((s = stdInput.readLine()) != null)) break;
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                         System.out.println(s);
+                    }
                 }
             } else {
                 logger.warning("Command not found");
