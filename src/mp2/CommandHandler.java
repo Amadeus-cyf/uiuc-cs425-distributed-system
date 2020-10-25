@@ -92,13 +92,11 @@ public class CommandHandler {
                     String s = null;
                     try {
                         p = Runtime.getRuntime().exec("diff " + filePath1 + " " + filePath2);
-                        System.out.println(p);
                         BufferedReader br = new BufferedReader(
                                 new InputStreamReader(p.getInputStream()));
                         while ((s = br.readLine()) != null)
                             System.out.println(s);
                         p.waitFor();
-//                        System.out.println ("exit: " + p.exitValue());
                         p.destroy();
                     } catch (Exception e) {}
                 }
