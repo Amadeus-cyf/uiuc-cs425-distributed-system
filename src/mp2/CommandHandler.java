@@ -6,10 +6,7 @@ import mp2.failureDetector.Mode;
 import mp2.failureDetector.Server;
 import org.json.JSONArray;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
@@ -129,6 +126,22 @@ public class CommandHandler {
                     logger.warning("Incorrect input type for clear");
                 } else {
                     for (int i = 0; i < 50; ++i) System.out.println();
+                }
+            } else if(commandList[0].equals(Command.COMPARE)) {
+                if(commandList.length != 3) {
+                    logger.warning("Incorrect input type for compare");
+                } else {
+                    String filePath1 = ROOT + commandList[1];
+                    String filePath2 = ROOT + commandList[2];
+                    File file1 = new File(filePath1);
+                    File file2 = new File(filePath2);
+                    System.out.println(filePath1 + " has a size of " + file1.length());
+                    System.out.println(filePath2 + " has a size of " + file2.length());
+                    if(file1.length() == file2.length()) {
+                        System.out.println("Two files have a same size");
+                    } else {
+                        System.out.println("Two files have different sizes");
+                    }
                 }
             }
             else {
