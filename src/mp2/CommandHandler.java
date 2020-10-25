@@ -12,6 +12,8 @@ import java.io.InputStreamReader;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
+import static mp2.constant.FilePath.ROOT;
+
 public class CommandHandler {
     private Logger logger = Logger.getLogger(CommandHandler.class.getName());
     private FailureDetector failureDetector;
@@ -84,24 +86,21 @@ public class CommandHandler {
                 if (commandList.length != 3) {
                     logger.warning("Incorrect input type for diff");
                 } else {
-                    String filePath1 = commandList[1];
-                    String filePath2 = commandList[2];
+                    String filePath1 = ROOT + commandList[1];
+                    String filePath2 = ROOT + commandList[2];
                     Process p = null;
+                    String s = null;
                     try {
                         p = Runtime.getRuntime().exec("diff " + filePath1 + " " + filePath2);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    while (true) {
-                        String s = null;
-                        try {
-                            if (!((s = stdInput.readLine()) != null)) break;
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        System.out.println(s);
-                    }
+                        System.out.println(p);
+                        BufferedReader br = new BufferedReader(
+                                new InputStreamReader(p.getInputStream()));
+                        while ((s = br.readLine()) != null)
+                            System.out.println(s);
+                        p.waitFor();
+//                        System.out.println ("exit: " + p.exitValue());
+                        p.destroy();
+                    } catch (Exception e) {}
                 }
             } else {
                 logger.warning("Command not found");
