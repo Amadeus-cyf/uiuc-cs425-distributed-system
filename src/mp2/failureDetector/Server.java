@@ -1,10 +1,14 @@
 package mp2.failureDetector;
 
 import mp2.failureDetector.model.Member;
+import mp2.message.FPRejoinMessage;
 
 import java.sql.Timestamp;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static mp2.constant.MasterInfo.MASTER_IP_ADDRESS;
+import static mp2.constant.MasterInfo.MASTER_PORT;
 
 public class Server extends FailureDetector {
     public Sender sender;
@@ -62,6 +66,9 @@ public class Server extends FailureDetector {
         this.statusBuilder.append(Status.RUNNING);
         this.join();
         this.checker.resetId(this.id);
+        FPRejoinMessage fpRejoinMessage = new FPRejoinMessage(this.ipAddress, this.port);
+        this.socket.send(fpRejoinMessage.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+        this.socket.send(fpRejoinMessage.toJSON(), this.ipAddress, this.port-1);
     }
 
     @Override

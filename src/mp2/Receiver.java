@@ -73,6 +73,9 @@ public class Receiver {
             case(MsgType.ERROR_RESPONSE):
                 receiveErrorResponse(msgJson);
                 break;
+            case(MsgType.FP_REJOIN_MSG):
+                receiveFPReJoinMsg(msgJson);
+                break;
         }
     }
 
@@ -245,6 +248,11 @@ public class Receiver {
         } else {
             System.out.println(FILE_NOT_FOUND);
         }
+    }
+
+    private void receiveFPReJoinMsg(JSONObject jsonObject) {
+        System.out.println("Receive REJOIN/FALSE POSITIVE MESSAGE");
+        this.files.clear();
     }
 
     /*

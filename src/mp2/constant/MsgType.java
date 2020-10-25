@@ -34,4 +34,7 @@ public class MsgType {
 
     // replicate complete
     public static final String REPLICATE_NOTIFY = "REPLICATE_NOTIFY";
+
+    // false positive or rejoin the system
+    public static final String FP_REJOIN_MSG = "FP_JOIN_MSG";
 }

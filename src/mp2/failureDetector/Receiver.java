@@ -4,6 +4,7 @@ import mp2.DataTransfer;
 import mp2.failureDetector.model.AgreeJoinHeartBeat;
 import mp2.failureDetector.model.HeartBeat;
 import mp2.failureDetector.model.Member;
+import mp2.message.FPRejoinMessage;
 import mp2.message.JoinRequest;
 import mp2.message.Message;
 import org.json.JSONArray;
@@ -150,7 +151,16 @@ public class Receiver {
                     // sender has fail status on the local membership list, we let it rejoin the system
                     if (member.getId().equals(senderId) && (!member.getStatus().equals(Status.RUNNING))) {
                         member.setStatus(Status.RUNNING);
-                       member.setHeartbeatCounter(heartbeatCounter);
+                        member.setHeartbeatCounter(heartbeatCounter);
+                        String[] info = member.getId().split("_");
+                        if (info.length == 3) {
+                            String serverIpAddress = info[0];
+                            int serverPort = Integer.parseInt(info[1]);
+                            System.out.println("FALSE POSITIVE DETECTED IN FD");
+                            FPRejoinMessage fpRejoinMessage = new FPRejoinMessage(serverIpAddress, serverPort);
+                            this.socket.send(fpRejoinMessage.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+                            this.socket.send(fpRejoinMessage.toJSON(), serverIpAddress, serverPort - 1);
+                        }
                     }
                 }
             }

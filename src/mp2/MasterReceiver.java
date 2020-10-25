@@ -111,6 +111,9 @@ public class MasterReceiver extends Receiver {
             case(MsgType.ERROR_RESPONSE):
                 receiveErrorResponse(msgJson);
                 break;
+            case(MsgType.FP_REJOIN_MSG):
+                receiveFPRejoinMsg(msgJson);
+                break;
         }
     }
 
@@ -497,5 +500,12 @@ public class MasterReceiver extends Receiver {
         }
         fileStorageInfo.get(fileName).add(serverList.get(randomIdx));
         return serverList.get(randomIdx);
+    }
+
+    private void receiveFPRejoinMsg(JSONObject msgJson) {
+        String ipAddress = msgJson.getString(MsgKey.IP_ADDRESS);
+        int port = msgJson.getInt(MsgKey.PORT);
+        System.out.println("Receive rejoin request / false positive from server " + ipAddress + ":" + port);
+        servers.add(new ServerInfo(ipAddress, port));
     }
 }
