@@ -5,7 +5,7 @@ import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Server extends BaseServer {
+public class Server {
     private String ipAddress;
     private int port;
 
@@ -18,7 +18,7 @@ public class Server extends BaseServer {
         DataTransfer dataTransfer = new DataTransfer(this.ipAddress, this.port);
         FailureDetector failureDetector = new mp2.failureDetector.Server(this.ipAddress, this.port+1);
         Receiver receiver = new Receiver(this.ipAddress, this.port, dataTransfer);
-        Sender sender = new Sender(this.ipAddress, this.port, false, dataTransfer);
+        Sender sender = new Sender(this.ipAddress, this.port, dataTransfer);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         receiveThread.execute(new Runnable() {
             @Override
@@ -36,7 +36,11 @@ public class Server extends BaseServer {
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3600);
+        if (args.length == 0) {
+            System.out.println("enter ip address");
+            return;
+        }
+        Server server = new Server(args[0], 3000);
         server.run();
     }
 }

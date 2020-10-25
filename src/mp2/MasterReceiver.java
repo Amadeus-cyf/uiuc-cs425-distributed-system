@@ -10,12 +10,10 @@ import java.net.DatagramPacket;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 import static mp2.constant.MasterInfo.*;
 
 public class MasterReceiver extends Receiver {
-    private Logger logger = Logger.getLogger(MasterReceiver.class.getName());
     private Map<String, Queue<JSONObject>> messageMap;
     private Map<String, Status> fileStatus;                      // the first of boolean array isReading, the second is isWriting
     private Map<String, Set<ServerInfo>> fileStorageInfo;
@@ -65,7 +63,7 @@ public class MasterReceiver extends Receiver {
     private void receive(String msg) {
         JSONObject msgJson = new JSONObject(msg);
         String msgType = msgJson.getString(MsgKey.MSG_TYPE);
-        logger.info("Master Receiver: Receive " + msgType);
+        System.out.println("Master Receiver: Receive " + msgType);
         switch(msgType) {
             case(MsgType.PRE_GET_REQUEST):
             case(MsgType.PRE_PUT_REQUEST):
@@ -85,9 +83,6 @@ public class MasterReceiver extends Receiver {
             case(MsgType.GET_ACK):
             case(MsgType.DEL_ACK):
                 receiveACK(msgJson);
-                break;
-            case(MsgType.GET_RESPONSE):
-                receiveGetResponse(msgJson);
                 break;
             case(MsgType.PUT_NOTIFY):
                 receivePutNotify(msgJson);
@@ -111,7 +106,7 @@ public class MasterReceiver extends Receiver {
                 receiveStoreRequest();
                 break;
             case(MsgType.ERROR_RESPONSE):
-                receiveErrorResponse();
+                receiveErrorResponse(msgJson);
                 break;
         }
     }
@@ -122,7 +117,7 @@ public class MasterReceiver extends Receiver {
     private void receiveRequest(JSONObject jsonObject){
         String fileName = jsonObject.getString(MsgKey.SDFS_FILE_NAME);
         String msgType = jsonObject.getString(MsgKey.MSG_TYPE);
-        logger.info("MASTER RECEIVE: RECEIVE REQUEST " + msgType);
+        System.out.println("MASTER RECEIVE: RECEIVE REQUEST " + msgType);
         Status currentStatus = fileStatus.get(fileName);
         if (currentStatus == null || !currentStatus.isWriting) {
             Set<ServerInfo> targetServers = fileStorageInfo.get(fileName);
@@ -138,7 +133,7 @@ public class MasterReceiver extends Receiver {
                         String localFileName = jsonObject.getString(MsgKey.LOCAL_FILE_NAME);
                         PrePutResponse prePutResponse = new PrePutResponse(fileName, localFileName, targetServers);
                         this.dataTransfer.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
-                        logger.info("Master: SEND PRE_PUT_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
+                        System.out.println("Master: SEND PRE_PUT_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
                     }
                 } else if (msgType.equals(MsgType.PRE_DEL_REQUEST)) {
                     if (currentStatus != null && currentStatus.isReading) {
@@ -147,7 +142,7 @@ public class MasterReceiver extends Receiver {
                         fileStatus.put(fileName, new Status(false, true, false));
                         PreDelResponse preDelResponse = new PreDelResponse(fileName, targetServers);
                         this.dataTransfer.send(preDelResponse.toJSON(), targetIpAddress, targetPort);
-                        logger.info("Master: SEND PRE_DEL_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
+                        System.out.println("Master: SEND PRE_DEL_RESPONSE BACK TO " + targetIpAddress + ":" + targetPort);
                     }
                 } else if (msgType.equals(MsgType.PRE_GET_REQUEST)) {
                     if (currentStatus != null && currentStatus.isReading) {
@@ -161,7 +156,7 @@ public class MasterReceiver extends Receiver {
                             this.dataTransfer.send(preGetResponse.toJSON(), targetIpAddress, targetPort);
                             break;
                         }
-                        logger.info("Master: SEND PRE_GET_RESPONSE BACK TO Server " + targetIpAddress + ":" + targetPort);
+                        System.out.print("Master: SEND PRE_GET_RESPONSE BACK TO Server " + targetIpAddress + ":" + targetPort);
                         getReqNum.put(fileName, 1);
                     }
                 }
@@ -170,7 +165,7 @@ public class MasterReceiver extends Receiver {
                     // use hash to find server to store new files
                     fileStatus.put(fileName, new Status(false, true, false));
                     int serverIdx = (hash(fileName) % servers.size());
-                    logger.info("server Idx: " + serverIdx);
+                    System.out.println("server Idx: " + serverIdx);
                     Set<ServerInfo> serversArranged = new HashSet<>();
                     List<ServerInfo> serverInfos = new ArrayList<>(servers);
                     if (serverIdx <= serverInfos.size() - REPLICA_NUM) {
@@ -189,13 +184,17 @@ public class MasterReceiver extends Receiver {
                         }
                     }
                     for (ServerInfo serverInfo : serversArranged) {
-                        logger.info("Master: ASSIGN FILE: " + fileName + " TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                        System.out.println("Master: ASSIGN FILE: " + fileName + " TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                     }
                     fileStorageInfo.put(fileName, serversArranged);
                     String localFileName = jsonObject.getString(MsgKey.LOCAL_FILE_NAME);
                     PrePutResponse prePutResponse = new PrePutResponse(fileName, localFileName, serversArranged);
                     this.dataTransfer.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
-                    logger.info("SEND PRE PUT RESPONSE TO " + targetIpAddress + ":" + targetPort);
+                    System.out.println("SEND PRE PUT RESPONSE TO " + targetIpAddress + ":" + targetPort);
+                } else {
+                    // for GET and DELETE, FILE NOT FOUND
+                    ErrorResponse errorResponse = new ErrorResponse(fileName);
+                    this.dataTransfer.send(errorResponse.toJSON(), targetIpAddress, targetPort);
                 }
             }
         } else {
@@ -217,7 +216,7 @@ public class MasterReceiver extends Receiver {
         int port = jsonObject.getInt(MsgKey.PORT);
         ackResponse.get(fileName).add(new ServerInfo(ipAddress, port));
         String msgType = jsonObject.getString(MsgKey.MSG_TYPE);
-        logger.info("Receive" + msgType + " ACK Response from Server " + ipAddress + ":" + port);
+        System.out.println("Receive" + msgType + " ACK Response from Server " + ipAddress + ":" + port);
         int numGetReq = getReqNum.get(fileName) == null ? 0 : getReqNum.get(fileName);
         int currentAckNum = ackResponse.get(fileName).size();
         // check whether the ack number is enough
@@ -231,7 +230,7 @@ public class MasterReceiver extends Receiver {
             } else if (msgType.equals(MsgType.DEL_ACK)) {
                 handleDelAck(fileName, serversAck);
             }
-            logger.info(fileName + ": " + fileStorageInfo.get(fileName));
+            System.out.println(fileName + ": " + fileStorageInfo.get(fileName));
             ackResponse.remove(fileName);
             fileStatus.put(fileName, new Status(false, false, false));
             Queue<JSONObject> messageQueue = messageMap.get(fileName);
@@ -262,7 +261,7 @@ public class MasterReceiver extends Receiver {
                         } else {
                             getReqNum.put(fileName, getReqNum.get(fileName) + 1);
                         }
-                        logger.info("RECEIVE ACK : SEND PRE GET RESPONSE TO SERVER " + targetIpAddress + ":" + targetPort);
+                        System.out.println("RECEIVE ACK : SEND PRE GET RESPONSE TO SERVER " + targetIpAddress + ":" + targetPort);
                     } else if (currentMsgType.equals(MsgType.PRE_PUT_REQUEST)) {
                         // send all server ip and port back to the querying server
                         Status currentStatus = fileStatus.get(fileName);
@@ -273,7 +272,7 @@ public class MasterReceiver extends Receiver {
                             this.dataTransfer.send(prePutResponse.toJSON(), targetIpAddress, targetPort);
                             fileStatus.put(fileName, new Status(false, true, false));
                             for (ServerInfo serverInfo : targetServers) {
-                                logger.info("RECEIVE ACK: SEND PRE PUT RESPONSE TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                                System.out.println("RECEIVE ACK: SEND PRE PUT RESPONSE TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                             }
                         }
                         break;
@@ -285,7 +284,7 @@ public class MasterReceiver extends Receiver {
                             this.dataTransfer.send(preDelResponse.toJSON(), targetIpAddress, targetPort);
                             fileStatus.put(fileName, new Status(false, true, false));
                             for (ServerInfo serverInfo : targetServers) {
-                                logger.info("RECEIVE ACK: SEND PRE DEL RESPONSE TO Server " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                                System.out.println("RECEIVE ACK: SEND PRE DEL RESPONSE TO Server " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                             }
                         }
                         break;
@@ -315,7 +314,7 @@ public class MasterReceiver extends Receiver {
             String ipAddress = server.getString(MsgKey.IP_ADDRESS);
             int port = server.getInt(MsgKey.PORT);
             ServerInfo serverInfo = new ServerInfo(ipAddress, port);
-            logger.info("receive membershipList - loop serverList: " + ipAddress + port);
+            System.out.println("receive membershipList - loop serverList: " + ipAddress + port);
             if (!servers.contains(serverInfo)) {
                 servers.add(serverInfo);
                 this.serverStorageInfo.put(serverInfo, new HashSet<>());
@@ -324,7 +323,7 @@ public class MasterReceiver extends Receiver {
     }
 
     private void receiveFail(JSONObject jsonObject) {
-        logger.info("Receive Failure: " + jsonObject.toString());
+        System.out.println("Receive Failure: " + jsonObject.toString());
         String failIpAddress = jsonObject.getString(MsgKey.IP_ADDRESS);
         int failPort = jsonObject.getInt(MsgKey.PORT);
         ServerInfo failServerInfo = new ServerInfo(failIpAddress, failPort);
@@ -372,15 +371,6 @@ public class MasterReceiver extends Receiver {
             List<ServerInfo> serverStoreFile = new ArrayList<>(fileStorageInfo.get(fileName));
             // find new servers where replicas are assigned to
             Set<ServerInfo> assignedServers = new HashSet<>();
-            /*for (ServerInfo server : servers) {
-                if (!serverStoreFile.contains(server)) {
-                    assignedServers.add(server);
-                    temp--;
-                }
-                if (temp <= 0) {
-                    break;
-                }
-            }*/
             while (assignedServers.size() < replicaNum) {
                 assignedServers.add(getReplicaTarget(fileName));
             }
@@ -392,7 +382,7 @@ public class MasterReceiver extends Receiver {
                 targetServer = serverStoreFile.get(randomIdx);
             }
             if (targetServer == null) {
-                logger.info("NO SERVER STORE THE FILE");
+                System.out.println("NO SERVER STORE THE FILE");
                 return;
             }
             ReplicateRequest replicateRequest = new ReplicateRequest(fileName, assignedServers, targetServer.getIpAddress(), targetServer.getPort());
@@ -452,7 +442,7 @@ public class MasterReceiver extends Receiver {
                 if (serverStorageInfo.get(serverInfo) == null) {
                     serverStorageInfo.put(serverInfo, new HashSet<>());
                 }
-                logger.info("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+                System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                 serverStorageInfo.get(serverInfo).add(fileName);
             }
         }
@@ -475,7 +465,7 @@ public class MasterReceiver extends Receiver {
         System.out.println("ls filename:" + fileName);
         // check if the target server is the master
         if(this.fileStorageInfo.get(fileName) == null){
-            logger.info("get filename == null");
+            System.out.println("get filename == null");
             Message errorMsg = new ErrorResponse(fileName);
             this.dataTransfer.send(errorMsg.toJSON(), targetIpAddress, targetPort);
         }else{

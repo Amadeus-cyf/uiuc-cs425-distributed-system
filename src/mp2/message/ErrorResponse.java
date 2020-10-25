@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 public class ErrorResponse extends Message {
     private String fileName;
+
     public ErrorResponse(String fileName) {
         super(MsgType.ERROR_RESPONSE);
         this.fileName = fileName;

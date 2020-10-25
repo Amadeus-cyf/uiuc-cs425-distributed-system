@@ -10,7 +10,7 @@ import static mp2.constant.MasterFdInfo.MASTER_FD_IP_ADDRESS;
 import static mp2.constant.MasterFdInfo.MASTER_FD_PORT;
 import static mp2.constant.MasterInfo.*;
 
-public class Master extends BaseServer {
+public class Master {
     private String ipAddress;
     private int port;
 
@@ -23,7 +23,7 @@ public class Master extends BaseServer {
         DataTransfer dataTransfer = new DataTransfer(this.ipAddress, this.port);
         FailureDetector failureDetector = new Introducer(MASTER_FD_IP_ADDRESS, MASTER_FD_PORT);
         Receiver receiver = new MasterReceiver(this.ipAddress, this.port, dataTransfer);
-        Sender sender = new Sender(this.ipAddress, this.port, true, dataTransfer);
+        Sender sender = new Sender(this.ipAddress, this.port, dataTransfer);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         receiveThread.execute(new Runnable() {
             @Override

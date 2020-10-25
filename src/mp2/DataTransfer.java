@@ -5,8 +5,6 @@ import org.json.JSONObject;
 
 import java.net.*;
 
-import static mp2.constant.MasterInfo.*;
-
 public class DataTransfer {
     private DatagramSocket socket;
     private String ipAddress;
@@ -53,18 +51,10 @@ public class DataTransfer {
      */
     public int sendFile(String localFile, String sdfsFile, String ipAddress) {
         System.out.println("send file");
-        String command = "scp " + localFile + " " + UserInfo.username + "@" + ipAddress + ":" + sdfsFile;
-        System.out.println(command);
-        try {
-            Process process = Runtime.getRuntime().exec(command);
-            process.waitFor();
-            int result = process.exitValue();
-            System.out.println(result);
-            return result;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return -1;
+        StringBuilder sb = new StringBuilder();
+        sb.append("scp ").append(localFile).append(" ").append(UserInfo.username).append("@").append(ipAddress).append(":").append(sdfsFile);
+        String command = sb.toString();
+        return executeCommand(command);
     }
 
     public void receive(DatagramPacket receivedPacket) {
@@ -80,7 +70,13 @@ public class DataTransfer {
      */
     public int receiveFile(String localFile, String sdfsFile, String ipAddress) {
         System.out.println("receive file");
-        String command = "scp " + UserInfo.username + "@" + ipAddress + ":" + sdfsFile + " " + localFile;
+        StringBuilder sb = new StringBuilder();
+        sb.append("scp ").append(UserInfo.username).append("@").append(ipAddress).append(":").append(sdfsFile).append(" ").append(localFile);
+        String command = sb.toString();
+        return executeCommand(command);
+    }
+
+    private int executeCommand(String command) {
         System.out.println(command);
         try {
             Process process = Runtime.getRuntime().exec(command);
@@ -92,12 +88,5 @@ public class DataTransfer {
             e.printStackTrace();
         }
         return -1;
-    }
-
-    /*
-     * whether a server is the master
-     */
-    private Boolean isMaster(String ipAddress, int port) {
-        return ipAddress.equals(MASTER_IP_ADDRESS) && port == MASTER_PORT;
     }
 }

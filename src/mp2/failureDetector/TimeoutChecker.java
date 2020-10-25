@@ -1,6 +1,7 @@
 package mp2.failureDetector;
 
 import mp2.DataTransfer;
+import mp2.constant.MasterFdInfo;
 import mp2.constant.MasterInfo;
 import mp2.failureDetector.model.Member;
 import mp2.message.FailMessage;
@@ -9,9 +10,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
-import static mp1.Introducer.IP_ADDRESS;
-import static mp1.Introducer.PORT;
 
 public class TimeoutChecker implements Runnable {
     private final List<Member> membershipList;
@@ -109,7 +107,7 @@ public class TimeoutChecker implements Runnable {
         String[] idInfo = id.split("_");
         String ipAddress = idInfo[0];
         int port = Integer.parseInt(idInfo[1]);
-        if(ipAddress.equals(IP_ADDRESS) && port == PORT) {
+        if(ipAddress.equals(MasterFdInfo.MASTER_FD_IP_ADDRESS) && port == MasterFdInfo.MASTER_FD_PORT) {
             return true;
         }
         return false;

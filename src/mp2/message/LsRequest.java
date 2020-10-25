@@ -9,7 +9,7 @@ public class LsRequest extends Message{
     private String ipAddress;
     private int port;
 
-    public LsRequest(String ipAddress, int port, String sdfsFileName){
+    public LsRequest(String ipAddress, int port, String sdfsFileName) {
         super(MsgType.LS_REQUEST);
         this.sdfsFileName = sdfsFileName;
         this.ipAddress = ipAddress;
