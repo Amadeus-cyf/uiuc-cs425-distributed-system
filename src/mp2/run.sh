@@ -37,4 +37,4 @@ dd if=/dev/urandom of=../../local/large.txt bs=1000000 count=500
 javac -d ../../out -classpath ../../json-20140107.jar @sources.list
 
 # Run the project
-java -classpath ../../out:../../json-20140107.jar mp2.Master  #fa20-cs425-g53-02.cs.illinois.edu
+java -classpath ../../out:../../json-20140107.jar mp2.Server fa20-cs425-g53-03.cs.illinois.edu
