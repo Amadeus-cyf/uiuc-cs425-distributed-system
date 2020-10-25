@@ -20,7 +20,7 @@ public class Sender {
     private volatile StringBuilder statusBuilder;
     private Long heartbeatCounter;
     static Logger logger = Logger.getLogger(Sender.class.getName());
-    private static final int K = 4;
+    private static final int K = 6;
 
     public Sender(String id, String ipAddress, int port, List<Member> membershipList, StringBuilder modeBuilder, StringBuilder statusBuilder,
                   DataTransfer socket, Long heartbeatCounter) {

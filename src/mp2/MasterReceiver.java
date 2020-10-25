@@ -99,6 +99,9 @@ public class MasterReceiver extends Receiver {
             case(MsgType.REPLICATE_REQUEST):
                 receiveReplicateRequest(msgJson);
                 break;
+            case(MsgType.REPLICATE_NOTIFY):
+                receiveReplicateNotify(msgJson);
+                break;
             case(MsgType.LS_REQUEST):
                 receiveLsRequest(msgJson);
                 break;
@@ -114,7 +117,7 @@ public class MasterReceiver extends Receiver {
     /*
      * receive request for get, put and delete
      */
-    private void receiveRequest(JSONObject jsonObject){
+    private void receiveRequest(JSONObject jsonObject) {
         String fileName = jsonObject.getString(MsgKey.SDFS_FILE_NAME);
         String msgType = jsonObject.getString(MsgKey.MSG_TYPE);
         System.out.println("MASTER RECEIVE: RECEIVE REQUEST " + msgType);
@@ -216,7 +219,7 @@ public class MasterReceiver extends Receiver {
         int port = jsonObject.getInt(MsgKey.PORT);
         ackResponse.get(fileName).add(new ServerInfo(ipAddress, port));
         String msgType = jsonObject.getString(MsgKey.MSG_TYPE);
-        System.out.println("Receive" + msgType + " ACK Response from Server " + ipAddress + ":" + port);
+        System.out.println("Receive " + msgType + " ACK Response from Server " + ipAddress + ":" + port);
         int numGetReq = getReqNum.get(fileName) == null ? 0 : getReqNum.get(fileName);
         int currentAckNum = ackResponse.get(fileName).size();
         // check whether the ack number is enough
@@ -390,7 +393,7 @@ public class MasterReceiver extends Receiver {
             // check whether we could do replicate immediately
             if (fileStatus.get(fileName) == null || !(fileStatus.get(fileName).isWriting)) {
                 // the file is currently not writing
-                System.out.println("REPLICATE FILE: WRITE IS AVAILABLE " + fileName);
+                System.out.println("REPLICATE FILE: WRITE IS AVAILABLE " + fileName + " " + targetServer.getIpAddress() + ":" + targetServer.getPort());
                 fileStatus.put(fileName, new Status(false,  false, true));
                 this.dataTransfer.send(replicateRequest.toJSON(), targetServer.getIpAddress(), targetServer.getPort());
                 if (this.ackResponse.get(fileName) == null) {

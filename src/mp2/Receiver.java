@@ -61,6 +61,9 @@ public class Receiver {
             case(MsgType.REPLICATE_REQUEST):
                 receiveReplicateRequest(msgJson);
                 break;
+            case(MsgType.REPLICATE_NOTIFY):
+                receiveReplicateNotify(msgJson);
+                break;
             case(MsgType.LS_RESPONSE):
                 receiveLsResponse(msgJson);
                 break;
@@ -179,7 +182,7 @@ public class Receiver {
                 String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.DEL_ACK);
                 this.dataTransfer.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
-                System.out.println("Receiver Delete Request: sending DELETE ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress +
+                System.out.println("Receiver Delete Request: sending DELETE ACK message to master: " + sdfsFileName + " from server " + ipAddress +
                         ":" + port);
                 return;
             }
@@ -192,14 +195,29 @@ public class Receiver {
      */
     protected void receiveReplicateRequest(JSONObject msgJson) {
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        System.out.println("Receive Replicate Request for " + sdfsFileName);
         JSONArray targetServers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         for (int i = 0; i < targetServers.length(); i++) {
             JSONObject server  = targetServers.getJSONObject(i);
             String targetIpAddress = server.getString(MsgKey.IP_ADDRESS);
             int targetPort = server.getInt(MsgKey.PORT);
+            System.out.println("FILE SEND TO " + targetIpAddress + ":" + targetPort);
             String sourceAndDest = FilePath.ROOT + FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName;
-            this.dataTransfer.sendFile(sourceAndDest, sourceAndDest, targetIpAddress);
+            int result = this.dataTransfer.sendFile(sourceAndDest, sourceAndDest, targetIpAddress);
+            System.out.println("SCP result is " + result);
+            if (result == 0) {
+                System.out.println("NOTIFY " + targetIpAddress + ":" + targetPort);
+                ReplicateNotify replicateNotify = new ReplicateNotify(sdfsFileName);
+                this.dataTransfer.send(replicateNotify.toJSON(), targetIpAddress, targetPort);
+            }
         }
+    }
+
+    protected void receiveReplicateNotify(JSONObject msgJson) {
+        String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
+        this.files.add(new File(FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName));
+        Ack replicateAck = new Ack(sdfsFileName, ipAddress, port,  MsgType.PUT_ACK);
+        this.dataTransfer.send(replicateAck.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
     }
 
     protected void receiveLsResponse(JSONObject msgJson) {

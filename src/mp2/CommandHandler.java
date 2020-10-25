@@ -7,7 +7,9 @@ import mp2.failureDetector.Server;
 import org.json.JSONArray;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.Scanner;
 import java.util.logging.Logger;
 
@@ -101,26 +103,32 @@ public class CommandHandler {
                     }
                 }
             } else if (commandList[0].equals(Command.MORE)) {
-                String filePath = commandList[0];
-                try {
-                    String s = null;
-                    Process p = Runtime.getRuntime().exec("more " + ROOT + filePath);
-                    BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                    while ((s = br.readLine()) != null) {
-                        System.out.println(s);
+                if (commandList.length != 2) {
+                    logger.warning("Incorrect input type for more");
+                } else {
+                    String filePath = commandList[1];
+                    System.out.println(filePath);
+                    try {
+                        String s = null;
+                        System.out.println("more " + ROOT + filePath);
+                        Process p = Runtime.getRuntime().exec("cat " + ROOT + filePath);
+                        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
+                        bw.write("yes");
+                        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                        while ((s = br.readLine()) != null) {
+                            System.out.println(s);
+                        }
+                        p.waitFor();
+                        p.destroy();
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    p.waitFor();
-                    p.destroy();
-                } catch (Exception e) {
-                    e.printStackTrace();
                 }
             } else if (commandList[0].equals(Command.CLEAR)) {
-                try {
-                    Process p = Runtime.getRuntime().exec("clear");
-                    p.waitFor();
-                    p.exitValue();
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if (commandList.length != 1) {
+                    logger.warning("Incorrect input type for clear");
+                } else {
+                    for (int i = 0; i < 50; ++i) System.out.println();
                 }
             }
             else {
