@@ -6,8 +6,13 @@ import mp2.failureDetector.Mode;
 import mp2.failureDetector.Server;
 import org.json.JSONArray;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Scanner;
 import java.util.logging.Logger;
+
+import static mp2.constant.FilePath.ROOT;
 
 public class CommandHandler {
     private Logger logger = Logger.getLogger(CommandHandler.class.getName());
@@ -76,6 +81,26 @@ public class CommandHandler {
                     logger.warning("Incorrect input type for storage");
                 } else {
                     this.sender.sendStoreRequest();
+                }
+            } else if(commandList[0].equals(Command.DIFF)) {
+                if (commandList.length != 3) {
+                    logger.warning("Incorrect input type for diff");
+                } else {
+                    String filePath1 = ROOT + commandList[1];
+                    String filePath2 = ROOT + commandList[2];
+                    Process p = null;
+                    String s = null;
+                    try {
+                        p = Runtime.getRuntime().exec("diff " + filePath1 + " " + filePath2);
+                        System.out.println(p);
+                        BufferedReader br = new BufferedReader(
+                                new InputStreamReader(p.getInputStream()));
+                        while ((s = br.readLine()) != null)
+                            System.out.println(s);
+                        p.waitFor();
+//                        System.out.println ("exit: " + p.exitValue());
+                        p.destroy();
+                    } catch (Exception e) {}
                 }
             } else {
                 logger.warning("Command not found");
