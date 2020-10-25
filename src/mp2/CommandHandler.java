@@ -77,6 +77,17 @@ public class CommandHandler {
                 } else {
                     this.sender.sendStoreRequest();
                 }
+            } else if(commandList[0].equals(Command.DIFF)) {
+                if (commandList.length != 2) {
+                    logger.warning("Incorrect input type for diff");
+                } else {
+                    String filePath1 = commandList[1];
+                    String filePath2 = commandList[2];
+                    Process p = Runtime.getRuntime().exec("diff " + filePath1 + " " + filePath2);
+                    BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    while ((s = stdInput.readLine()) != null) {
+                        System.out.println(s);
+                }
             } else {
                 logger.warning("Command not found");
             }
