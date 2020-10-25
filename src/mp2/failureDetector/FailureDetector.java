@@ -1,6 +1,6 @@
 package mp2.failureDetector;
 
-import mp2.UdpSocket;
+import mp2.DataTransfer;
 import mp2.failureDetector.model.Member;
 
 import java.sql.Timestamp;
@@ -10,7 +10,7 @@ import java.util.List;
 public abstract class FailureDetector {
     protected String ipAddress;
     protected int port;
-    protected UdpSocket socket;
+    protected DataTransfer socket;
     protected List<Member> membershipList;
     protected Timestamp startingTime;
     protected String id;
@@ -21,7 +21,7 @@ public abstract class FailureDetector {
     protected FailureDetector(String ipAddress, int port) {
         this.ipAddress = ipAddress;
         this.port = port;
-        this.socket = new UdpSocket(this.ipAddress, this.port);
+        this.socket = new DataTransfer(this.ipAddress, this.port);
         this.membershipList = new ArrayList<>();
         this.modeBuilder = new StringBuilder();
         this.modeBuilder.append(Mode.GOSSIP);

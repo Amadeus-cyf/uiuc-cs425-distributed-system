@@ -20,10 +20,10 @@ public class Master extends BaseServer {
     }
 
     public void run() {
-        UdpSocket socket = new UdpSocket(this.ipAddress, this.port);
+        DataTransfer dataTransfer = new DataTransfer(this.ipAddress, this.port);
         FailureDetector failureDetector = new Introducer(MASTER_FD_IP_ADDRESS, MASTER_FD_PORT);
-        Receiver receiver = new MasterReceiver(this.ipAddress, this.port, socket);
-        Sender sender = new Sender(this.ipAddress, this.port, true, socket);
+        Receiver receiver = new MasterReceiver(this.ipAddress, this.port, dataTransfer);
+        Sender sender = new Sender(this.ipAddress, this.port, true, dataTransfer);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         receiveThread.execute(new Runnable() {
             @Override

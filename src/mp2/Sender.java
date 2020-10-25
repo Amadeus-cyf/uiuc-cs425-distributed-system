@@ -12,9 +12,9 @@ public class Sender {
     private String ipAddress;
     private int port;
     private boolean isMaster;
-    private UdpSocket socket;
+    private DataTransfer socket;
 
-    public Sender(String ipAddress, int port, boolean isMaster, UdpSocket socket) {
+    public Sender(String ipAddress, int port, boolean isMaster, DataTransfer socket) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.isMaster = isMaster;
@@ -50,6 +50,5 @@ public class Sender {
     public void sendStoreRequest() {
         Message request = new StoreRequest();
         this.socket.send(request.toJSON(), this.ipAddress, this.port);
-        logger.info("Receive Store Request");
     }
 }

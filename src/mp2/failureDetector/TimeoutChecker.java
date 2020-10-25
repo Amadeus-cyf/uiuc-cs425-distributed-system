@@ -1,6 +1,6 @@
 package mp2.failureDetector;
 
-import mp2.UdpSocket;
+import mp2.DataTransfer;
 import mp2.constant.MasterInfo;
 import mp2.failureDetector.model.Member;
 import mp2.message.FailMessage;
@@ -21,9 +21,9 @@ public class TimeoutChecker implements Runnable {
     private volatile String mode;
     private String id;
     private static Logger logger = Logger.getLogger(TimeoutChecker.class.getName());
-    private UdpSocket socket;
+    private DataTransfer socket;
 
-    public TimeoutChecker(List<Member> membershipList, StringBuilder modeBuilder, String id, UdpSocket socket) {
+    public TimeoutChecker(List<Member> membershipList, StringBuilder modeBuilder, String id, DataTransfer socket) {
         this.membershipList = membershipList;
         this.modeBuilder = modeBuilder;
         this.mode = modeBuilder.toString();

@@ -15,10 +15,10 @@ public class Server extends BaseServer {
     }
 
     public void run() {
-        UdpSocket socket = new UdpSocket(this.ipAddress, this.port);
+        DataTransfer dataTransfer = new DataTransfer(this.ipAddress, this.port);
         FailureDetector failureDetector = new mp2.failureDetector.Server(this.ipAddress, this.port+1);
-        Receiver receiver = new Receiver(this.ipAddress, this.port, socket);
-        Sender sender = new Sender(this.ipAddress, this.port, false, socket);
+        Receiver receiver = new Receiver(this.ipAddress, this.port, dataTransfer);
+        Sender sender = new Sender(this.ipAddress, this.port, false, dataTransfer);
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         receiveThread.execute(new Runnable() {
             @Override

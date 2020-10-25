@@ -1,19 +1,17 @@
 package mp2.failureDetector;
 
-import mp2.UdpSocket;
+import mp2.DataTransfer;
 import mp2.failureDetector.model.*;
 
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import static mp2.constant.MasterInfo.MASTER_IP_ADDRESS;
-import static mp2.constant.MasterInfo.MASTER_PORT;
 import static mp2.constant.MasterFdInfo.MASTER_FD_IP_ADDRESS;
 import static mp2.constant.MasterFdInfo.MASTER_FD_PORT;
 
 public class Sender {
-    private UdpSocket socket;
+    private DataTransfer socket;
     private String ipAddress;
     private int port;
     private List<Member> membershipList;
@@ -22,10 +20,10 @@ public class Sender {
     private volatile StringBuilder statusBuilder;
     private Long heartbeatCounter;
     static Logger logger = Logger.getLogger(Sender.class.getName());
-    private static final int K = 3;
+    private static final int K = 4;
 
     public Sender(String id, String ipAddress, int port, List<Member> membershipList, StringBuilder modeBuilder, StringBuilder statusBuilder,
-                  UdpSocket socket, Long heartbeatCounter) {
+                  DataTransfer socket, Long heartbeatCounter) {
         this.ipAddress = ipAddress;
         this.port = port;
         this.membershipList = membershipList;

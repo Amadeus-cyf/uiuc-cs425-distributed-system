@@ -1,6 +1,6 @@
 package mp2.failureDetector;
 
-import mp2.UdpSocket;
+import mp2.DataTransfer;
 import mp2.failureDetector.model.AgreeJoinHeartBeat;
 import mp2.failureDetector.model.HeartBeat;
 import mp2.failureDetector.model.Member;
@@ -23,7 +23,7 @@ public class Receiver {
     private String id;
     private String ipAddress;
     private int port;
-    private UdpSocket socket;
+    private DataTransfer socket;
     private byte[] buffer = new byte[2048];
     private volatile StringBuilder modeBuilder;
     private volatile StringBuilder statusBuilder;
@@ -33,7 +33,7 @@ public class Receiver {
     static Logger logger = Logger.getLogger(Receiver.class.getName());
 
     public Receiver(String id, String ipAddress, int port, List<Member> membershipList, StringBuilder modeBuilder,
-                    StringBuilder statusBuilder, UdpSocket socket, Long heartbeatCounter
+                    StringBuilder statusBuilder, DataTransfer socket, Long heartbeatCounter
     ) {
         this.id = id;
         this.ipAddress = ipAddress;

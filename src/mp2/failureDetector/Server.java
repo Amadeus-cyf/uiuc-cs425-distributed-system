@@ -1,10 +1,8 @@
 package mp2.failureDetector;
 
-import mp2.UdpSocket;
 import mp2.failureDetector.model.Member;
 
 import java.sql.Timestamp;
-import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
