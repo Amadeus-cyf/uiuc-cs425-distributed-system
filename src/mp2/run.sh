@@ -24,11 +24,11 @@ mkdir ../../local
 # Generate 15 random files with different sizes in local folder
 for((i=0;i<=15;i++))
 do
-	dd if=/dev/urandom of=../../local/$i.txt bs=1024*1024 count=3
+	dd if=/dev/urandom of=../../local/$i.txt bs=1000000 count=3
 done
 
 # Generate a samll file
-dd if=/dev/urandom of=../../local/small.txt bs=1024*1024 count=3
+dd if=/dev/urandom of=../../local/small.txt bs=1000000 count=3
 
 # Generate a large file
 dd if=/dev/urandom of=../../local/large.txt bs=1000000 count=500
@@ -37,4 +37,4 @@ dd if=/dev/urandom of=../../local/large.txt bs=1000000 count=500
 javac -d ../../out -classpath ../../json-20140107.jar @sources.list
 
 # Run the project
-java -classpath ../../out:../../json-20140107.jar mp2.Server fa20-cs425-g53-02.cs.illinois.edu
+java -classpath ../../out:../../json-20140107.jar mp2.Master  #fa20-cs425-g53-02.cs.illinois.edu
