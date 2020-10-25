@@ -192,7 +192,6 @@ public class MasterReceiver extends Receiver {
                     for (ServerInfo serverInfo : serversArranged) {
                         System.out.println("Master: ASSIGN FILE: " + fileName + " TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
                     }
-                    fileStorageInfo.put(fileName, serversArranged);
                     String localFileName = jsonObject.getString(MsgKey.LOCAL_FILE_NAME);
                     PrePutResponse prePutResponse = new PrePutResponse(fileName, localFileName, serversArranged);
                     this.dataTransfer.send(prePutResponse.toJSON(), targetIpAddress, targetPort);

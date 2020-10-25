@@ -19,7 +19,7 @@ public class Receiver {
     protected int port;
     protected Set<File> files;
     protected DataTransfer dataTransfer;
-    protected final int BLOCK_SIZE = 1024 * 2;
+    protected final int BLOCK_SIZE = 1024 * 4;
 
     public Receiver(String ipAddress, int port, DataTransfer dataTransfer) {
         this.ipAddress = ipAddress;
@@ -237,7 +237,10 @@ public class Receiver {
     }
 
     protected void receiveStoreRequest() {
-        System.out.println("Print all stored sdfs files on this server: " + files.toString());
+        System.out.println("Print all stored sdfs files on this server: ");
+        for (File file : this.files) {
+            System.out.println(file.toPath());
+        }
     }
 
     protected void receiveErrorResponse(JSONObject msgJson){
