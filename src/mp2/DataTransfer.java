@@ -51,8 +51,14 @@ public class DataTransfer {
      */
     public int sendFile(String localFile, String sdfsFile, String ipAddress) {
         System.out.println("send file");
+        int idx = ipAddress.indexOf(".cs.illinois.edu");
+        String hostName = ipAddress;
+        if (idx >= 0) {
+            hostName = ipAddress.substring(0, idx);
+        }
+        System.out.println("HostName " + hostName);
         StringBuilder sb = new StringBuilder();
-        sb.append("scp ").append(localFile).append(" ").append(UserInfo.username).append("@").append(ipAddress).append(":").append(sdfsFile);
+        sb.append("scp ").append(localFile).append(" ").append(UserInfo.username).append("@").append(hostName).append(":").append(sdfsFile);
         String command = sb.toString();
         return executeCommand(command);
     }
@@ -70,6 +76,12 @@ public class DataTransfer {
      */
     public int receiveFile(String localFile, String sdfsFile, String ipAddress) {
         System.out.println("receive file");
+        String hostName = ipAddress;
+        int idx = ipAddress.indexOf(".cs.illinois.edu");
+        if (idx >= 0) {
+            hostName = ipAddress.substring(0, idx);
+        }
+        System.out.println("HOSTNAME " + hostName);
         StringBuilder sb = new StringBuilder();
         sb.append("scp ").append(UserInfo.username).append("@").append(ipAddress).append(":").append(sdfsFile).append(" ").append(localFile);
         String command = sb.toString();
