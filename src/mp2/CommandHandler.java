@@ -81,7 +81,7 @@ public class CommandHandler {
                     this.sender.sendStoreRequest();
                 }
             } else if(commandList[0].equals(Command.DIFF)) {
-                if (commandList.length != 2) {
+                if (commandList.length != 3) {
                     logger.warning("Incorrect input type for diff");
                 } else {
                     String filePath1 = commandList[1];
