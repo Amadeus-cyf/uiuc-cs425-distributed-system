@@ -12,4 +12,6 @@ public class Command {
     public static final String STORAGE = "storage";
     public static final String SERVERS = "servers";
     public static final String DIFF = "diff";
+    public static final String MORE = "more";
+    public static final String CLEAR = "clear";
 }

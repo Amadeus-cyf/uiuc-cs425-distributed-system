@@ -83,7 +83,7 @@ public class DataTransfer {
         }
         System.out.println("HOSTNAME " + hostName);
         StringBuilder sb = new StringBuilder();
-        sb.append("scp ").append(UserInfo.username).append("@").append(ipAddress).append(":").append(sdfsFile).append(" ").append(localFile);
+        sb.append("scp ").append(UserInfo.username).append("@").append(hostName).append(":").append(sdfsFile).append(" ").append(localFile);
         String command = sb.toString();
         return executeCommand(command);
     }

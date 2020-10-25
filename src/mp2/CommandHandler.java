@@ -7,7 +7,6 @@ import mp2.failureDetector.Server;
 import org.json.JSONArray;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Scanner;
 import java.util.logging.Logger;
@@ -88,21 +87,43 @@ public class CommandHandler {
                 } else {
                     String filePath1 = ROOT + commandList[1];
                     String filePath2 = ROOT + commandList[2];
-                    Process p = null;
-                    String s = null;
                     try {
+                        Process p = null;
+                        String s = null;
                         p = Runtime.getRuntime().exec("diff " + filePath1 + " " + filePath2);
-                        System.out.println(p);
-                        BufferedReader br = new BufferedReader(
-                                new InputStreamReader(p.getInputStream()));
+                        BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
                         while ((s = br.readLine()) != null)
                             System.out.println(s);
                         p.waitFor();
-//                        System.out.println ("exit: " + p.exitValue());
-                        p.destroy();
-                    } catch (Exception e) {}
+                        p.exitValue();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            } else {
+            } else if (commandList[0].equals(Command.MORE)) {
+                String filePath = commandList[0];
+                try {
+                    String s = null;
+                    Process p = Runtime.getRuntime().exec("more " + ROOT + filePath);
+                    BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                    while ((s = br.readLine()) != null) {
+                        System.out.println(s);
+                    }
+                    p.waitFor();
+                    p.destroy();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else if (commandList[0].equals(Command.CLEAR)) {
+                try {
+                    Process p = Runtime.getRuntime().exec("clear");
+                    p.waitFor();
+                    p.exitValue();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
                 logger.warning("Command not found");
             }
         }
