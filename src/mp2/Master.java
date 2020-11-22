@@ -8,15 +8,15 @@ import java.util.concurrent.Executors;
 
 import static mp2.constant.MasterFdInfo.MASTER_FD_IP_ADDRESS;
 import static mp2.constant.MasterFdInfo.MASTER_FD_PORT;
-import static mp2.constant.MasterInfo.*;
+import static mp2.constant.MasterSdfsInfo.*;
 
 public class Master {
     private String ipAddress;
     private int port;
 
     public Master() {
-        this.ipAddress = MASTER_IP_ADDRESS;
-        this.port = MASTER_PORT;
+        this.ipAddress = MASTER_SDFS_IP_ADDRESS;
+        this.port = MASTER_SDFS_PORT;
     }
 
     public void run() {

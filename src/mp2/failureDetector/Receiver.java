@@ -15,8 +15,8 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static mp2.constant.MasterInfo.MASTER_IP_ADDRESS;
-import static mp2.constant.MasterInfo.MASTER_PORT;
+import static mp2.constant.MasterSdfsInfo.MASTER_SDFS_IP_ADDRESS;
+import static mp2.constant.MasterSdfsInfo.MASTER_SDFS_PORT;
 import static mp2.constant.MasterFdInfo.MASTER_FD_IP_ADDRESS;
 import static mp2.constant.MasterFdInfo.MASTER_FD_PORT;
 
@@ -158,7 +158,7 @@ public class Receiver {
                             int serverPort = Integer.parseInt(info[1]);
                             System.out.println("FALSE POSITIVE DETECTED IN FD");
                             FPRejoinMessage fpRejoinMessage = new FPRejoinMessage(serverIpAddress, serverPort);
-                            this.socket.send(fpRejoinMessage.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+                            this.socket.send(fpRejoinMessage.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
                             this.socket.send(fpRejoinMessage.toJSON(), serverIpAddress, serverPort - 1);
                         }
                     }
@@ -201,7 +201,7 @@ public class Receiver {
         }
         Message joinRequest = new JoinRequest(membershipList);
         // send the new membership list to the master for the sdfs file system
-        this.socket.send(joinRequest.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+        this.socket.send(joinRequest.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
     }
 
     /*

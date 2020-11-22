@@ -10,7 +10,6 @@ This is a simple distributed file system that allows you to put, get, delete, ch
 
 - For each put/delete operation, the system will store **four** replicas on four servers (because at most three failures at the same time). 
 
-
 ## Setup and Run all Servers
 
 Go to `mp2` directory and execute `bash run.sh`. To successfully compile and run the program, 

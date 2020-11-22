@@ -11,13 +11,13 @@ import java.io.*;
 import java.net.DatagramPacket;
 import java.util.*;
 
-import static mp2.constant.MasterInfo.*;
+import static mp2.constant.MasterSdfsInfo.*;
 import static mp2.constant.MsgContent.FILE_NOT_FOUND;
 
 public class Receiver {
     protected String ipAddress;
     protected int port;
-    protected Set<File> files;
+    private Set<File> files;
     protected DataTransfer dataTransfer;
     protected final int BLOCK_SIZE = 1024 * 4;
 
@@ -122,7 +122,7 @@ public class Receiver {
                 files.remove(file); // remove from the file list
                 file.delete(); // delete the sdfs file on the disk
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.DEL_ACK);
-                this.dataTransfer.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+                this.dataTransfer.send(ack.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
                 System.out.println("Sending DELETE ACK message to master: sdfsFileName" + sdfsFileName + " from server" + ipAddress + ":" + port);
             } else{
                 sendDeleteRequest(sdfsFileName, targetIpAddress, targetPort);
@@ -136,7 +136,7 @@ public class Receiver {
                 FilePath.ROOT + FilePath.SDFS_ROOT_DIRECTORY + sdfsFilename, targetIpAddress);
         if (result == 0) {
             Ack getAck = new Ack(sdfsFilename, this.ipAddress, this.port, MsgType.GET_ACK);
-            this.dataTransfer.send(getAck.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+            this.dataTransfer.send(getAck.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
         } else {
             System.out.println("GET FAILED ......");
         }
@@ -169,7 +169,7 @@ public class Receiver {
         this.files.add(new File(FilePath.SDFS_ROOT_DIRECTORY + sdfsFile));
         System.out.println("RECEIVE PUT REQUEST FOR " + sdfsFile);
         Ack putAck = new Ack(sdfsFile, ipAddress, port,  MsgType.PUT_ACK);
-        this.dataTransfer.send(putAck.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+        this.dataTransfer.send(putAck.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
     }
 
     protected void receiveDeleteRequest(JSONObject msgJson) {
@@ -184,7 +184,7 @@ public class Receiver {
                 // send ack message to the master server
                 String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
                 Message ack = new Ack(sdfsFileName, this.ipAddress, this.port, MsgType.DEL_ACK);
-                this.dataTransfer.send(ack.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+                this.dataTransfer.send(ack.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
                 System.out.println("Receiver Delete Request: sending DELETE ACK message to master: " + sdfsFileName + " from server " + ipAddress +
                         ":" + port);
                 return;
@@ -220,7 +220,7 @@ public class Receiver {
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         this.files.add(new File(FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName));
         Ack replicateAck = new Ack(sdfsFileName, ipAddress, port,  MsgType.PUT_ACK);
-        this.dataTransfer.send(replicateAck.toJSON(), MASTER_IP_ADDRESS, MASTER_PORT);
+        this.dataTransfer.send(replicateAck.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
     }
 
     protected void receiveLsResponse(JSONObject msgJson) {
@@ -253,7 +253,7 @@ public class Receiver {
         }
     }
 
-    private void receiveFPReJoinMsg(JSONObject jsonObject) {
+    private void receiveFPReJoinMsg(JSONObject msgJson) {
         System.out.println("Receive REJOIN/FALSE POSITIVE MESSAGE");
         this.files.clear();
     }
@@ -270,34 +270,5 @@ public class Receiver {
             sb.append((char)(packet[i]));
         }
         return sb.toString();
-    }
-
-    /*
-    * writing a file from the input to the ouput
-     */
-    protected void writeFile(String inputFilePath, String outputFilePath) {
-        FileInputStream in = null;
-        try {
-            in = new FileInputStream(inputFilePath);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        FileOutputStream out = null;
-        try {
-            out = new FileOutputStream(outputFilePath);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        int f = 0;
-        try {
-            while ((f = in.read()) >= 0) {
-                out.write(f);
-            }
-            out.flush();
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.print(e);
-        }
     }
 }

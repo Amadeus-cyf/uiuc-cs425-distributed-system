@@ -2,7 +2,7 @@ package mp2.failureDetector;
 
 import mp2.DataTransfer;
 import mp2.constant.MasterFdInfo;
-import mp2.constant.MasterInfo;
+import mp2.constant.MasterSdfsInfo;
 import mp2.failureDetector.model.Member;
 import mp2.message.FailMessage;
 
@@ -118,7 +118,7 @@ public class TimeoutChecker implements Runnable {
         String failIpAddress = idInfo[0];
         int failPort = Integer.parseInt(idInfo[1]);
         FailMessage failMessage = new FailMessage(failIpAddress, failPort);
-        this.socket.send(failMessage.toJSON(), MasterInfo.MASTER_IP_ADDRESS, MasterInfo.MASTER_PORT);
+        this.socket.send(failMessage.toJSON(), MasterSdfsInfo.MASTER_SDFS_IP_ADDRESS, MasterSdfsInfo.MASTER_SDFS_PORT);
         System.out.println("Server " + failIpAddress + ":" + failPort + "fails. Send Fail Message to Server Master");
     }
 }
