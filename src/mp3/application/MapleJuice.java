@@ -15,7 +15,7 @@ public abstract class MapleJuice<K, V> {
 
     public abstract void maple(String line);
 
-    public abstract void juice(String key);
+    public abstract void juice(String line);
 
     public void writeMapleOutputToFile(String filePath) {
         FileOutputStream outputStream = null;
@@ -44,5 +44,9 @@ public abstract class MapleJuice<K, V> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void writeJuiceOutputToFile(String filePath) {
+
     }
 }

@@ -81,7 +81,6 @@ public class DataTransfer {
         if (idx >= 0) {
             hostName = ipAddress.substring(0, idx);
         }
-        System.out.println("HOSTNAME " + hostName);
         StringBuilder sb = new StringBuilder();
         sb.append("scp ").append(UserInfo.username).append("@").append(hostName).append(":").append(sdfsFile).append(" ").append(localFile);
         String command = sb.toString();

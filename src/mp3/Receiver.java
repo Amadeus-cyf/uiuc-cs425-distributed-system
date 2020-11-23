@@ -7,11 +7,14 @@ import mp3.constant.*;
 import mp3.message.MapleAck;
 import mp3.message.MapleCompleteMsg;
 import mp3.message.Message;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.net.DatagramPacket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Receiver {
     protected String ipAddress;
@@ -53,7 +56,7 @@ public class Receiver {
     protected void handleMapleFileMsg(JSONObject msgJson) {
         System.out.print("Receive Maple File Msg: " + msgJson.toString());
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
-        String splitFileName = msgJson.getString(MsgKey.SPLIT_FILE);
+        String splitFileName = msgJson.getString(MsgKey.FILE_TO_MAPLE);
         String mapleExe = msgJson.getString(MsgKey.MAPLE_EXE);
         if (mapleExe.equals(ApplicationType.WORD_COUNT)) {
             this.mapleJuice = new WordCount();
@@ -94,6 +97,20 @@ public class Receiver {
         this.dataTransfer.send(mapleAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
 
+    protected void handleJuiceFilesMsg(JSONObject msgJson) {
+        System.out.println("Receive Juice Files Msg: " + msgJson.toString());
+        JSONArray filesToJuice = msgJson.getJSONArray(MsgKey.FILES_TO_JUICE);
+        String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
+        for (int i = 0; i < filesToJuice.length(); i++) {
+            String fileName = filesToJuice.getString(i);
+            this.dataTransfer.receiveFile(getJuiceInputLocalPath(fileName), getJuiceInputRemotePath(intermediatePrefix, fileName), MasterInfo.Master_IP_ADDRESS);
+        }
+        ExecutorService service = Executors.newCachedThreadPool();
+        for (int i = 0; i < filesToJuice.length(); i++) {
+            service.execute(new JuiceFile(filesToJuice, i));
+        }
+    }
+
     protected String getSplitFilePath(String splitFileName) {
         StringBuilder sb = new StringBuilder();
         return sb.append(FilePath.ROOT).append(FilePath.SPLIT_DIRECTORY).append(splitFileName).toString();
@@ -109,6 +126,21 @@ public class Receiver {
         return sb.append(prefix).append("_").append(this.ipAddress).append("_").append(this.port).toString();
     }
 
+    protected String getJuiceInputLocalPath(String fileName) {
+        StringBuilder sb = new StringBuilder();
+        return sb.append(FilePath.ROOT).append(fileName).toString();
+    }
+
+    protected String getJuiceOutputLocalPath() {
+        StringBuilder sb = new StringBuilder();
+        return sb.append(this.ipAddress).append("_").append(this.port).append("_juice_out").toString();
+    }
+
+    protected String getJuiceInputRemotePath(String intermediatePrefix, String fileName) {
+        StringBuilder sb = new StringBuilder();
+        return sb.append(FilePath.ROOT).append(intermediatePrefix).append("/").append(fileName).toString();
+    }
+
     /*
      * turn bytes into string
      */
@@ -121,5 +153,39 @@ public class Receiver {
             sb.append((char)(packet[i]));
         }
         return sb.toString();
+    }
+
+    private class JuiceFile implements Runnable {
+        private JSONArray filesToJuice;
+        private int idx;
+
+        JuiceFile(JSONArray filesToJuice, int idx) {
+            this.idx = idx;
+            this.filesToJuice = filesToJuice;
+        }
+
+        @Override
+        public void run() {
+            String fileName = filesToJuice.getString(idx);
+            BufferedReader fIn = null;
+            try {
+                fIn = new BufferedReader(new FileReader(getJuiceInputLocalPath(fileName)));
+                String line = null;
+                while ((line = fIn.readLine()) != null) {
+                    mapleJuice.juice(line);
+                }
+                mapleJuice.writeJuiceOutputToFile(getJuiceOutputLocalPath());
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (fIn != null) {
+                    try {
+                        fIn.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
 }

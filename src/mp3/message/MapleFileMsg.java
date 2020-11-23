@@ -23,7 +23,7 @@ public class MapleFileMsg extends Message {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
         jsonObject.put(MsgKey.SOURCE_FILE, this.sourcefile);
-        jsonObject.put(MsgKey.SPLIT_FILE, this.splitFile);
+        jsonObject.put(MsgKey.FILE_TO_MAPLE, this.splitFile);
         jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, this.intermediatePrefix);
         jsonObject.put(MsgKey.MAPLE_EXE, this.mapleExe);
         return jsonObject;

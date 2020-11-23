@@ -3,6 +3,7 @@ package mp3;
 import mp2.DataTransfer;
 import mp2.ServerInfo;
 import mp3.constant.*;
+import mp3.message.JuiceFilesMsg;
 import mp3.message.MapleFileMsg;
 import mp3.message.Message;
 import mp3.message.MapleAckRequest;
@@ -68,18 +69,15 @@ public class MasterReceiver extends Receiver {
         int mapleNum = msgJson.getInt(MsgKey.NUM_MAPLE);
         runningServers.put(sourceName, mapleNum);
         if (files.contains(sourceName)) {
-            System.out.println("split file");
             FileSplitter splitter = new FileSplitter(sourceName, mapleNum);
             List<String> splitFiles = splitter.split();
-            System.out.println("After split: " + splitFiles);
             ServerInfo[] serverInfos = randomPickNServers(mapleNum);
             if (splitFiles != null) {
                 intermediateFiles.put(sourceName, splitFiles);
                 for (int i = 0; i < splitFiles.size(); i++) {
                     String splitFileName = splitFiles.get(i);
                     Message mapleFileMsg = new MapleFileMsg(sourceName, splitFileName, intermediatePrefix, mapleExe);
-                    System.out.println("SEND " + splitFiles.get(i));
-                    System.out.println(serverInfos[i].getIpAddress() + " " + serverInfos[i].getPort());
+                    System.out.println("Send " + splitFiles.get(i) + " to " + serverInfos[i].getIpAddress() + ":" + serverInfos[i].getPort());
                     dataTransfer.send(mapleFileMsg.toJSON(), serverInfos[i].getIpAddress(), serverInfos[i].getPort());
                 }
             }
@@ -93,7 +91,7 @@ public class MasterReceiver extends Receiver {
         System.out.println("Receive Maple Complete Msg: " + msgJson.toString());
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
         String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
-        String destFileName = msgJson.getString(MsgKey.DEST_FILE);
+        String destFileName = msgJson.getString(MsgKey.DEST_INTERMEDIATE_FILE);
         String senderIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int senderPort = msgJson.getInt(MsgKey.PORT);
         String mapleOutputPath = getMapleOutputPath(sourceFileName, destFileName);
@@ -141,7 +139,7 @@ public class MasterReceiver extends Receiver {
                     System.out.println("Key: " + pair[0]);
                     BufferedWriter fOut = fOutMap.get(pair[0]);
                     if (fOut == null) {
-                        String path = getJuiceInputPath(sourceFile, intermediatePrefix, pair[0]);
+                        String path = getJuiceInputPath(intermediatePrefix, pair[0]);
                         fOut = new BufferedWriter(new FileWriter(path));
                         fOutMap.put(pair[0], fOut);
                     }
@@ -171,7 +169,28 @@ public class MasterReceiver extends Receiver {
     }
 
     private void handleJuiceRequest(JSONObject msgJson) {
-
+        String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
+        String destFileName = msgJson.getString(MsgKey.DEST_FILE);
+        String juiceExe = msgJson.getString(MsgKey.JUICE_EXE);
+        int isDelete = msgJson.getInt(MsgKey.IS_DELETE);
+        File dir = new File(getIntermediateDir(intermediatePrefix));
+        File[] files = dir.listFiles();
+        if (files != null) {
+            int juiceNum = msgJson.getInt(MsgKey.NUM_JUICE);
+            ServerInfo[] serverInfos = randomPickNServers(juiceNum);
+            long numFilePerServer = files.length / juiceNum;
+            int serverIdx = 0;
+            for (int i = 0; i < files.length; i += numFilePerServer) {
+                List<String> filesAssigned = new ArrayList<>();
+                long end = (serverIdx == serverInfos.length - 1) ? files.length : (i + numFilePerServer);
+                for (int j = i; j < end; j++) {
+                    filesAssigned.add(files[j].getName());
+                }
+                Message juiceFilesMsg = new JuiceFilesMsg(filesAssigned, destFileName, juiceExe, isDelete);
+                this.dataTransfer.send(juiceFilesMsg.toJSON(), serverInfos[serverIdx].getIpAddress(), serverInfos[serverIdx].getPort());
+                serverIdx++;
+            }
+        }
     }
 
     private ServerInfo[] randomPickNServers(int n) {
@@ -199,11 +218,6 @@ public class MasterReceiver extends Receiver {
         return result;
     }
 
-    private String getJuiceInputPath(String sourceFile, String intermediatePrefix, String key) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(intermediatePrefix).append("/").append(intermediatePrefix).append("_").append(key).toString();
-    }
-
     private String getMapleOutputPath(String sourceFileName, String destFileName) {
         StringBuilder sb = new StringBuilder();
         return sb.append(FilePath.ROOT).append(sourceFileName).append("_maple_out/").append(destFileName).toString();
@@ -212,5 +226,15 @@ public class MasterReceiver extends Receiver {
     private String getMapleOutputDir(String sourceFileName) {
         StringBuilder sb = new StringBuilder();
         return sb.append(FilePath.ROOT).append(sourceFileName).append("_maple_out/").toString();
+    }
+
+    private String getJuiceInputPath(String intermediatePrefix, String key) {
+        StringBuilder sb = new StringBuilder();
+        return sb.append(FilePath.ROOT).append(intermediatePrefix).append("/").append(intermediatePrefix).append("_").append(key).toString();
+    }
+
+    private String getIntermediateDir(String intermediatePrefix) {
+        StringBuilder sb = new StringBuilder();
+        return sb.append(FilePath.ROOT).append(intermediatePrefix).toString();
     }
 }

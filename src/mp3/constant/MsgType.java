@@ -6,4 +6,6 @@ public class MsgType {
     public static final String MAPLE_COMPLETE_MSG = "MAPLE_COMPLETE_MSG";
     public static final String MAPLE_ACK_REQUEST = "MAPLE_ACK_REQUEST";
     public static final String MAPLE_ACK = "MAPLE_ACK";
+    public static final String JUICE_REQUEST = "JUICE_REQUEST";
+    public static final String JUICE_FILES_MSG = "JUICE_FILES_MSG";
 }

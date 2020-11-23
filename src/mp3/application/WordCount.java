@@ -10,7 +10,7 @@ public class WordCount extends MapleJuice<String, Integer> {
     }
 
     @Override
-    public void juice(String key) {
+    public void juice(String line) {
 
     }
 }

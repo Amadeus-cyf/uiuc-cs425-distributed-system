@@ -27,7 +27,7 @@ public class MapleCompleteMsg extends Message {
         jsonObject.put(MsgKey.IP_ADDRESS, this.ipAddress);
         jsonObject.put(MsgKey.PORT, this.port);
         jsonObject.put(MsgKey.SOURCE_FILE, this.sourceFile);
-        jsonObject.put(MsgKey.DEST_FILE, this.destFile);
+        jsonObject.put(MsgKey.DEST_INTERMEDIATE_FILE, this.destFile);
         jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, this.intermediatePrefix);
         return jsonObject;
     }
