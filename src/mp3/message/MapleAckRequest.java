@@ -6,10 +6,12 @@ import org.json.JSONObject;
 
 public class MapleAckRequest extends Message {
     private String sourceFile;
+    private String intermediatePrefix;
 
-    public MapleAckRequest(String sourceFile) {
-        super(MsgType.REQUEST_ACK);
+    public MapleAckRequest(String sourceFile, String intermediatePrefix) {
+        super(MsgType.MAPLE_ACK_REQUEST);
         this.sourceFile = sourceFile;
+        this.intermediatePrefix = intermediatePrefix;
     }
 
     @Override
@@ -17,6 +19,7 @@ public class MapleAckRequest extends Message {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
         jsonObject.put(MsgKey.SOURCE_FILE, this.sourceFile);
+        jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, this.intermediatePrefix);
         return jsonObject;
     }
 }

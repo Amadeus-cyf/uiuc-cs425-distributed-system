@@ -2,9 +2,8 @@ package mp3;
 
 import mp2.DataTransfer;
 import mp3.application.MapleJuice;
-import mp3.constant.FilePath;
-import mp3.constant.MasterInfo;
-import mp3.constant.MsgKey;
+import mp3.application.WordCount;
+import mp3.constant.*;
 import mp3.message.MapleAck;
 import mp3.message.MapleCompleteMsg;
 import mp3.message.Message;
@@ -12,23 +11,51 @@ import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.net.DatagramPacket;
 
 public class Receiver {
     protected String ipAddress;
     protected int port;
     protected DataTransfer dataTransfer;
     protected MapleJuice<?, ?> mapleJuice;
+    protected int BLOCK_SIZE = 1024;
 
-    public Receiver(String ipAddress, int port, MapleJuice<?, ?> mapleJuice) {
+    public Receiver(String ipAddress, int port, DataTransfer dataTransfer) {
         this.ipAddress = ipAddress;
         this.port = port;
-        this.dataTransfer = new DataTransfer(ipAddress, port);
-        this.mapleJuice = mapleJuice;
+        this.dataTransfer = dataTransfer;
     }
 
-    private void handleMapleFileMsg(JSONObject msgJson) {
+    public void start() {
+        while(true) {
+            byte[] buffer = new byte[BLOCK_SIZE * 2];
+            DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
+            this.dataTransfer.receive(receivedPacket);
+            String msg = readBytes(buffer, receivedPacket.getLength());
+            receive(msg);
+        }
+    }
+
+    private void receive(String msg) {
+        JSONObject msgJson = new JSONObject(msg);
+        String msgType = msgJson.getString(MsgKey.MSG_TYPE);
+        switch(msgType) {
+            case(MsgType.MAPLE_FILE_MSG):
+                handleMapleFileMsg(msgJson);
+                break;
+            case(MsgType.MAPLE_ACK_REQUEST):
+                handleMapleAckRequest(msgJson);
+                break;
+        }
+    }
+
+    protected void handleMapleFileMsg(JSONObject msgJson) {
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
         String splitFileName = msgJson.getString(MsgKey.SPLIT_FILE);
+        String mapleExe = msgJson.getString(MsgKey.MAPLE_EXE);
+        if (mapleExe.equals(ApplicationType.WORD_COUNT)) {
+            this.mapleJuice = new WordCount<String, Integer>();
+        }
         String localSplitFilePath = FilePath.ROOT + splitFileName;
         StringBuilder sb = new StringBuilder();
         String remoteSplitFilePath = sb.append(FilePath.ROOT).append(FilePath.SPLIT_DIRECTORY).append(splitFileName).toString();
@@ -51,15 +78,18 @@ public class Receiver {
             e.printStackTrace();
         }
         sb.setLength(0);
-        String destFileName = getMapleOutputFileName(sourceFileName);
-        mapleJuice.writeMapleOutputToFile(FilePath.ROOT + destFileName);
-        Message mapleCompleteMsg = new MapleCompleteMsg(this.ipAddress, this.port, sourceFileName, destFileName);
+        String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
+        String destPath = getLocalMapleOutputPath(intermediatePrefix);
+        String destFileName = getMapleOutputFileName(intermediatePrefix);
+        mapleJuice.writeMapleOutputToFile(destPath);
+        Message mapleCompleteMsg = new MapleCompleteMsg(this.ipAddress, this.port, sourceFileName, destFileName, intermediatePrefix);
         this.dataTransfer.send(mapleCompleteMsg.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
 
-    private void handleMapleAckRequest(JSONObject jsonObject) {
-        String sourceFile = jsonObject.getString(MsgKey.SOURCE_FILE);
-        Message mapleAck = new MapleAck(sourceFile);
+    protected void handleMapleAckRequest(JSONObject msgJson) {
+        String sourceFile = msgJson.getString(MsgKey.SOURCE_FILE);
+        String prefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
+        Message mapleAck = new MapleAck(sourceFile, prefix);
         this.dataTransfer.send(mapleAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
 
@@ -68,8 +98,27 @@ public class Receiver {
         return sb.append(FilePath.ROOT).append(FilePath.SPLIT_DIRECTORY).append(splitFileName).toString();
     }
 
-    protected String getMapleOutputFileName(String sourceFileName) {
+    protected String getLocalMapleOutputPath(String prefix) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(sourceFileName).append("_maple_").append(ipAddress).append("_").append(port).toString();
+        return sb.append(FilePath.ROOT).append(prefix).append("_").append(this.ipAddress).append("_").append(this.port).toString();
+    }
+
+    protected String getMapleOutputFileName(String prefix) {
+        StringBuilder sb = new StringBuilder();
+        return sb.append(prefix).append("_").append(this.ipAddress).append("_").append(this.port).toString();
+    }
+
+    /*
+     * turn bytes into string
+     */
+    protected String readBytes(byte[] packet, int length) {
+        if (packet == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            sb.append((char)(packet[i]));
+        }
+        return sb.toString();
     }
 }

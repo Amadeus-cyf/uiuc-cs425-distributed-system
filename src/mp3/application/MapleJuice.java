@@ -4,7 +4,7 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class MapleJuice<K, V>{
+public abstract class MapleJuice<K, V> {
     protected List<Pair<K, V>> mapleOutput;
     protected List<Pair<K, V>> juiceOutput;
 

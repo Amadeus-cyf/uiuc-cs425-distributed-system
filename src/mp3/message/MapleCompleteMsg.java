@@ -9,13 +9,15 @@ public class MapleCompleteMsg extends Message {
     private int port;
     private String sourceFile;
     private String destFile;
+    private String intermediatePrefix;
 
-    public MapleCompleteMsg(String ipAddress, int port, String sourceFile, String destFile) {
+    public MapleCompleteMsg(String ipAddress, int port, String sourceFile, String destFile, String intermediatePrefix) {
         super(MsgType.MAPLE_COMPLETE_MSG);
         this.ipAddress = ipAddress;
         this.port = port;
         this.sourceFile = sourceFile;
         this.destFile = destFile;
+        this.intermediatePrefix = intermediatePrefix;
     }
 
     @Override
@@ -26,6 +28,7 @@ public class MapleCompleteMsg extends Message {
         jsonObject.put(MsgKey.PORT, this.port);
         jsonObject.put(MsgKey.SOURCE_FILE, this.sourceFile);
         jsonObject.put(MsgKey.DEST_FILE, this.destFile);
+        jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, this.intermediatePrefix);
         return jsonObject;
     }
 }

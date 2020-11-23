@@ -30,7 +30,7 @@ public class Receiver {
     }
 
     public void start() {
-        while (true) {
+        while(true) {
             byte[] buffer = new byte[BLOCK_SIZE * 2];
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
             this.dataTransfer.receive(receivedPacket);
