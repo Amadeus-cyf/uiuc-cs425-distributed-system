@@ -59,8 +59,7 @@ public class Receiver {
             this.mapleJuice = new WordCount();
         }
         String localSplitFilePath = FilePath.ROOT + splitFileName;
-        StringBuilder sb = new StringBuilder();
-        String remoteSplitFilePath = sb.append(FilePath.ROOT).append(FilePath.SPLIT_DIRECTORY).append(splitFileName).toString();
+        String remoteSplitFilePath = getSplitFilePath(splitFileName);
         this.dataTransfer.receiveFile(localSplitFilePath, remoteSplitFilePath, MasterInfo.Master_IP_ADDRESS);
         BufferedReader in = null;
         try {
@@ -79,7 +78,6 @@ public class Receiver {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        sb.setLength(0);
         String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
         String destPath = getLocalMapleOutputPath(intermediatePrefix);
         String destFileName = getMapleOutputFileName(intermediatePrefix);

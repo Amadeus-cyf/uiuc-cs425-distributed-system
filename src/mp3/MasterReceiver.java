@@ -57,6 +57,9 @@ public class MasterReceiver extends Receiver {
         }
     }
 
+    /*
+    * called when maple command is sent from some server
+     */
     private void handleMapleRequest(JSONObject msgJson) {
         System.out.println("Receive Maple Request: " + msgJson.toString());
         String sourceName = msgJson.getString(MsgKey.SOURCE_FILE);
@@ -101,6 +104,9 @@ public class MasterReceiver extends Receiver {
         this.dataTransfer.send(requestAck.toJSON(), senderIpAddress, senderPort);
     }
 
+    /*
+    * called when receive maple ACK message from other servers
+     */
     private void handleMapleAck(JSONObject msgJson) {
         System.out.println("Receive Maple ACK: " + msgJson.toString());
         String sourceFile = msgJson.getString(MsgKey.SOURCE_FILE);
@@ -144,7 +150,6 @@ public class MasterReceiver extends Receiver {
                     fOut.flush();
                 }
             } catch(Exception e) {
-                System.out.println(e.toString());
                 e.printStackTrace();
             } finally {
                 try {
@@ -152,7 +157,6 @@ public class MasterReceiver extends Receiver {
                         fIn.close();
                     }
                 } catch (Exception e) {
-                    System.out.println(e.toString());
                     e.printStackTrace();
                 }
             }
