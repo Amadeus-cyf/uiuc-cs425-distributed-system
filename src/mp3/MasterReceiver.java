@@ -21,6 +21,7 @@ public class MasterReceiver extends Receiver {
         super(MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT, dataTransfer);
         this.intermediateFiles = new HashMap<>();
         this.files = new HashSet<>();
+        files.add("test");
         this.runningServers = new HashMap<>();
     }
 
@@ -50,24 +51,32 @@ public class MasterReceiver extends Receiver {
             case(MsgType.MAPLE_ACK_REQUEST):
                 handleMapleAckRequest(msgJson);
                 break;
+            case(MsgType.MAPLE_ACK):
+                handleMapleAck(msgJson);
+                break;
         }
     }
 
     private void handleMapleRequest(JSONObject msgJson) {
+        System.out.println("Receive Maple Request: " + msgJson.toString());
         String sourceName = msgJson.getString(MsgKey.SOURCE_FILE);
         String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
         String mapleExe = msgJson.getString(MsgKey.MAPLE_EXE);
         int mapleNum = msgJson.getInt(MsgKey.NUM_MAPLE);
         runningServers.put(sourceName, mapleNum);
         if (files.contains(sourceName)) {
+            System.out.println("split file");
             FileSplitter splitter = new FileSplitter(sourceName, mapleNum);
             List<String> splitFiles = splitter.split();
+            System.out.println("After split: " + splitFiles);
             ServerInfo[] serverInfos = randomPickNServers(mapleNum);
             if (splitFiles != null) {
                 intermediateFiles.put(sourceName, splitFiles);
                 for (int i = 0; i < splitFiles.size(); i++) {
                     String splitFileName = splitFiles.get(i);
                     Message mapleFileMsg = new MapleFileMsg(sourceName, splitFileName, intermediatePrefix, mapleExe);
+                    System.out.println("SEND " + splitFiles.get(i));
+                    System.out.println(serverInfos[i].getIpAddress() + " " + serverInfos[i].getPort());
                     dataTransfer.send(mapleFileMsg.toJSON(), serverInfos[i].getIpAddress(), serverInfos[i].getPort());
                 }
             }
@@ -78,23 +87,28 @@ public class MasterReceiver extends Receiver {
     * called when receive maple complete msg from some server
      */
     private void handleMapleCompleteMsg(JSONObject msgJson) {
+        System.out.println("Receive Maple Complete Msg: " + msgJson.toString());
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
         String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
         String destFileName = msgJson.getString(MsgKey.DEST_FILE);
         String senderIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int senderPort = msgJson.getInt(MsgKey.PORT);
         String mapleOutputPath = getMapleOutputPath(sourceFileName, destFileName);
+        File dir = new File(sourceFileName + "_maple_out");
+        System.out.println("MAKE DIRC: " + dir.mkdir());
         this.dataTransfer.receiveFile(mapleOutputPath, FilePath.ROOT + destFileName, senderIpAddress);
         Message requestAck = new MapleAckRequest(sourceFileName, intermediatePrefix);
         this.dataTransfer.send(requestAck.toJSON(), senderIpAddress, senderPort);
     }
 
     private void handleMapleAck(JSONObject msgJson) {
+        System.out.println("Receive Maple ACK: " + msgJson.toString());
         String sourceFile = msgJson.getString(MsgKey.SOURCE_FILE);
         String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
         runningServers.put(sourceFile, runningServers.get(sourceFile)-1);
         if (runningServers.get(sourceFile) == 0) {
             // all ack receive
+            System.out.println("All Maple ACK receive");
             sortPairsByKeys(sourceFile, intermediatePrefix);
         }
     }
@@ -106,33 +120,48 @@ public class MasterReceiver extends Receiver {
         if (files == null) {
             return;
         }
+        File dir = new File(intermediatePrefix);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+        Map<String, BufferedWriter> fOutMap = new HashMap<>();
         for (File file : files) {
-            BufferedReader in = null;
-            BufferedWriter out = null;
+            BufferedReader fIn = null;
             try {
-               in = new BufferedReader(new FileReader(file.getAbsoluteFile()));
-               out = null;
+               fIn = new BufferedReader(new FileReader(file.getAbsoluteFile()));
                 String line = null;
-                while ((line = in.readLine()) != null) {
+                while ((line = fIn.readLine()) != null) {
                     String[] pair = line.split(" ");
-                    String path = getJuiceInputPath(sourceFile, intermediatePrefix, pair[0]);
-                    out = new BufferedWriter(new FileWriter(path));
-                    out.write(line);
-                    out.close();
+                    System.out.println("Key: " + pair[0]);
+                    BufferedWriter fOut = fOutMap.get(pair[0]);
+                    if (fOut == null) {
+                        String path = getJuiceInputPath(sourceFile, intermediatePrefix, pair[0]);
+                        fOut = new BufferedWriter(new FileWriter(path));
+                        fOutMap.put(pair[0], fOut);
+                    }
+                    fOut.append(line);
+                    fOut.newLine();
+                    fOut.flush();
                 }
             } catch(Exception e) {
+                System.out.println(e.toString());
                 e.printStackTrace();
             } finally {
                 try {
-                    if (in != null) {
-                        in.close();
-                    }
-                    if (out != null) {
-                        out.close();
+                    if (fIn != null) {
+                        fIn.close();
                     }
                 } catch (Exception e) {
+                    System.out.println(e.toString());
                     e.printStackTrace();
                 }
+            }
+        }
+        for (BufferedWriter writer : fOutMap.values()) {
+            try {
+                writer.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
@@ -168,7 +197,7 @@ public class MasterReceiver extends Receiver {
 
     private String getJuiceInputPath(String sourceFile, String intermediatePrefix, String key) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(sourceFile).append("_").append(intermediatePrefix).append("/").append(intermediatePrefix).append("_").append(key).toString();
+        return sb.append(FilePath.ROOT).append(intermediatePrefix).append("/").append(intermediatePrefix).append("_").append(key).toString();
     }
 
     private String getMapleOutputPath(String sourceFileName, String destFileName) {
@@ -176,8 +205,8 @@ public class MasterReceiver extends Receiver {
         return sb.append(FilePath.ROOT).append(sourceFileName).append("_maple_out/").append(destFileName).toString();
     }
 
-    private String getMapleOutputDir(String intermediatePrefix) {
+    private String getMapleOutputDir(String sourceFileName) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(intermediatePrefix).append("_maple_out/").toString();
+        return sb.append(FilePath.ROOT).append(sourceFileName).append("_maple_out/").toString();
     }
 }

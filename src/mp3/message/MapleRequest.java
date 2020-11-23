@@ -21,9 +21,10 @@ public class MapleRequest extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
+        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
         jsonObject.put(MsgKey.MAPLE_EXE, this.mapleExe);
         jsonObject.put(MsgKey.NUM_MAPLE, this.mapleNum);
-        jsonObject.put(MsgKey.MAPLE_EXE, this.intermediatePrefix);
+        jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, this.intermediatePrefix);
         jsonObject.put(MsgKey.SOURCE_FILE, this.sourceFile);
         return jsonObject;
     }

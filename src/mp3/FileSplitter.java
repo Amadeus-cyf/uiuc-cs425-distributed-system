@@ -18,21 +18,27 @@ public class FileSplitter {
     public List<String> split() {
         long bytePerSplit = file.length() / numSplits;
         long remainBytes = file.length() % numSplits;
-        BufferedReader in = null;
+        BufferedReader fIn = null;
         List<String> splitFiles = new ArrayList<>();
         try {
-            in = new BufferedReader(new FileReader(file.getAbsolutePath()));
+            fIn = new BufferedReader(new FileReader(file.getAbsolutePath()));
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (in == null) {
+        if (fIn == null) {
             return null;
         }
         String sourceName = file.getName();
+        String line = null;
+        String newline = "\n";
         for (int i = 1; i < numSplits + 1; i++) {
             FileOutputStream outputStream = null;
             StringBuilder sb = new StringBuilder();
             final String path = sb.append(FilePath.ROOT).append(FilePath.SPLIT_DIRECTORY).append(sourceName).append("_split_").append(i).toString();
+            File dir = new File(FilePath.SPLIT_DIRECTORY);
+            if (!dir.exists()) {
+                dir.mkdir();
+            }
             try {
                 outputStream = new FileOutputStream(path);
             } catch (Exception e) {
@@ -46,11 +52,11 @@ public class FileSplitter {
                 bytesRead += remainBytes;
             }
             try {
-                String line = null;
                 long sizeRead = 0;
-                while ((line = in.readLine()) != null && sizeRead < bytesRead) {
+                while (sizeRead < bytesRead && (line = fIn.readLine()) != null) {
                     outputStream.write(line.getBytes());
-                    sizeRead += line.length();
+                    outputStream.write(newline.getBytes());
+                    sizeRead += (line.length() + 1);
                 }
                 outputStream.flush();
                 outputStream.close();
@@ -62,7 +68,7 @@ public class FileSplitter {
             splitFiles.add(splitFileName);
         }
         try {
-            in.close();
+            fIn.close();
         } catch (Exception e) {
             e.printStackTrace();
         }

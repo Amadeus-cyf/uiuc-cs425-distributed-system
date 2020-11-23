@@ -37,6 +37,7 @@ public class Receiver {
     }
 
     private void receive(String msg) {
+        System.out.println("Receive msg");
         JSONObject msgJson = new JSONObject(msg);
         String msgType = msgJson.getString(MsgKey.MSG_TYPE);
         switch(msgType) {
@@ -50,11 +51,12 @@ public class Receiver {
     }
 
     protected void handleMapleFileMsg(JSONObject msgJson) {
+        System.out.print("Receive Maple File Msg: " + msgJson.toString());
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
         String splitFileName = msgJson.getString(MsgKey.SPLIT_FILE);
         String mapleExe = msgJson.getString(MsgKey.MAPLE_EXE);
         if (mapleExe.equals(ApplicationType.WORD_COUNT)) {
-            this.mapleJuice = new WordCount<String, Integer>();
+            this.mapleJuice = new WordCount();
         }
         String localSplitFilePath = FilePath.ROOT + splitFileName;
         StringBuilder sb = new StringBuilder();
@@ -87,6 +89,7 @@ public class Receiver {
     }
 
     protected void handleMapleAckRequest(JSONObject msgJson) {
+        System.out.println("Receive Maple ACK Request: " + msgJson.toString());
         String sourceFile = msgJson.getString(MsgKey.SOURCE_FILE);
         String prefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
         Message mapleAck = new MapleAck(sourceFile, prefix);

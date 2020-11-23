@@ -28,11 +28,13 @@ public abstract class MapleJuice<K, V> {
             return;
         }
         String space = " ";
+        String newline= "\n";
         for (Pair pair : mapleOutput) {
             StringBuilder sb = new StringBuilder();
             String line = sb.append(pair.key.toString()).append(space).append(pair.val.toString()).toString();
             try {
                 outputStream.write(line.getBytes());
+                outputStream.write(newline.getBytes());
             } catch (Exception e) {
                 e.printStackTrace();;
             }

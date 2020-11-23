@@ -18,13 +18,13 @@ public class Master extends Server{
         thread.execute(new Runnable() {
             @Override
             public void run() {
-
+                receiver.start();
             }
         });
         commandHandler.run();
     }
 
-    public void main(String[] args) {
+    public static void main(String[] args) {
         Master master = new Master();
         master.run();
     }

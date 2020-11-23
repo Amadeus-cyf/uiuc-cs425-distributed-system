@@ -24,14 +24,14 @@ public class Server {
         thread.execute(new Runnable() {
             @Override
             public void run() {
-
+                receiver.start();
             }
         });
         commandHandler.run();
     }
 
-    public void main(String[] args) {
-        Server server = new Server("localhost", 3100);
+    public static void main(String[] args) {
+        Server server = new Server("localhost", 3600);
         server.run();
     }
 }
