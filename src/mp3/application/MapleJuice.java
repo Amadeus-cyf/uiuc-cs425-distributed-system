@@ -1,6 +1,8 @@
 package mp3.application;
 
+import java.io.BufferedWriter;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +17,7 @@ public abstract class MapleJuice<K, V> {
 
     public abstract void maple(String line);
 
-    public abstract void juice(String line);
+    public abstract void juice(String filename);
 
     public void writeMapleOutputToFile(String filePath) {
         FileOutputStream outputStream = null;
@@ -47,6 +49,31 @@ public abstract class MapleJuice<K, V> {
     }
 
     public void writeJuiceOutputToFile(String filePath) {
-
+        FileOutputStream fOut = null;
+        String space = " ";
+        String newline= "\n";
+        try {
+            fOut = new FileOutputStream(filePath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (fOut == null) {
+            return;
+        }
+        for (Pair<K, V>  pair : juiceOutput) {
+            StringBuilder sb = new StringBuilder();
+            String line = sb.append(pair.key.toString()).append(space).append(pair.val.toString()).toString();
+            try {
+                fOut.write(line.getBytes());
+                fOut.write(newline.getBytes());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            fOut.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

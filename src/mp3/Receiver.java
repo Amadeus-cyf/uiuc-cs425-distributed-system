@@ -4,9 +4,7 @@ import mp2.DataTransfer;
 import mp3.application.MapleJuice;
 import mp3.application.WordCount;
 import mp3.constant.*;
-import mp3.message.MapleAck;
-import mp3.message.MapleCompleteMsg;
-import mp3.message.Message;
+import mp3.message.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -50,9 +48,18 @@ public class Receiver {
             case(MsgType.MAPLE_ACK_REQUEST):
                 handleMapleAckRequest(msgJson);
                 break;
+            case(MsgType.JUICE_FILES_MSG):
+                handleJuiceFilesMsg(msgJson);
+                break;
+            case(MsgType.JUICE_ACK_REQUEST):
+                handleJuiceAckRequest(msgJson);
+                break;
         }
     }
 
+    /*
+    * called when receive request from master for mapling some part of the input
+     */
     protected void handleMapleFileMsg(JSONObject msgJson) {
         System.out.print("Receive Maple File Msg: " + msgJson.toString());
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
@@ -89,6 +96,9 @@ public class Receiver {
         this.dataTransfer.send(mapleCompleteMsg.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
 
+    /*
+    * called when receive master's request for ack in maple stage
+     */
     protected void handleMapleAckRequest(JSONObject msgJson) {
         System.out.println("Receive Maple ACK Request: " + msgJson.toString());
         String sourceFile = msgJson.getString(MsgKey.SOURCE_FILE);
@@ -97,6 +107,9 @@ public class Receiver {
         this.dataTransfer.send(mapleAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
 
+    /*
+    * called when receive master's message for juicing some part of the input
+     */
     protected void handleJuiceFilesMsg(JSONObject msgJson) {
         System.out.println("Receive Juice Files Msg: " + msgJson.toString());
         JSONArray filesToJuice = msgJson.getJSONArray(MsgKey.FILES_TO_JUICE);
@@ -109,6 +122,22 @@ public class Receiver {
         for (int i = 0; i < filesToJuice.length(); i++) {
             service.execute(new JuiceFile(filesToJuice, i));
         }
+        int isDelete =  msgJson.getInt(MsgKey.IS_DELETE);
+        String destFile = msgJson.getString(MsgKey.DEST_FILE);
+        String juiceOutputFilePath = getJuiceOutputLocalPath();
+        Message juiceCompleteMsg = new JuiceCompleteMsg(this.ipAddress, this.port, juiceOutputFilePath, destFile, isDelete);
+        this.dataTransfer.send(juiceCompleteMsg.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
+    }
+
+    /*
+    * called when receive master's request for ack at the juice stage
+     */
+    protected void handleJuiceAckRequest(JSONObject msgJson) {
+        System.out.println("Receive Juice ACK Request: " + msgJson.toString());
+        String destFile = msgJson.getString(MsgKey.DEST_FILE);
+        int isDelete = msgJson.getInt(MsgKey.IS_DELETE);
+        Message juiceAck = new JuiceAck(destFile, isDelete);
+        this.dataTransfer.send(juiceAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
 
     protected String getSplitFilePath(String splitFileName) {
@@ -167,25 +196,10 @@ public class Receiver {
         @Override
         public void run() {
             String fileName = filesToJuice.getString(idx);
-            BufferedReader fIn = null;
-            try {
-                fIn = new BufferedReader(new FileReader(getJuiceInputLocalPath(fileName)));
-                String line = null;
-                while ((line = fIn.readLine()) != null) {
-                    mapleJuice.juice(line);
-                }
-                mapleJuice.writeJuiceOutputToFile(getJuiceOutputLocalPath());
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                if (fIn != null) {
-                    try {
-                        fIn.close();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+            String filePath = getJuiceInputLocalPath(fileName);
+            mapleJuice.juice(filePath);
+            String juiceOutputPath = getJuiceOutputLocalPath();
+            mapleJuice.writeJuiceOutputToFile(juiceOutputPath);
         }
     }
 }
