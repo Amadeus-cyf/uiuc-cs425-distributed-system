@@ -229,7 +229,7 @@ public class MasterReceiver extends Receiver {
         BufferedWriter fOut = null;
         BufferedReader fIn = null;
         try {
-            fIn = new BufferedReader(new FileReader(juiceIntermediateFile));
+            fIn = new BufferedReader(new FileReader(juiceOutputTmpPath));
             fOut = new BufferedWriter(new FileWriter(juiceOutputRemotePath));
             String line = null;
             while ((line = fIn.readLine()) != null) {

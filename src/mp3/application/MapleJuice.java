@@ -1,23 +1,22 @@
 package mp3.application;
 
-import java.io.BufferedWriter;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 public abstract class MapleJuice<K, V> {
     protected List<Pair<K, V>> mapleOutput;
-    protected List<Pair<K, V>> juiceOutput;
+    protected Vector<Pair<K, V>> juiceOutput;
 
     public MapleJuice() {
         this.mapleOutput = new ArrayList<>();
-        this.juiceOutput = new ArrayList<>();
+        this.juiceOutput = new Vector<>();
     }
 
     public abstract void maple(String line);
 
-    public abstract void juice(String filename);
+    public abstract void juice(String filePath);
 
     public void writeMapleOutputToFile(String filePath) {
         FileOutputStream outputStream = null;
