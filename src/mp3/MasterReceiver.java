@@ -16,6 +16,8 @@ public class MasterReceiver extends Receiver {
     private Map<String, Integer> mapleRunningServers;                               // map source file to number of maple exe
     private Map<String, Integer> juiceRunningServers;                               // map dest file to number of juice exe
     private Map<String, String> destToIntermediate;                                 // map dest file to intermediate prefix at juice stage
+    private boolean isMapleFinished = false;
+    private JSONObject juiceRequest = null;
 
     public MasterReceiver(DataTransfer dataTransfer) {
         super(MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT, dataTransfer);
@@ -130,6 +132,9 @@ public class MasterReceiver extends Receiver {
             // all ack receive
             System.out.println("All Maple ACK receive");
             sortPairsByKeys(sourceFile, intermediatePrefix);
+            System.out.println("Maple stage completes.");
+            this.isMapleFinished = true;
+            handleJuiceRequest(this.juiceRequest);
         }
     }
 
@@ -187,12 +192,20 @@ public class MasterReceiver extends Receiver {
     * called when receive juice command from some server
      */
     private void handleJuiceRequest(JSONObject msgJson) {
+        System.out.println("Receive Juice Request: " + msgJson.toString());
         String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
         String destFileName = msgJson.getString(MsgKey.DEST_FILE);
         String juiceExe = msgJson.getString(MsgKey.JUICE_EXE);
         int isDelete = msgJson.getInt(MsgKey.IS_DELETE);
         this.destToIntermediate.put(destFileName, intermediatePrefix);
         File dir = new File(getJuiceInputDir(intermediatePrefix));
+        if (dir.exists()) {
+            isMapleFinished = true;
+        }
+        if (!isMapleFinished && juiceRequest == null) {
+            this.juiceRequest = msgJson;
+            return;
+        }
         File[] files = dir.listFiles();
         if (files != null) {
             int juiceNum = msgJson.getInt(MsgKey.NUM_JUICE);
@@ -277,6 +290,7 @@ public class MasterReceiver extends Receiver {
                 File file = new File(intermediatePrefix);
                 file.delete();
             }
+            System.out.println("Juice Stage completes.");
         }
     }
 

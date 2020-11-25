@@ -2,6 +2,7 @@ package mp3;
 
 import mp2.DataTransfer;
 import mp3.application.MapleJuice;
+import mp3.application.MapleJuiceFactory;
 import mp3.application.WordCount;
 import mp3.constant.*;
 import mp3.message.*;
@@ -66,8 +67,9 @@ public class Receiver {
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
         String splitFileName = msgJson.getString(MsgKey.FILE_TO_MAPLE);
         String mapleExe = msgJson.getString(MsgKey.MAPLE_EXE);
-        if (mapleExe.equals(ApplicationType.WORD_COUNT)) {
-            this.mapleJuice = new WordCount();
+        this.mapleJuice = MapleJuiceFactory.create(mapleExe);
+        if (this.mapleJuice == null) {
+            return;
         }
         String localSplitFilePath = FilePath.ROOT + splitFileName;
         String remoteSplitFilePath = getSplitFilePath(splitFileName);
@@ -120,8 +122,9 @@ public class Receiver {
             this.dataTransfer.receiveFile(getJuiceInputLocalPath(fileName), getJuiceInputRemotePath(intermediatePrefix, fileName), MasterInfo.Master_IP_ADDRESS);
         }
         String juiceExe = msgJson.getString(MsgKey.JUICE_EXE);
-        if (juiceExe.equals(ApplicationType.WORD_COUNT)) {
-            this.mapleJuice = new WordCount();
+        this.mapleJuice = MapleJuiceFactory.create(juiceExe);
+        if (this.mapleJuice == null) {
+            return;
         }
         ExecutorService service = Executors.newCachedThreadPool();
         CountDownLatch latch = new CountDownLatch(filesToJuice.length());
@@ -129,7 +132,7 @@ public class Receiver {
             service.execute(new JuiceFile(filesToJuice, i, latch));
         }
         while (latch.getCount() > 0) {
-            continue;
+            Thread.yield();
         }
         int isDelete =  msgJson.getInt(MsgKey.IS_DELETE);
         String destFile = msgJson.getString(MsgKey.DEST_FILE);
