@@ -18,8 +18,8 @@ public class WordCount extends MapleJuice<String, Integer> {
         try {
             fIn = new BufferedReader(new FileReader(filePath));
             String line = fIn.readLine();
-            String key = line.split("_")[0];
-            int count = 0;
+            String key = line.split(" ")[0];
+            int count = 1;
             while((line = fIn.readLine()) != null) {
                 count++;
             }

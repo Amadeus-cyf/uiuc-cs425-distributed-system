@@ -31,7 +31,7 @@ public class Server {
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3200);
+        Server server = new Server("localhost", 3400);
         server.run();
     }
 }

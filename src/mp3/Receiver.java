@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.net.DatagramPacket;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -118,9 +119,17 @@ public class Receiver {
             String fileName = filesToJuice.getString(i);
             this.dataTransfer.receiveFile(getJuiceInputLocalPath(fileName), getJuiceInputRemotePath(intermediatePrefix, fileName), MasterInfo.Master_IP_ADDRESS);
         }
+        String juiceExe = msgJson.getString(MsgKey.JUICE_EXE);
+        if (juiceExe.equals(ApplicationType.WORD_COUNT)) {
+            this.mapleJuice = new WordCount();
+        }
         ExecutorService service = Executors.newCachedThreadPool();
+        CountDownLatch latch = new CountDownLatch(filesToJuice.length());
         for (int i = 0; i < filesToJuice.length(); i++) {
-            service.execute(new JuiceFile(filesToJuice, i));
+            service.execute(new JuiceFile(filesToJuice, i, latch));
+        }
+        while (latch.getCount() > 0) {
+            continue;
         }
         int isDelete =  msgJson.getInt(MsgKey.IS_DELETE);
         String destFile = msgJson.getString(MsgKey.DEST_FILE);
@@ -187,10 +196,12 @@ public class Receiver {
     private class JuiceFile implements Runnable {
         private JSONArray filesToJuice;
         private int idx;
+        private CountDownLatch latch;
 
-        JuiceFile(JSONArray filesToJuice, int idx) {
+        JuiceFile(JSONArray filesToJuice, int idx, CountDownLatch latch) {
             this.idx = idx;
             this.filesToJuice = filesToJuice;
+            this.latch = latch;
         }
 
         @Override
@@ -200,6 +211,7 @@ public class Receiver {
             mapleJuice.juice(filePath);
             String juiceOutputPath = getJuiceOutputLocalPath();
             mapleJuice.writeJuiceOutputToFile(juiceOutputPath);
+            latch.countDown();
         }
     }
 }

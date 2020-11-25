@@ -8,13 +8,15 @@ import java.util.List;
 
 public class JuiceFilesMsg extends Message {
     private List<String> filesToJuice;
+    private String intermediatePrefix;
     private String destFileName;
     private String juiceExe;
     private int isDelete;
 
-    public JuiceFilesMsg(List<String> filesToJuice, String destFileName, String juiceExe, int isDelete) {
+    public JuiceFilesMsg(List<String> filesToJuice, String intermediatePrefix, String destFileName, String juiceExe, int isDelete) {
         super(MsgType.JUICE_FILES_MSG);
         this.filesToJuice = filesToJuice;
+        this.intermediatePrefix = intermediatePrefix;
         this.destFileName = destFileName;
         this.juiceExe = juiceExe;
         this.isDelete = isDelete;
@@ -25,6 +27,7 @@ public class JuiceFilesMsg extends Message {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
         jsonObject.put(MsgKey.FILES_TO_JUICE, this.filesToJuice);
+        jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, this.intermediatePrefix);
         jsonObject.put(MsgKey.JUICE_EXE, this.juiceExe);
         jsonObject.put(MsgKey.DEST_FILE, this.destFileName);
         jsonObject.put(MsgKey.IS_DELETE, this.isDelete);

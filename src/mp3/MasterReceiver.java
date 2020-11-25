@@ -156,12 +156,11 @@ public class MasterReceiver extends Receiver {
                     BufferedWriter fOut = fOutMap.get(pair[0]);
                     if (fOut == null) {
                         String path = getJuiceInputPath(intermediatePrefix, pair[0]);
-                        fOut = new BufferedWriter(new FileWriter(path));
+                        fOut = new BufferedWriter(new FileWriter(path, true));
                         fOutMap.put(pair[0], fOut);
                     }
                     fOut.append(line);
                     fOut.newLine();
-                    fOut.flush();
                 }
             } catch(Exception e) {
                 e.printStackTrace();
@@ -207,10 +206,15 @@ public class MasterReceiver extends Receiver {
                 for (int j = i; j < end; j++) {
                     filesAssigned.add(files[j].getName());
                 }
-                Message juiceFilesMsg = new JuiceFilesMsg(filesAssigned, destFileName, juiceExe, isDelete);
+                Message juiceFilesMsg = new JuiceFilesMsg(filesAssigned, intermediatePrefix, destFileName, juiceExe, isDelete);
                 this.dataTransfer.send(juiceFilesMsg.toJSON(), serverInfos[serverIdx].getIpAddress(), serverInfos[serverIdx].getPort());
                 serverIdx++;
             }
+        }
+        // delete the dest file if it already exists
+        File file = new File(destFileName);
+        if (file.exists()) {
+            file.delete();
         }
     }
 
@@ -223,14 +227,14 @@ public class MasterReceiver extends Receiver {
         int senderPort = msgJson.getInt(MsgKey.PORT);
         String juiceIntermediateFile = msgJson.getString(MsgKey.JUICE_INTERMEDIATE_FILE);
         String destFile = msgJson.getString(MsgKey.DEST_FILE);
-        String juiceOutputTmpPath = getJuiceOutputTmpPath(senderIpAddress, senderPort);
-        this.dataTransfer.receiveFile(juiceOutputTmpPath, juiceIntermediateFile, senderIpAddress);
+        String juiceOutputTmpPath = getJuiceOutputTmpPath(destFile, senderIpAddress, senderPort);
+        this.dataTransfer.receiveFile(juiceOutputTmpPath, FilePath.ROOT + juiceIntermediateFile, senderIpAddress);
         String juiceOutputRemotePath = getJuiceOutputRemotePath(destFile);
         BufferedWriter fOut = null;
         BufferedReader fIn = null;
         try {
             fIn = new BufferedReader(new FileReader(juiceOutputTmpPath));
-            fOut = new BufferedWriter(new FileWriter(juiceOutputRemotePath));
+            fOut = new BufferedWriter(new FileWriter(juiceOutputRemotePath, true));
             String line = null;
             while ((line = fIn.readLine()) != null) {
                 fOut.append(line);
@@ -321,9 +325,9 @@ public class MasterReceiver extends Receiver {
         return sb.append(FilePath.ROOT).append(intermediatePrefix).toString();
     }
 
-    private String getJuiceOutputTmpPath(String senderIp, int senderPort) {
+    private String getJuiceOutputTmpPath(String destFile, String senderIp, int senderPort) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(senderIp).append(senderPort).toString();
+        return sb.append(FilePath.ROOT).append(destFile).append("_").append(senderIp).append("_").append(senderPort).append("_tmp").toString();
     }
 
     private String getJuiceOutputRemotePath(String destFileName) {
