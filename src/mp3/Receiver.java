@@ -3,7 +3,6 @@ package mp3;
 import mp2.DataTransfer;
 import mp3.application.MapleJuice;
 import mp3.application.MapleJuiceFactory;
-import mp3.application.WordCount;
 import mp3.constant.*;
 import mp3.message.*;
 import org.json.JSONArray;
@@ -134,9 +133,10 @@ public class Receiver {
         while (latch.getCount() > 0) {
             Thread.yield();
         }
+        String juiceOutputFilePath = getJuiceOutputLocalPath(intermediatePrefix);
+        this.mapleJuice.writeJuiceOutputToFile(juiceOutputFilePath);
         int isDelete =  msgJson.getInt(MsgKey.IS_DELETE);
         String destFile = msgJson.getString(MsgKey.DEST_FILE);
-        String juiceOutputFilePath = getJuiceOutputLocalPath();
         Message juiceCompleteMsg = new JuiceCompleteMsg(this.ipAddress, this.port, juiceOutputFilePath, destFile, isDelete);
         this.dataTransfer.send(juiceCompleteMsg.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
@@ -172,9 +172,9 @@ public class Receiver {
         return sb.append(FilePath.ROOT).append(fileName).toString();
     }
 
-    protected String getJuiceOutputLocalPath() {
+    protected String getJuiceOutputLocalPath(String intermediatePrefix) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(this.ipAddress).append("_").append(this.port).append("_juice_out").toString();
+        return sb.append(this.ipAddress).append("_").append(this.port).append("_").append(intermediatePrefix).append("_juice_out").toString();
     }
 
     protected String getJuiceInputRemotePath(String intermediatePrefix, String fileName) {
@@ -212,8 +212,6 @@ public class Receiver {
             String fileName = filesToJuice.getString(idx);
             String filePath = getJuiceInputLocalPath(fileName);
             mapleJuice.juice(filePath);
-            String juiceOutputPath = getJuiceOutputLocalPath();
-            mapleJuice.writeJuiceOutputToFile(juiceOutputPath);
             latch.countDown();
         }
     }
