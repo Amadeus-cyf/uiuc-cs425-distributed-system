@@ -1,6 +1,7 @@
 package mp3;
 
 import mp2.DataTransfer;
+import mp2.failureDetector.FailureDetector;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,9 +18,11 @@ public class Server {
     }
 
     public void run() {
+        FailureDetector failureDetector = new mp2.failureDetector.Server(this.ipAddress, this.port+1);
         Sender sender = new Sender(this.ipAddress, this.port, this.dataTransfer);
         Receiver receiver = new Receiver(this.ipAddress, this.port, this.dataTransfer);
-        CommandHandler commandHandler = new CommandHandler(sender);
+        failureDetector.run();
+        CommandHandler commandHandler = new CommandHandler(sender, failureDetector);
         ExecutorService thread = Executors.newFixedThreadPool(1);
         thread.execute(new Runnable() {
             @Override
@@ -31,7 +34,7 @@ public class Server {
     }
 
     public static void main(String[] args) {
-        Server server = new Server("localhost", 3500);
+        Server server = new Server("localhost", 3900);
         server.run();
     }
 }

@@ -175,12 +175,11 @@ public class Receiver {
      * handle message request for joining the system
      */
     private void receiveJoinRequest(JSONObject request) {
-        System.out.println(this.ipAddress + this.port);
         if (!this.ipAddress.equals(MASTER_FD_IP_ADDRESS) || this.port != MASTER_FD_PORT) {
             return;
         }
         String senderId = request.getString("id");
-        logger.warning("SERVER " + senderId + " requests joining the system.");
+        System.out.println("Server " + senderId + " requests joining the system.");
         if (senderId == null || isMemberExists(senderId)) {
             return;
         }
@@ -190,13 +189,10 @@ public class Receiver {
         }
         String[] senderInfo = senderId.split("_");
         if (senderInfo.length == 3) {
-           // logger.warning("receiveJoinRequest" + request);
             String targetIpAddress = senderInfo[0];
             int targetPort = Integer.parseInt(senderInfo[1]);
             this.membershipList.add(new Member(senderId, new Timestamp(System.currentTimeMillis()), 0));
             HeartBeat heartBeat = new AgreeJoinHeartBeat(this.modeBuilder.toString(), this.membershipList);
-
-            //logger.warning("SendBackMembership" + heartBeat.toJSON());
             this.socket.send(heartBeat.toJSON(), targetIpAddress, targetPort);
         }
         Message joinRequest = new JoinRequest(membershipList);

@@ -13,8 +13,8 @@ import java.util.logging.Logger;
 
 public class TimeoutChecker implements Runnable {
     private final List<Member> membershipList;
-    private final long ALLTOALL_FAIL_TIME_LIMIT = 5000;
-    private final long GOSSIP_FAIL_TIME_LIMIT = 5000;
+    private final long ALLTOALL_FAIL_TIME_LIMIT = 3000;
+    private final long GOSSIP_FAIL_TIME_LIMIT = 3000;
     private StringBuilder modeBuilder;
     private volatile String mode;
     private String id;
@@ -89,12 +89,12 @@ public class TimeoutChecker implements Runnable {
             }
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
             if((timestamp.getTime() - member.getTimestamp().getTime()) >= 2 * GOSSIP_FAIL_TIME_LIMIT){
-                logger.warning("GOSSIP CLEANOUT " + member.getId());
+                System.out.println("GOSSIP CLEANOUT " + member.getId());
                 // go through the membershiplist, delete the member
                 delList.add(member);
             } else if((timestamp.getTime() - member.getTimestamp().getTime()) >= GOSSIP_FAIL_TIME_LIMIT && (!member.getStatus().equals(Status.FAIL))) {
                 member.setStatus(Status.FAIL);
-                logger.warning("GOSSIP LEAVE/FAIL  " + member.getId());
+                System.out.println("GOSSIP LEAVE/FAIL  " + member.getId());
                 sendFailMessage(member);
             }
         }
@@ -119,6 +119,6 @@ public class TimeoutChecker implements Runnable {
         int failPort = Integer.parseInt(idInfo[1]);
         FailMessage failMessage = new FailMessage(failIpAddress, failPort);
         this.socket.send(failMessage.toJSON(), MasterSdfsInfo.MASTER_SDFS_IP_ADDRESS, MasterSdfsInfo.MASTER_SDFS_PORT);
-        System.out.println("Server " + failIpAddress + ":" + failPort + "fails. Send Fail Message to Server Master");
+        System.out.println("Server " + failIpAddress + ":" + failPort + " fails. Send Fail Message to Server Master");
     }
 }

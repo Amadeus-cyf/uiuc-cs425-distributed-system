@@ -9,7 +9,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class JoinRequest extends Message{
+public class JoinRequest extends Message {
     private List<ServerInfo> servers;
 
     public JoinRequest(List<Member> membershipList) {
@@ -17,7 +17,7 @@ public class JoinRequest extends Message{
         this.servers = new ArrayList<>();
         for (Member member: membershipList) {
             String[] idInfo = member.getId().split("_");
-            // we need to substract 1 for port number sending to the master
+            // we need to subtract 1 for port number sending to the master
             this.servers.add(new ServerInfo(idInfo[0], Integer.parseInt(idInfo[1])-1));
         }
 

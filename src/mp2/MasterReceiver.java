@@ -319,7 +319,6 @@ public class MasterReceiver extends Receiver {
             String ipAddress = server.getString(MsgKey.IP_ADDRESS);
             int port = server.getInt(MsgKey.PORT);
             ServerInfo serverInfo = new ServerInfo(ipAddress, port);
-            System.out.println("receive membershipList - loop serverList: " + ipAddress + port);
             if (!servers.contains(serverInfo)) {
                 servers.add(serverInfo);
                 this.serverStorageInfo.put(serverInfo, new HashSet<>());

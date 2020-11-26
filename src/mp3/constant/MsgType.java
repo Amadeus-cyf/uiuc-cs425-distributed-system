@@ -11,4 +11,7 @@ public class MsgType {
     public static final String JUICE_COMPLETE_MSG = "JUICE_COMPLETE_MSG";
     public static final String JUICE_ACK_REQUEST = "JUICE_ACK_REQUEST";
     public static final String JUICE_ACK = "JUICE_ACK";
+    public static final String JOIN_REQUEST = "JOIN_REQUEST";
+    public static final String FP_REJOIN_MSG = "FP_JOIN_MSG";
+    public static final String SERVER_FAIL = "SERVER_FAIL";
 }

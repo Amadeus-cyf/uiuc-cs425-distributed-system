@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.net.DatagramPacket;
 import java.util.concurrent.CountDownLatch;
@@ -62,7 +63,7 @@ public class Receiver {
     * called when receive request from master for mapling some part of the input
      */
     protected void handleMapleFileMsg(JSONObject msgJson) {
-        System.out.print("Receive Maple File Msg: " + msgJson.toString());
+        System.out.println("Receive Maple File Msg: " + msgJson.toString());
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
         String splitFileName = msgJson.getString(MsgKey.FILE_TO_MAPLE);
         String mapleExe = msgJson.getString(MsgKey.MAPLE_EXE);
@@ -91,8 +92,8 @@ public class Receiver {
             e.printStackTrace();
         }
         String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
-        String destPath = getLocalMapleOutputPath(intermediatePrefix);
-        String destFileName = getMapleOutputFileName(intermediatePrefix);
+        String destPath = getLocalMapleOutputPath(intermediatePrefix, splitFileName);
+        String destFileName = getMapleOutputFileName(intermediatePrefix, splitFileName);
         mapleJuice.writeMapleOutputToFile(destPath);
         Message mapleCompleteMsg = new MapleCompleteMsg(this.ipAddress, this.port, sourceFileName, destFileName, intermediatePrefix);
         this.dataTransfer.send(mapleCompleteMsg.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
@@ -105,7 +106,7 @@ public class Receiver {
         System.out.println("Receive Maple ACK Request: " + msgJson.toString());
         String sourceFile = msgJson.getString(MsgKey.SOURCE_FILE);
         String prefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
-        Message mapleAck = new MapleAck(sourceFile, prefix);
+        Message mapleAck = new MapleAck(sourceFile, prefix, this.ipAddress, this.port);
         this.dataTransfer.send(mapleAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
 
@@ -148,36 +149,41 @@ public class Receiver {
         System.out.println("Receive Juice ACK Request: " + msgJson.toString());
         String destFile = msgJson.getString(MsgKey.DEST_FILE);
         int isDelete = msgJson.getInt(MsgKey.IS_DELETE);
-        Message juiceAck = new JuiceAck(destFile, isDelete);
+        Message juiceAck = new JuiceAck(destFile, isDelete, this.ipAddress, this.port);
         this.dataTransfer.send(juiceAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
     }
 
-    protected String getSplitFilePath(String splitFileName) {
+    private String getSplitFilePath(String splitFileName) {
         StringBuilder sb = new StringBuilder();
         return sb.append(FilePath.ROOT).append(FilePath.SPLIT_DIRECTORY).append(splitFileName).toString();
     }
 
-    protected String getLocalMapleOutputPath(String prefix) {
+    private String getLocalMapleOutputPath(String prefix, String splitFileName) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(prefix).append("_").append(this.ipAddress).append("_").append(this.port).toString();
+        return sb.append(FilePath.ROOT).append(prefix).append("_").append(splitFileName).append("_").append(this.ipAddress).append("_").append(this.port).toString();
     }
 
-    protected String getMapleOutputFileName(String prefix) {
+    private String getMapleOutputFileName(String prefix, String splitFileName) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(prefix).append("_").append(this.ipAddress).append("_").append(this.port).toString();
+        return sb.append(prefix).append("_").append(splitFileName).append("_").append(this.ipAddress).append("_").append(this.port).toString();
     }
 
-    protected String getJuiceInputLocalPath(String fileName) {
+    private String getJuiceInputLocalPath(String fileName) {
         StringBuilder sb = new StringBuilder();
         return sb.append(FilePath.ROOT).append(fileName).toString();
     }
 
-    protected String getJuiceOutputLocalPath(String intermediatePrefix) {
+    private String getJuiceOutputLocalPath(String intermediatePrefix) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(this.ipAddress).append("_").append(this.port).append("_").append(intermediatePrefix).append("_juice_out").toString();
+        String fileName = sb.append(this.ipAddress).append("_").append(this.port).append("_").append(intermediatePrefix).append("_juice_out").toString();
+        File file = new File(fileName);
+        if (file.exists()) {
+            fileName = sb.append("_1").toString();
+        }
+        return fileName;
     }
 
-    protected String getJuiceInputRemotePath(String intermediatePrefix, String fileName) {
+    private String getJuiceInputRemotePath(String intermediatePrefix, String fileName) {
         StringBuilder sb = new StringBuilder();
         return sb.append(FilePath.ROOT).append(intermediatePrefix).append("/").append(fileName).toString();
     }

@@ -1,5 +1,7 @@
 package mp3;
 
+import mp2.failureDetector.FailureDetector;
+import mp2.failureDetector.Introducer;
 import mp3.constant.MasterInfo;
 
 import java.util.concurrent.ExecutorService;
@@ -11,9 +13,11 @@ public class Master extends Server{
     }
 
     public void run() {
+        FailureDetector failureDetector = new Introducer(MasterInfo.MASTER_FD_IP_ADDRESS, MasterInfo.MASTER_FD_PORT);
         Sender sender = new Sender(this.ipAddress, this.port, this.dataTransfer);
         Receiver receiver = new MasterReceiver(this.dataTransfer);
-        CommandHandler commandHandler = new CommandHandler(sender);
+        failureDetector.run();
+        CommandHandler commandHandler = new CommandHandler(sender, failureDetector);
         ExecutorService thread = Executors.newFixedThreadPool(1);
         thread.execute(new Runnable() {
             @Override

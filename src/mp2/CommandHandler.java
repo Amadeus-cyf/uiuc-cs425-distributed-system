@@ -3,7 +3,6 @@ package mp2;
 import mp2.constant.Command;
 import mp2.failureDetector.FailureDetector;
 import mp2.failureDetector.Mode;
-import mp2.failureDetector.Server;
 import org.json.JSONArray;
 
 import java.io.*;
@@ -42,7 +41,7 @@ public class CommandHandler {
             }
         } else if (command.equals(Command.REJOIN)) {
             if(this.failureDetector instanceof mp2.failureDetector.Server) {
-                ((Server) this.failureDetector).rejoin();
+                ((mp2.failureDetector.Server) this.failureDetector).rejoin();
             }
         } else if(command.equals(Command.SERVERS)) {
             if(this.receiver instanceof MasterReceiver) {

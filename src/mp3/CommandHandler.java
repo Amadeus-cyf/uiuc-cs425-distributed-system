@@ -1,9 +1,15 @@
 package mp3;
 
+import mp2.constant.Command;
+import mp2.failureDetector.FailureDetector;
+import mp2.failureDetector.Mode;
+import org.json.JSONArray;
+
 import java.util.Scanner;
 
 public class CommandHandler {
     private Sender sender;
+    private FailureDetector failureDetector;
     private final String MAPLE = "maple";
     private final String JUICE = "juice";
     private final String MAPLE_JUICE = "mapleJuice";
@@ -11,8 +17,9 @@ public class CommandHandler {
     private final int JUICE_COMMAND_LENGTH = 6;
     private final int MAPLE_JUICE_COMMAND_LENGTH = 9;
 
-    public CommandHandler(Sender sender) {
+    public CommandHandler(Sender sender, FailureDetector failureDetector) {
         this.sender = sender;
+        this.failureDetector = failureDetector;
     }
 
     public void run() {
@@ -59,7 +66,24 @@ public class CommandHandler {
                     this.sender.sendJuiceRequest(juiceExe, juiceNum, intermediatePrefix, destFile, isDelete);
                 }
             } else {
-                System.out.println("Invalid command");
+                if (command.equals(Command.SWITCH_MODE)) {
+                    String newMode = this.failureDetector.getModeBuilder().toString().equals(Mode.GOSSIP) ? Mode.ALL_TO_ALL : Mode.GOSSIP;
+                    // sends switch mode message to all machines in the system
+                    this.failureDetector.getSender().switchMode(newMode);
+                } else if (command.equals(Command.PRINT_MEMBERSHIP)) {
+                    JSONArray jsonArray = new JSONArray(failureDetector.getMembershipList());
+                    System.out.println(jsonArray.toString());
+                } else if (command.equals(Command.LEAVE)) {
+                    if (this.failureDetector instanceof mp2.failureDetector.Server) {
+                        this.failureDetector.leave();
+                    }
+                } else if (command.equals(Command.REJOIN)) {
+                    if (this.failureDetector instanceof mp2.failureDetector.Server) {
+                        ((mp2.failureDetector.Server) this.failureDetector).rejoin();
+                    }
+                } else {
+                    System.out.println("Invalid command");
+                }
             }
         }
     }

@@ -14,7 +14,7 @@ public class Sender {
     private DataTransfer socket;
     private String ipAddress;
     private int port;
-    private List<Member> membershipList;
+    private final List<Member> membershipList;
     private String id;
     private volatile StringBuilder modeBuilder;
     private volatile StringBuilder statusBuilder;
@@ -83,7 +83,13 @@ public class Sender {
         // if we have less number of servers then K working now, we send all membershiplists
         if(numAlive <= K){
             // update the timestamp for the current id
-            for (Member member : membershipList) {
+            Member[] members = new Member[membershipList.size()];
+            // to avoid concurrent modification exception
+            for (int i = 0; i < members.length; i++) {
+                members[i] = membershipList.get(i);
+            }
+            for (int i = 0; i < members.length; i++) {
+                Member member = members[i];
                 if (member.getId().equals(this.id)) {
                     continue;
                 }
@@ -134,7 +140,6 @@ public class Sender {
         //logger.warning("sendMembership: sends " + gossipHeartBeat.toJSON() + "to" + targetIpAddress + ":" + targetPort);
         this.socket.send(gossipHeartBeat.toJSON(), targetIpAddress, targetPort);
         this.updateMember();
-
     }
 
     /*
@@ -151,7 +156,6 @@ public class Sender {
 
     public void sendJoinRequest() {
         JoinSystemHeartBeat joinSystemHeartBeat = new JoinSystemHeartBeat(this.id);
-//        logger.warning("sendJoinRequest: sends " + joinSystemHeartBeat.toJSON() + "to Introducer");
         this.socket.send(joinSystemHeartBeat.toJSON(), MASTER_FD_IP_ADDRESS, MASTER_FD_PORT);
     }
 

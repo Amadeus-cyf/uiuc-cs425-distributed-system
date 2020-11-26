@@ -75,7 +75,7 @@ public class DataTransfer {
      * download sdfs file from remote servers into the local file. Used for GET
      */
     public int receiveFile(String localFile, String sdfsFile, String ipAddress) {
-        System.out.println("receive file");
+        System.out.println("Receive File");
         String hostName = ipAddress;
         int idx = ipAddress.indexOf(".cs.illinois.edu");
         if (idx >= 0) {
