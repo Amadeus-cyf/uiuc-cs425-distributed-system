@@ -413,7 +413,7 @@ public class MasterReceiver extends Receiver {
                 System.out.println("Assign maple tasks to newly selected server " + server.getIpAddress() + ":" + server.getPort());
                 MapleFileMsg mapleFileMsg = new MapleFileMsg(inputFileName, task.getAssignedFiles().get(0), task.getOutputFileName(), task.getExeFunc());
                 this.dataTransfer.send(mapleFileMsg.toJSON(), server.getIpAddress(), server.getPort());
-            } else if (task.equals(JUICE)){
+            } else if (type.equals(JUICE)){
                 System.out.println("Assign juice tasks to newly selected server " + server.getIpAddress() + ":" + server.getPort());
                 JuiceFilesMsg juiceFilesMsg = new JuiceFilesMsg(task.getAssignedFiles(), inputFileName, task.getOutputFileName(), task.getExeFunc(), task.getIsDelete());
                 this.dataTransfer.send(juiceFilesMsg.toJSON(), server.getIpAddress(), server.getPort());
