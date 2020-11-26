@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 public class TimeoutChecker implements Runnable {
     private final List<Member> membershipList;
     private final long ALLTOALL_FAIL_TIME_LIMIT = 3000;
-    private final long GOSSIP_FAIL_TIME_LIMIT = 3000;
+    private final long GOSSIP_FAIL_TIME_LIMIT = 5000;
     private StringBuilder modeBuilder;
     private volatile String mode;
     private String id;

@@ -3,6 +3,7 @@ package mp2.failureDetector.model;
 import mp2.failureDetector.MsgType;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GossipHeartBeat extends HeartBeat {
@@ -14,7 +15,7 @@ public class GossipHeartBeat extends HeartBeat {
     public GossipHeartBeat(String mode, String senderId, List<Member> membershipList, long heartbeatCounter) {
         super(MsgType.GOSSIP_MSG);
         this.senderId = senderId;
-        this.membershipList = membershipList;
+        this.membershipList = new ArrayList<>(membershipList);
         this.mode = mode;
         this.heartbeatCounter = heartbeatCounter;
     }

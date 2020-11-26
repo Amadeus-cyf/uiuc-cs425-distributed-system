@@ -353,6 +353,8 @@ public class MasterReceiver extends Receiver {
                 deleteDir(FilePath.ROOT + intermediatePrefix);
             }
             this.runningServers.remove(intermediatePrefix);
+            this.juiceRequest = null;
+            this.isMapleComplete = false;
             System.out.println("Juice Stage completes.");
         }
     }
