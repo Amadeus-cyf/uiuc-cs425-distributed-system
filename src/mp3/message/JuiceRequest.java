@@ -17,7 +17,7 @@ public class JuiceRequest extends Message {
         this.juiceNum = juiceNum;
         this.intermediatePrefix = intermediatePrefix;
         this.destFileName = destFileName;
-        this.isDelete = isDelete;
+        this.isDelete = isDelete > 0 ? 1 : 0;
     }
 
     @Override

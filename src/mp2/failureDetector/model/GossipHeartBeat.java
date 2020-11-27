@@ -15,7 +15,7 @@ public class GossipHeartBeat extends HeartBeat {
     public GossipHeartBeat(String mode, String senderId, List<Member> membershipList, long heartbeatCounter) {
         super(MsgType.GOSSIP_MSG);
         this.senderId = senderId;
-        this.membershipList = new ArrayList<>(membershipList);
+        this.membershipList = new ArrayList<>(membershipList);                  // to avoid concurrent modification exception
         this.mode = mode;
         this.heartbeatCounter = heartbeatCounter;
     }

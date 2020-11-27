@@ -27,6 +27,10 @@ public class Receiver {
         this.ipAddress = ipAddress;
         this.port = port;
         this.dataTransfer = dataTransfer;
+        File dir = new File(FilePath.INTERMEDIATE_DIRECTORY);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
     }
 
     public void start() {
@@ -71,7 +75,7 @@ public class Receiver {
         if (this.mapleJuice == null) {
             return;
         }
-        String localSplitFilePath = FilePath.ROOT + splitFileName;
+        String localSplitFilePath = FilePath.INTERMEDIATE_PATH + splitFileName;
         String remoteSplitFilePath = getSplitFilePath(splitFileName);
         this.dataTransfer.receiveFile(localSplitFilePath, remoteSplitFilePath, MasterInfo.Master_IP_ADDRESS);
         BufferedReader in = null;
@@ -151,16 +155,32 @@ public class Receiver {
         int isDelete = msgJson.getInt(MsgKey.IS_DELETE);
         Message juiceAck = new JuiceAck(destFile, isDelete, this.ipAddress, this.port);
         this.dataTransfer.send(juiceAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
+        if (!this.ipAddress.equals(MasterInfo.Master_IP_ADDRESS) || this.port != MasterInfo.MASTER_PORT) {
+            //deleteDir(FilePath.INTERMEDIATE_DIRECTORY);
+        }
+    }
+
+    protected void deleteDir(String dirPath) {
+        File dir = new File(dirPath);
+        File[] files = dir.listFiles();
+        if (files == null || files.length == 0) {
+            dir.delete();
+            return;
+        }
+        for (File file : files) {
+            deleteDir(file.getAbsolutePath());
+        }
+        dir.delete();
     }
 
     private String getSplitFilePath(String splitFileName) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(FilePath.SPLIT_DIRECTORY).append(splitFileName).toString();
+        return sb.append(FilePath.INTERMEDIATE_PATH).append(FilePath.SPLIT_DIRECTORY).append(splitFileName).toString();
     }
 
     private String getLocalMapleOutputPath(String prefix, String splitFileName) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(prefix).append("_").append(splitFileName).append("_").append(this.ipAddress).append("_").append(this.port).toString();
+        return sb.append(FilePath.INTERMEDIATE_PATH).append(prefix).append("_").append(splitFileName).append("_").append(this.ipAddress).append("_").append(this.port).toString();
     }
 
     private String getMapleOutputFileName(String prefix, String splitFileName) {
@@ -170,17 +190,18 @@ public class Receiver {
 
     private String getJuiceInputLocalPath(String fileName) {
         StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(fileName).toString();
+        return sb.append(FilePath.INTERMEDIATE_PATH).append(fileName).toString();
     }
 
     private String getJuiceOutputLocalPath(String intermediatePrefix) {
         StringBuilder sb = new StringBuilder();
-        String fileName = sb.append(this.ipAddress).append("_").append(this.port).append("_").append(intermediatePrefix).append("_juice_out").toString();
-        File file = new File(fileName);
+        String filePath = sb.append(FilePath.INTERMEDIATE_PATH).append(this.ipAddress).append("_").append(this.port).append("_").append(intermediatePrefix).append("_juice_out").toString();
+        System.out.println("Juice output path: " + filePath);
+        File file = new File(filePath);
         if (file.exists()) {
-            fileName = sb.append("_1").toString();
+            filePath = sb.append("_1").toString();
         }
-        return fileName;
+        return filePath;
     }
 
     private String getJuiceInputRemotePath(String intermediatePrefix, String fileName) {

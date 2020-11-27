@@ -40,7 +40,7 @@ public class Server {
             System.out.println("enter ip address");
             return;
         }
-        Server server = new Server(args[0], 3000);
+        Server server = new Server(args[0], 3300);
         server.run();
     }
 }

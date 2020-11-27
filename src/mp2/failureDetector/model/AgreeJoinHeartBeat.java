@@ -3,6 +3,7 @@ package mp2.failureDetector.model;
 import mp2.failureDetector.MsgType;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AgreeJoinHeartBeat extends HeartBeat {
@@ -11,7 +12,7 @@ public class AgreeJoinHeartBeat extends HeartBeat {
 
     public AgreeJoinHeartBeat(String mode, List<Member> membershipList) {
         super(MsgType.AGREE_JOIN);
-        this.membershipList = membershipList;
+        this.membershipList = new ArrayList<>(membershipList);              // to avoid concurrent modification exception
         this.mode = mode;
     }
 

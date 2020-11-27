@@ -32,6 +32,7 @@ public class Server {
         });
         commandHandler.run();
     }
+
     public static void main(String[] args) {
         Server server = new Server("localhost", 3500);
         server.run();

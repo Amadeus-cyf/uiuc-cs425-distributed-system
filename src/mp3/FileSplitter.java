@@ -34,10 +34,10 @@ public class FileSplitter {
         for (int i = 1; i < numSplits + 1; i++) {
             FileOutputStream outputStream = null;
             StringBuilder sb = new StringBuilder();
-            final String path = sb.append(FilePath.ROOT).append(FilePath.SPLIT_DIRECTORY).append(sourceName).append("_split_").append(i).toString();
-            File dir = new File(FilePath.SPLIT_DIRECTORY);
-            if (!dir.exists()) {
-                dir.mkdir();
+            final String path = sb.append(FilePath.INTERMEDIATE_PATH).append(FilePath.SPLIT_DIRECTORY).append(sourceName).append("_split_").append(i).toString();
+            File split  = new File(FilePath.INTERMEDIATE_DIRECTORY + FilePath.SPLIT_DIRECTORY);
+            if (!split.exists()) {
+                System.out.println("Create Split directory for splitted files: " + split.mkdirs());
             }
             try {
                 outputStream = new FileOutputStream(path);

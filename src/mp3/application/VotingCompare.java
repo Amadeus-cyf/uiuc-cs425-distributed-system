@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class VotingCompare extends MapleJuice{
+public class VotingCompare extends MapleJuice {
     @Override
     public void maple(String line) {
         String[] infoList = line.split(" "); // name1, name2 (n1 dominates n2)
@@ -64,6 +64,5 @@ public class VotingCompare extends MapleJuice{
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 }
