@@ -16,8 +16,8 @@ rm -rf ../../out
 mkdir ../../out
  
 # Compile the project
-javac -d ../../out -classpath ../../json-20140107.jar @sources.list
+javac -d ../../out -classpath ../../lib/json-20140107.jar @sources.list
 
 # Run the project
-java -classpath ../../out:../../json-20140107.jar mp1.Server fa20-cs425-g53-02.cs.illinois.edu
+java -classpath ../../out:../../lib/json-20140107.jar mp1.Server localhost
 
