@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class VotingCount extends MapleJuice {
+public class VotingCount extends MapleJuice<String, Object> {
     @Override
     public void maple(String line) {
         String[] infoList = line.split(" "); // name1, name2, name3...
