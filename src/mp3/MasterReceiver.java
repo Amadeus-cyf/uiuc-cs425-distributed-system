@@ -197,7 +197,7 @@ public class MasterReceiver extends Receiver {
         for (File file : files) {
             BufferedReader fIn = null;
             try {
-               fIn = new BufferedReader(new FileReader(FilePath.ROOT + intermediatePrefix));
+               fIn = new BufferedReader(new FileReader(file.getAbsolutePath()));
                 String line = null;
                 while ((line = fIn.readLine()) != null) {
                     String[] pair = line.split(" ");
