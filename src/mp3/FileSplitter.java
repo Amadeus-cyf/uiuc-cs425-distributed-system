@@ -21,7 +21,7 @@ public class FileSplitter {
         BufferedReader fIn = null;
         List<String> splitFiles = new ArrayList<>();
         try {
-            fIn = new BufferedReader(new FileReader(file.getAbsolutePath()));
+            fIn = new BufferedReader(new FileReader(FilePath.ROOT + file.getName()));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -35,7 +35,7 @@ public class FileSplitter {
             FileOutputStream outputStream = null;
             StringBuilder sb = new StringBuilder();
             final String path = sb.append(FilePath.INTERMEDIATE_PATH).append(FilePath.SPLIT_DIRECTORY).append(sourceName).append("_split_").append(i).toString();
-            File split  = new File(FilePath.INTERMEDIATE_DIRECTORY + FilePath.SPLIT_DIRECTORY);
+            File split  = new File(FilePath.INTERMEDIATE_PATH + FilePath.SPLIT_DIRECTORY);
             if (!split.exists()) {
                 System.out.println("Create Split directory for splitted files: " + split.mkdirs());
             }

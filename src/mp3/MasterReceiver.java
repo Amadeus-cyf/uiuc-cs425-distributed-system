@@ -32,7 +32,7 @@ public class MasterReceiver extends Receiver {
         this.assignedTasks = new HashMap<>();
         this.servers = new HashSet<>();
         this.servers.add(new ServerInfo(MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT));
-        File dir = new File(FilePath.INTERMEDIATE_DIRECTORY);
+        File dir = new File(FilePath.INTERMEDIATE_PATH);
         if (!dir.exists()) {
             System.out.println("Create Root directory for intermediate files: " + dir.mkdirs());
         }
@@ -356,7 +356,7 @@ public class MasterReceiver extends Receiver {
             int isDelete = msgJson.getInt(MsgKey.IS_DELETE);
             System.out.println("Delete intermediate directory");
             // delete intermediate directory
-            deleteDir(FilePath.INTERMEDIATE_DIRECTORY);
+            deleteDir(FilePath.INTERMEDIATE_PATH);
             String intermediatePrefix = destToIntermediate.get(destFile);
             if (isDelete == 1) {
                 File file = new File(intermediatePrefix);

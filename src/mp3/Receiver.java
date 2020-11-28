@@ -27,7 +27,7 @@ public class Receiver {
         this.ipAddress = ipAddress;
         this.port = port;
         this.dataTransfer = dataTransfer;
-        File dir = new File(FilePath.INTERMEDIATE_DIRECTORY);
+        File dir = new File(FilePath.INTERMEDIATE_PATH);
         if (!dir.exists()) {
             dir.mkdir();
         }
@@ -156,7 +156,7 @@ public class Receiver {
         Message juiceAck = new JuiceAck(destFile, isDelete, this.ipAddress, this.port);
         this.dataTransfer.send(juiceAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
         if (!this.ipAddress.equals(MasterInfo.Master_IP_ADDRESS) || this.port != MasterInfo.MASTER_PORT) {
-            //deleteDir(FilePath.INTERMEDIATE_DIRECTORY);
+            deleteDir(FilePath.INTERMEDIATE_PATH);
         }
     }
 
