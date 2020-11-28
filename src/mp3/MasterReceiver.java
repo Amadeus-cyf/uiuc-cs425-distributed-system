@@ -32,10 +32,6 @@ public class MasterReceiver extends Receiver {
         this.assignedTasks = new HashMap<>();
         this.servers = new HashSet<>();
         this.servers.add(new ServerInfo(MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT));
-        File dir = new File(FilePath.INTERMEDIATE_PATH);
-        if (!dir.exists()) {
-            System.out.println("Create Root directory for intermediate files: " + dir.mkdirs());
-        }
     }
 
     public void start() {
@@ -99,6 +95,10 @@ public class MasterReceiver extends Receiver {
     * called when maple command is sent from some server
      */
     private void handleMapleRequest(JSONObject msgJson) {
+        File dir = new File(FilePath.INTERMEDIATE_PATH);
+        if (!dir.exists()) {
+            System.out.println("Create Root directory for intermediate files: " + dir.mkdirs());
+        }
         System.out.println("Receive Maple Request: " + msgJson.toString());
         System.out.println(this.servers);
         String sourceName = msgJson.getString(MsgKey.SOURCE_FILE);

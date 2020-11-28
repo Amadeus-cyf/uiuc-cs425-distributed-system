@@ -68,6 +68,10 @@ public class Receiver {
      */
     protected void handleMapleFileMsg(JSONObject msgJson) {
         System.out.println("Receive Maple File Msg: " + msgJson.toString());
+        File dir = new File(FilePath.INTERMEDIATE_PATH);
+        if (!dir.exists()) {
+            System.out.println("Create Root directory for intermediate files: " + dir.mkdirs());
+        }
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
         String splitFileName = msgJson.getString(MsgKey.FILE_TO_MAPLE);
         String mapleExe = msgJson.getString(MsgKey.MAPLE_EXE);
@@ -156,7 +160,7 @@ public class Receiver {
         Message juiceAck = new JuiceAck(destFile, isDelete, this.ipAddress, this.port);
         this.dataTransfer.send(juiceAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
         if (!this.ipAddress.equals(MasterInfo.Master_IP_ADDRESS) || this.port != MasterInfo.MASTER_PORT) {
-            deleteDir(FilePath.INTERMEDIATE_PATH);
+            //deleteDir(FilePath.INTERMEDIATE_PATH);
         }
     }
 
