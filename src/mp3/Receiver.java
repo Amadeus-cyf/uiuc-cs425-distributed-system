@@ -160,7 +160,7 @@ public class Receiver {
         Message juiceAck = new JuiceAck(destFile, isDelete, this.ipAddress, this.port);
         this.dataTransfer.send(juiceAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
         if (!this.ipAddress.equals(MasterInfo.Master_IP_ADDRESS) || this.port != MasterInfo.MASTER_PORT) {
-            //deleteDir(FilePath.INTERMEDIATE_PATH);
+            deleteDir(FilePath.INTERMEDIATE_PATH);
         }
     }
 
