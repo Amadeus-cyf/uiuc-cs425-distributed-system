@@ -48,10 +48,6 @@ public class CommandHandler {
                     }
                     String intermediatePrefix = info[3];
                     String source = info[4];
-                    if (isInputFileNotExist(source)) {
-                        System.out.println("Input file not found");
-                        continue;
-                    }
                     this.sender.sendMapleRequest(mapleExe, mapleNum, intermediatePrefix, source);
                 }
             } else if (info[0].equals(JUICE)) {
@@ -64,10 +60,6 @@ public class CommandHandler {
                         continue;
                     }
                     String intermediatePrefix = info[3];
-                    if (isInputFileNotExist(intermediatePrefix)) {
-                        System.out.println("Input file not found");
-                        continue;
-                    }
                     int juiceNum = Integer.parseInt(info[2]);
                     if (juiceNum <= 0) {
                         System.out.println("Please enter positive number of execution servers");
@@ -92,10 +84,6 @@ public class CommandHandler {
                         continue;
                     }
                     String source = info[4];
-                    if (isInputFileNotExist(source)) {
-                        System.out.println("Input file not found");
-                        continue;
-                    }
                     int mapleNum = Integer.parseInt(info[2]);
                     if (mapleNum < 0) {
                         System.out.println("Please enter positive number of execution servers");
