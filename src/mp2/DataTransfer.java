@@ -51,14 +51,14 @@ public class DataTransfer {
      */
     public int sendFile(String localFile, String sdfsFile, String ipAddress) {
         System.out.println("send file");
-        int idx = ipAddress.indexOf(".cs.illinois.edu");
+        /*int idx = ipAddress.indexOf(".cs.illinois.edu");
         String hostName = ipAddress;
         if (idx >= 0) {
             hostName = ipAddress.substring(0, idx);
         }
-        System.out.println("HostName " + hostName);
+        System.out.println("HostName " + hostName);*/
         StringBuilder sb = new StringBuilder();
-        sb.append("scp ").append(localFile).append(" ").append(UserInfo.username).append("@").append(hostName).append(":").append(sdfsFile);
+        sb.append("scp ").append(localFile).append(" ").append(UserInfo.username).append("@").append(ipAddress).append(":").append(sdfsFile);
         String command = sb.toString();
         return executeCommand(command);
     }
@@ -76,13 +76,13 @@ public class DataTransfer {
      */
     public int receiveFile(String localFile, String sdfsFile, String ipAddress) {
         System.out.println("Receive File");
-        String hostName = ipAddress;
+        /*String hostName = ipAddress;
         int idx = ipAddress.indexOf(".cs.illinois.edu");
         if (idx >= 0) {
             hostName = ipAddress.substring(0, idx);
-        }
+        }*/
         StringBuilder sb = new StringBuilder();
-        sb.append("scp ").append(UserInfo.username).append("@").append(hostName).append(":").append(sdfsFile).append(" ").append(localFile);
+        sb.append("scp ").append(UserInfo.username).append("@").append(ipAddress).append(":").append(sdfsFile).append(" ").append(localFile);
         String command = sb.toString();
         return executeCommand(command);
     }
