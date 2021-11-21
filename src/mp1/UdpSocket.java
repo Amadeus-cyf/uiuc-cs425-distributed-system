@@ -36,7 +36,7 @@ public class UdpSocket {
      * send message to the target ip address and port
      */
     public void send(JSONObject msg, String targetIpAddress, int targetPort) {
-        if (msg == null) {
+        if(msg == null) {
             return;
         }
         byte[] buffer = msg.toString().getBytes();

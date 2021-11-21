@@ -29,7 +29,7 @@ public class Server extends FailureDetector {
         sendThread.execute(new Runnable() {
             @Override
             public void run() {
-                while (true) {
+                while(true) {
                     sender.send();
                     try {
                         Thread.sleep(1000);

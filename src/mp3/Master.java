@@ -18,13 +18,7 @@ public class Master extends Server{
         Receiver receiver = new MasterReceiver(this.dataTransfer);
         failureDetector.run();
         CommandHandler commandHandler = new CommandHandler(sender, failureDetector);
-        ExecutorService thread = Executors.newFixedThreadPool(1);
-        thread.execute(new Runnable() {
-            @Override
-            public void run() {
-                receiver.start();
-            }
-        });
+        receiver.start();
         commandHandler.run();
     }
 

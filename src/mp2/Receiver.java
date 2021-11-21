@@ -10,6 +10,8 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.DatagramPacket;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static mp2.constant.MasterSdfsInfo.*;
 import static mp2.constant.MsgContent.FILE_NOT_FOUND;
@@ -30,12 +32,15 @@ public class Receiver {
     }
 
     public void start() {
+        ExecutorService service = Executors.newFixedThreadPool(5);
         while(true) {
             byte[] buffer = new byte[BLOCK_SIZE * 2];
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
             this.dataTransfer.receive(receivedPacket);
-            String msg = readBytes(buffer, receivedPacket.getLength());
-            receive(msg);
+            service.execute(() -> {
+                String msg = readBytes(buffer, receivedPacket.getLength());
+                receive(msg);
+            });
         }
     }
 
@@ -97,7 +102,7 @@ public class Receiver {
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
         JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
-        for (int i = 0; i < servers.length(); i++) {
+        for(int i = 0; i < servers.length(); i++) {
             JSONObject server = servers.getJSONObject(i);
             String targetIpAddress = server.getString(MsgKey.IP_ADDRESS);
             int targetPort = server.getInt(MsgKey.PORT);
@@ -111,7 +116,7 @@ public class Receiver {
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         JSONArray servers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
         int len = servers.length();
-        for (int i = 0; i < len; i ++) {
+        for(int i = 0; i < len; i ++) {
             JSONObject server = servers.getJSONObject(i);
             String targetIpAddress = server.getString("ipAddress");
             int targetPort = server.getInt("port");
@@ -134,7 +139,7 @@ public class Receiver {
     private void sendGetAndReceiveFile(String localFileName, String sdfsFilename, String targetIpAddress, int targetPort) {
         int result = this.dataTransfer.receiveFile(FilePath.ROOT + FilePath.LOCAL_ROOT_DIRECTORY + localFileName,
                 FilePath.ROOT + FilePath.SDFS_ROOT_DIRECTORY + sdfsFilename, targetIpAddress);
-        if (result == 0) {
+        if(result == 0) {
             Ack getAck = new Ack(sdfsFilename, this.ipAddress, this.port, MsgType.GET_ACK);
             this.dataTransfer.send(getAck.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
         } else {
@@ -146,7 +151,7 @@ public class Receiver {
         System.out.println("send file");
         int result = this.dataTransfer.sendFile(FilePath.ROOT + FilePath.LOCAL_ROOT_DIRECTORY + localFileName,
                 FilePath.ROOT + FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName, targetIpAddress);
-        if (result == 0) {
+        if(result == 0) {
             PutNotify putNotify = new PutNotify(sdfsFileName);
             this.dataTransfer.send(putNotify.toJSON(), targetIpAddress, targetPort);
         } else {
@@ -175,8 +180,8 @@ public class Receiver {
     protected void receiveDeleteRequest(JSONObject msgJson) {
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         System.out.println("Receive Delete Request with filename " + fileName);
-        for (File file : files) {
-            if (file.getName().equals(fileName)) {
+        for(File file : files) {
+            if(file.getName().equals(fileName)) {
                 files.remove(file);                                                     // remove from the file list
                 file.delete();                                                          // delete the sdfs file on the disk
                 System.out.println("Receiver Delete Request: Successfully delete file "+ fileName);
@@ -200,7 +205,7 @@ public class Receiver {
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         System.out.println("Receive Replicate Request for " + sdfsFileName);
         JSONArray targetServers = msgJson.getJSONArray(MsgKey.TARGET_SERVERS);
-        for (int i = 0; i < targetServers.length(); i++) {
+        for(int i = 0; i < targetServers.length(); i++) {
             JSONObject server  = targetServers.getJSONObject(i);
             String targetIpAddress = server.getString(MsgKey.IP_ADDRESS);
             int targetPort = server.getInt(MsgKey.PORT);
@@ -208,7 +213,7 @@ public class Receiver {
             String sourceAndDest = FilePath.ROOT + FilePath.SDFS_ROOT_DIRECTORY + sdfsFileName;
             int result = this.dataTransfer.sendFile(sourceAndDest, sourceAndDest, targetIpAddress);
             System.out.println("SCP result is " + result);
-            if (result == 0) {
+            if(result == 0) {
                 System.out.println("NOTIFY " + targetIpAddress + ":" + targetPort);
                 ReplicateNotify replicateNotify = new ReplicateNotify(sdfsFileName);
                 this.dataTransfer.send(replicateNotify.toJSON(), targetIpAddress, targetPort);
@@ -228,7 +233,7 @@ public class Receiver {
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         int len = servers.length();
         System.out.println("List all the servers stored the file " + fileName + ":");
-        for (int i = 0; i < len; i ++) {
+        for(int i = 0; i < len; i ++) {
             JSONObject server = servers.getJSONObject(i);
             String replicaIpAddress = server.getString("ipAddress");
             int replicaPort = server.getInt("port");
@@ -238,7 +243,7 @@ public class Receiver {
 
     protected void receiveStoreRequest() {
         System.out.println("Print all stored sdfs files on this server: ");
-        for (File file : this.files) {
+        for(File file : this.files) {
             System.out.println(file.toPath());
         }
     }
@@ -246,7 +251,7 @@ public class Receiver {
     protected void receiveErrorResponse(JSONObject msgJson){
         String sdfsFileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         String error = msgJson.getString(MsgKey.ERROR);
-        if (sdfsFileName != null) {
+        if(sdfsFileName != null) {
             System.out.println(error + ": " + sdfsFileName);
         } else {
             System.out.println(FILE_NOT_FOUND);
@@ -262,11 +267,11 @@ public class Receiver {
      * turn bytes into string
      */
     protected String readBytes(byte[] packet, int length) {
-        if (packet == null) {
+        if(packet == null) {
             return null;
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
+        for(int i = 0; i < length; i++) {
             sb.append((char)(packet[i]));
         }
         return sb.toString();

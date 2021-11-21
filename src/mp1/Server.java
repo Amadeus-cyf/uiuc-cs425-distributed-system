@@ -20,29 +20,10 @@ public class Server extends BaseServer {
     public static void main(String[] args) {
         Server server = new Server(args[0], 3000);
         server.join();
-        ExecutorService sendThread= Executors.newSingleThreadExecutor();
-        ExecutorService receiveThread = Executors.newSingleThreadExecutor();
-        ExecutorService checkerThread = Executors.newSingleThreadExecutor();
-        sendThread.execute(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    server.sender.send();
-                    try {
-                        Thread.sleep(1000);
-                    } catch (Exception e) {
-
-                    }
-                }
-            }
-        });
-        receiveThread.execute(new Runnable() {
-            @Override
-            public void run() {
-                server.receiver.start();
-            }
-        });
+        server.sender.start();
+        server.receiver.start();
         server.checker = new TimeoutChecker(server.membershipList, server.modeBuilder, server.id);
+        ExecutorService checkerThread = Executors.newSingleThreadExecutor();
         checkerThread.execute(server.checker);
         CommandHandler commandHandler = new CommandHandler(server);
         Scanner scanner = new Scanner(System.in);

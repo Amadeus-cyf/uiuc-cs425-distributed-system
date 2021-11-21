@@ -60,19 +60,19 @@ public class TimeoutChecker implements Runnable {
 
         }
         List<Member> delList = new ArrayList<>();
-        for (Member member : membershipList) {
+        for(Member member : membershipList) {
             if(isIntroducer(member.getId()) || member.getId().equals(this.id)) {
                 continue;
             }
             Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            if ((timestamp.getTime() - member.getTimestamp().getTime()) >= ALLTOALL_FAIL_TIME_LIMIT)  {
+            if((timestamp.getTime() - member.getTimestamp().getTime()) >= ALLTOALL_FAIL_TIME_LIMIT)  {
                 member.setStatus(Status.FAIL);
                 delList.add(member);
                 logger.warning("ALL_TO_ALL LEAVE/FAIL " + member.getId());
                 sendFailMessage(member);
             }
         }
-        for (Member member : delList) {
+        for(Member member : delList) {
             membershipList.remove(member);
         }
     }
@@ -83,7 +83,7 @@ public class TimeoutChecker implements Runnable {
         } catch (InterruptedException e) {
         }
         List<Member> delList = new ArrayList<>();
-        for (Member member : membershipList) {
+        for(Member member : membershipList) {
             if(isIntroducer(member.getId()) || member.getId().equals(id)) {
                 continue;
             }
@@ -98,7 +98,7 @@ public class TimeoutChecker implements Runnable {
                 sendFailMessage(member);
             }
         }
-        for (Member member : delList) {
+        for(Member member : delList) {
             membershipList.remove(member);
         }
     }

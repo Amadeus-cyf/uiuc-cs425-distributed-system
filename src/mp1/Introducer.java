@@ -26,28 +26,9 @@ public class Introducer extends BaseServer {
 
     public static void main(String[] args) {
         Introducer server = new Introducer();
-        ExecutorService sendThread= Executors.newSingleThreadExecutor();
-        ExecutorService receiveThread = Executors.newSingleThreadExecutor();
+        server.sender.start();
+        server.receiver.start();
         ExecutorService checkerThread = Executors.newSingleThreadExecutor();
-        sendThread.execute(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    server.sender.send();
-                    try {
-                        Thread.sleep(1000);
-                    } catch (Exception e) {
-
-                    }
-                }
-            }
-        });
-        receiveThread.execute(new Runnable() {
-            @Override
-            public void run() {
-                server.receiver.start();
-            }
-        });
         checkerThread.execute(new TimeoutChecker(server.membershipList, server.modeBuilder, server.id));
         CommandHandler commandHandler = new CommandHandler(server);
         Scanner scanner = new Scanner(System.in);

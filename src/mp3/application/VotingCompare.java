@@ -46,7 +46,7 @@ public class VotingCompare extends MapleJuice<String, Object> {
                     juiceOutput.add(new Pair<>(key, "Condorcet winner!"));
                     return;
                 }
-                if (val > maxVote) {
+                if(val > maxVote) {
                     maxVote = val;
                 }
             }

@@ -32,7 +32,7 @@ public class DataTransfer {
      * send message to the target ip address and port
      */
     public void send(JSONObject msg, String targetIpAddress, int targetPort) {
-        if (msg == null) {
+        if(msg == null) {
             return;
         }
         byte[] buffer = msg.toString().getBytes();
@@ -53,7 +53,7 @@ public class DataTransfer {
         System.out.println("send file");
         int idx = ipAddress.indexOf(".cs.illinois.edu");
         String hostName = ipAddress;
-        if (idx >= 0) {
+        if(idx >= 0) {
             hostName = ipAddress.substring(0, idx);
         }
         System.out.println("HostName " + hostName);
@@ -78,7 +78,7 @@ public class DataTransfer {
         System.out.println("Receive File");
         String hostName = ipAddress;
         int idx = ipAddress.indexOf(".cs.illinois.edu");
-        if (idx >= 0) {
+        if(idx >= 0) {
             hostName = ipAddress.substring(0, idx);
         }
         StringBuilder sb = new StringBuilder();

@@ -4,6 +4,8 @@ import mp1.model.*;
 
 import java.util.Random;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 public class Sender {
@@ -30,8 +32,22 @@ public class Sender {
         this.heartbeatCounter = heartbeatCounter;
     }
 
+    public void start() {
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        service.execute(() -> {
+            while(true) {
+                this.send();
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {
+
+                }
+            }
+        });
+    }
+
     public void send() {
-        if (!this.statusBuilder.toString().equals(Status.RUNNING)) {
+        if(!this.statusBuilder.toString().equals(Status.RUNNING)) {
             return;
         }
         switch(this.modeBuilder.toString()) {
@@ -48,13 +64,13 @@ public class Sender {
 
     private void sendAllToAll() {
         //logger.warning("SEND ALL TO ALL");
-        for (Member member : membershipList){
+        for(Member member : membershipList){
             if(member.getId().equals(this.id) || (!member.getStatus().equals(Status.RUNNING))) {
                 continue;
             }
             AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id, this.heartbeatCounter);
             String[] idInfo = member.getId().split("_"); // ipaddr_port_timestamp
-            if (idInfo.length == 3) {
+            if(idInfo.length == 3) {
                 //logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
                 this.socket.send(all2all.toJSON(), idInfo[0], Integer.parseInt(idInfo[1]));
                 updateMember();
@@ -71,16 +87,16 @@ public class Sender {
         }
         // count the number of working members
        int numAlive = 0;
-       for (Member member : membershipList) {
-           if (member.getStatus().equals(Status.RUNNING)) {
+       for(Member member : membershipList) {
+           if(member.getStatus().equals(Status.RUNNING)) {
                numAlive++;
            }
        }
         // if we have less number of servers then K working now, we send all membershiplists
         if(numAlive <= K){
             // update the timestamp for the current id
-            for (Member member : membershipList) {
-                if (member.getId().equals(this.id)) {
+            for(Member member : membershipList) {
+                if(member.getId().equals(this.id)) {
                     continue;
                 }
                 if(!member.getStatus().equals(Status.RUNNING)) {
@@ -152,15 +168,15 @@ public class Sender {
     }
 
     public void switchMode(String mode) {
-        if (this.modeBuilder.toString().equals(mode)) {
+        if(this.modeBuilder.toString().equals(mode)) {
             return;
         }
         this.modeBuilder.setLength(0);
         this.modeBuilder.append(mode);
         SwitchModeHeartBeat switchModeHeartBeat = new SwitchModeHeartBeat(mode);
-        for (Member member : membershipList) {
+        for(Member member : membershipList) {
             String[] idInfo = member.getId().split("_");
-            if (idInfo.length == 3) {
+            if(idInfo.length == 3) {
                 this.socket.send(switchModeHeartBeat.toJSON(),idInfo[0], Integer.parseInt(idInfo[1]));
                 logger.warning("Mode changed sends to " + idInfo[0] + ":" + idInfo[1] + switchModeHeartBeat.toJSON().toString());
             }

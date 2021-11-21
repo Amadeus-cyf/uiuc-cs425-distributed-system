@@ -23,13 +23,7 @@ public class Server {
         Receiver receiver = new Receiver(this.ipAddress, this.port, this.dataTransfer);
         failureDetector.run();
         CommandHandler commandHandler = new CommandHandler(sender, failureDetector);
-        ExecutorService thread = Executors.newFixedThreadPool(1);
-        thread.execute(new Runnable() {
-            @Override
-            public void run() {
-                receiver.start();
-            }
-        });
+        receiver.start();
         commandHandler.run();
     }
 

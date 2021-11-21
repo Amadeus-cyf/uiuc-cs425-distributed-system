@@ -35,7 +35,7 @@ public class Sender {
     }
 
     public void send() {
-        if (!this.statusBuilder.toString().equals(Status.RUNNING)) {
+        if(!this.statusBuilder.toString().equals(Status.RUNNING)) {
             return;
         }
         switch(this.modeBuilder.toString()) {
@@ -52,13 +52,13 @@ public class Sender {
 
     private void sendAllToAll() {
         //logger.warning("SEND ALL TO ALL");
-        for (Member member : membershipList){
+        for(Member member : membershipList){
             if(member.getId().equals(this.id) || (!member.getStatus().equals(Status.RUNNING))) {
                 continue;
             }
             AllToAllHeartBeat all2all = new AllToAllHeartBeat(Mode.ALL_TO_ALL, this.id, this.heartbeatCounter);
             String[] idInfo = member.getId().split("_"); // ipaddr_port_timestamp
-            if (idInfo.length == 3) {
+            if(idInfo.length == 3) {
                 //logger.warning("sendAlltoAll: sends" + all2all.toJSON() + "to" + idInfo[0] + ":" + idInfo[1]);
                 this.socket.send(all2all.toJSON(), idInfo[0], Integer.parseInt(idInfo[1]));
                 updateMember();
@@ -75,8 +75,8 @@ public class Sender {
         }
         // count the number of working members
        int numAlive = 0;
-       for (Member member : membershipList) {
-           if (member.getStatus().equals(Status.RUNNING)) {
+       for(Member member : membershipList) {
+           if(member.getStatus().equals(Status.RUNNING)) {
                numAlive++;
            }
        }
@@ -85,12 +85,12 @@ public class Sender {
             // update the timestamp for the current id
             Member[] members = new Member[membershipList.size()];
             // to avoid concurrent modification exception
-            for (int i = 0; i < members.length; i++) {
+            for(int i = 0; i < members.length; i++) {
                 members[i] = membershipList.get(i);
             }
-            for (int i = 0; i < members.length; i++) {
+            for(int i = 0; i < members.length; i++) {
                 Member member = members[i];
-                if (member.getId().equals(this.id)) {
+                if(member.getId().equals(this.id)) {
                     continue;
                 }
                 if(!member.getStatus().equals(Status.RUNNING)) {
@@ -160,15 +160,15 @@ public class Sender {
     }
 
     public void switchMode(String mode) {
-        if (this.modeBuilder.toString().equals(mode)) {
+        if(this.modeBuilder.toString().equals(mode)) {
             return;
         }
         this.modeBuilder.setLength(0);
         this.modeBuilder.append(mode);
         SwitchModeHeartBeat switchModeHeartBeat = new SwitchModeHeartBeat(mode);
-        for (Member member : membershipList) {
+        for(Member member : membershipList) {
             String[] idInfo = member.getId().split("_");
-            if (idInfo.length == 3) {
+            if(idInfo.length == 3) {
                 this.socket.send(switchModeHeartBeat.toJSON(),idInfo[0], Integer.parseInt(idInfo[1]));
                 logger.warning("Mode changed sends to " + idInfo[0] + ":" + idInfo[1] + switchModeHeartBeat.toJSON().toString());
             }

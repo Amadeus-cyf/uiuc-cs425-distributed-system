@@ -19,24 +19,18 @@ public class Server {
         FailureDetector failureDetector = new mp2.failureDetector.Server(this.ipAddress, this.port+1);
         Receiver receiver = new Receiver(this.ipAddress, this.port, dataTransfer);
         Sender sender = new Sender(this.ipAddress, this.port, dataTransfer);
-        ExecutorService receiveThread = Executors.newSingleThreadExecutor();
-        receiveThread.execute(new Runnable() {
-            @Override
-            public void run() {
-                receiver.start();
-            }
-        });
+        receiver.start();
         Scanner scanner = new Scanner(System.in);
         CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner, receiver);
         System.out.println(this.ipAddress + ":" + this.port);
         failureDetector.run();
-        while (true) {
+        while(true) {
             commandHandler.handleCommand();
         }
     }
 
     public static void main(String[] args) {
-        if (args.length == 0) {
+        if(args.length == 0) {
             System.out.println("enter ip address");
             return;
         }

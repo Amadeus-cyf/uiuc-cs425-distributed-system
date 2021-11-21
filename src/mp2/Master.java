@@ -24,13 +24,7 @@ public class Master {
         FailureDetector failureDetector = new Introducer(MASTER_FD_IP_ADDRESS, MASTER_FD_PORT);
         Receiver receiver = new MasterReceiver(this.ipAddress, this.port, dataTransfer);
         Sender sender = new Sender(this.ipAddress, this.port, dataTransfer);
-        ExecutorService receiveThread = Executors.newSingleThreadExecutor();
-        receiveThread.execute(new Runnable() {
-            @Override
-            public void run() {
-                receiver.start();
-            }
-        });
+        receiver.start();
         Scanner scanner = new Scanner(System.in);
         CommandHandler commandHandler = new CommandHandler(sender, failureDetector, scanner, receiver);
         failureDetector.run();

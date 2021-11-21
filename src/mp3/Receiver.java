@@ -28,18 +28,21 @@ public class Receiver {
         this.port = port;
         this.dataTransfer = dataTransfer;
         File dir = new File(FilePath.INTERMEDIATE_PATH);
-        if (!dir.exists()) {
+        if(!dir.exists()) {
             dir.mkdir();
         }
     }
 
     public void start() {
+        ExecutorService service = Executors.newFixedThreadPool(5);
         while(true) {
             byte[] buffer = new byte[BLOCK_SIZE * 2];
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
             this.dataTransfer.receive(receivedPacket);
-            String msg = readBytes(buffer, receivedPacket.getLength());
-            receive(msg);
+            service.execute(() -> {
+                String msg = readBytes(buffer, receivedPacket.getLength());
+                receive(msg);
+            });
         }
     }
 
@@ -69,14 +72,14 @@ public class Receiver {
     protected void handleMapleFileMsg(JSONObject msgJson) {
         System.out.println("Receive Maple File Msg: " + msgJson.toString());
         File dir = new File(FilePath.INTERMEDIATE_PATH);
-        if (!dir.exists()) {
+        if(!dir.exists()) {
             System.out.println("Create Root directory for intermediate files: " + dir.mkdirs());
         }
         String sourceFileName = msgJson.getString(MsgKey.SOURCE_FILE);
         String splitFileName = msgJson.getString(MsgKey.FILE_TO_MAPLE);
         String mapleExe = msgJson.getString(MsgKey.MAPLE_EXE);
         this.mapleJuice = MapleJuiceFactory.create(mapleExe);
-        if (this.mapleJuice == null) {
+        if(this.mapleJuice == null) {
             return;
         }
         String localSplitFilePath = FilePath.INTERMEDIATE_PATH + splitFileName;
@@ -88,12 +91,12 @@ public class Receiver {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if (in == null) {
+        if(in == null) {
             return;
         }
         try {
             String line = null;
-            while ((line = in.readLine()) != null) {
+            while((line = in.readLine()) != null) {
                 mapleJuice.maple(line);
             }
         } catch (Exception e) {
@@ -125,21 +128,21 @@ public class Receiver {
         System.out.println("Receive Juice Files Msg: " + msgJson.toString());
         JSONArray filesToJuice = msgJson.getJSONArray(MsgKey.FILES_TO_JUICE);
         String intermediatePrefix = msgJson.getString(MsgKey.INTERMEDIATE_PREFIX);
-        for (int i = 0; i < filesToJuice.length(); i++) {
+        for(int i = 0; i < filesToJuice.length(); i++) {
             String fileName = filesToJuice.getString(i);
             this.dataTransfer.receiveFile(getJuiceInputLocalPath(fileName), getJuiceInputRemotePath(intermediatePrefix, fileName), MasterInfo.Master_IP_ADDRESS);
         }
         String juiceExe = msgJson.getString(MsgKey.JUICE_EXE);
         this.mapleJuice = MapleJuiceFactory.create(juiceExe);
-        if (this.mapleJuice == null) {
+        if(this.mapleJuice == null) {
             return;
         }
         ExecutorService service = Executors.newCachedThreadPool();
         CountDownLatch latch = new CountDownLatch(filesToJuice.length());
-        for (int i = 0; i < filesToJuice.length(); i++) {
+        for(int i = 0; i < filesToJuice.length(); i++) {
             service.execute(new JuiceFile(filesToJuice, i, latch));
         }
-        while (latch.getCount() > 0) {
+        while(latch.getCount() > 0) {
             Thread.yield();
         }
         String juiceOutputFilePath = getJuiceOutputLocalPath(intermediatePrefix);
@@ -159,7 +162,7 @@ public class Receiver {
         int isDelete = msgJson.getInt(MsgKey.IS_DELETE);
         Message juiceAck = new JuiceAck(destFile, isDelete, this.ipAddress, this.port);
         this.dataTransfer.send(juiceAck.toJSON(), MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT);
-        if (!this.ipAddress.equals(MasterInfo.Master_IP_ADDRESS) || this.port != MasterInfo.MASTER_PORT) {
+        if(!this.ipAddress.equals(MasterInfo.Master_IP_ADDRESS) || this.port != MasterInfo.MASTER_PORT) {
             deleteDir(FilePath.INTERMEDIATE_PATH);
         }
     }
@@ -167,11 +170,11 @@ public class Receiver {
     protected void deleteDir(String dirPath) {
         File dir = new File(dirPath);
         File[] files = dir.listFiles();
-        if (files == null || files.length == 0) {
+        if(files == null || files.length == 0) {
             dir.delete();
             return;
         }
-        for (File file : files) {
+        for(File file : files) {
             deleteDir(file.getAbsolutePath());
         }
         dir.delete();
@@ -202,7 +205,7 @@ public class Receiver {
         String filePath = sb.append(FilePath.INTERMEDIATE_PATH).append(this.ipAddress).append("_").append(this.port).append("_").append(intermediatePrefix).append("_juice_out").toString();
         System.out.println("Juice output path: " + filePath);
         File file = new File(filePath);
-        if (file.exists()) {
+        if(file.exists()) {
             filePath = sb.append("_1").toString();
         }
         return filePath;
@@ -217,11 +220,11 @@ public class Receiver {
      * turn bytes into string
      */
     protected String readBytes(byte[] packet, int length) {
-        if (packet == null) {
+        if(packet == null) {
             return null;
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
+        for(int i = 0; i < length; i++) {
             sb.append((char)(packet[i]));
         }
         return sb.toString();
