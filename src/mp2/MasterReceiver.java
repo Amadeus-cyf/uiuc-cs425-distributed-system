@@ -268,43 +268,47 @@ public class MasterReceiver extends Receiver {
         int currentAckNum = ackResponse.get(fileName).size();
         // check whether the ack number is enough
         System.out.println("CURRENT ACK NUM " + currentAckNum);
-        if((msgType.equals(MsgType.GET_ACK) && currentAckNum >= numGetReq) || (currentAckNum >= Math.min(REPLICA_NUM, servers.size()))) {
-            getReqNum.remove(fileName);
-            Set<ServerInfo> serversAck = ackResponse.get(fileName);
-            if(msgType.equals(MsgType.PUT_ACK)) {
-                // either put success or replicate success
-                handlePutAck(fileName, serversAck);
-            } else if(msgType.equals(MsgType.DEL_ACK)) {
-                handleDelAck(fileName, serversAck);
+        if((!msgType.equals(MsgType.GET_ACK) || currentAckNum < numGetReq) && currentAckNum < Math.min(REPLICA_NUM, servers.size())) {
+            return;
+        }
+        
+        // receive enough GET ACK
+        getReqNum.remove(fileName);
+        Set<ServerInfo> serversAck = ackResponse.get(fileName);
+        if(msgType.equals(MsgType.PUT_ACK)) {
+            // either put success or replicate success
+            handlePutAck(fileName, serversAck);
+        } else if(msgType.equals(MsgType.DEL_ACK)) {
+            handleDelAck(fileName, serversAck);
+        }
+        System.out.println(fileName + ": " + fileStorageInfo.get(fileName));
+        ackResponse.remove(fileName);
+        fileStatus.put(fileName, new Status(false, false, false));
+        Queue<JSONObject> messageQueue = messageMap.get(fileName);
+        if(messageQueue == null) {
+            return;
+        }
+        label:
+        while(true) {
+            if(messageQueue.isEmpty()) {
+                break;
             }
-            System.out.println(fileName + ": " + fileStorageInfo.get(fileName));
-            ackResponse.remove(fileName);
-            fileStatus.put(fileName, new Status(false, false, false));
-            Queue<JSONObject> messageQueue = messageMap.get(fileName);
-            if(messageQueue != null) {
-                label:
-                while(true) {
-                    if(messageQueue.isEmpty()) {
-                        break;
-                    }
-                    JSONObject json = messageQueue.peek();
-                    String currentMsgType = json.getString(MsgKey.MSG_TYPE);
-                    System.out.println("receiveACK: " + json.toString());
-                    switch (currentMsgType) {
-                        case MsgType.PRE_GET_REQUEST:
-                            handlePreGetAck(fileName);
-                            break;
-                        case MsgType.PRE_PUT_REQUEST:
-                            handlePrePutAck(fileName);
-                            break label;
-                        case MsgType.PRE_DEL_REQUEST:
-                            handlePreDelAck(fileName);
-                            break label;
-                        case MsgType.REPLICATE_REQUEST:
-                            handleReplicateAck(fileName);
-                            break;
-                    }
-                }
+            JSONObject json = messageQueue.peek();
+            String currentMsgType = json.getString(MsgKey.MSG_TYPE);
+            System.out.println("receiveACK: " + json.toString());
+            switch (currentMsgType) {
+                case MsgType.PRE_GET_REQUEST:
+                    handlePreGetAck(fileName);
+                    break;
+                case MsgType.PRE_PUT_REQUEST:
+                    handlePrePutAck(fileName);
+                    break label;
+                case MsgType.PRE_DEL_REQUEST:
+                    handlePreDelAck(fileName);
+                    break label;
+                case MsgType.REPLICATE_REQUEST:
+                    handleReplicateAck(fileName);
+                    break;
             }
         }
     }
@@ -533,14 +537,15 @@ public class MasterReceiver extends Receiver {
         }
         for(ServerInfo serverInfo : serversAck) {
             // check whether the ack is a fake ack
-            if(!serverInfo.getIpAddress().equals("")) {
-                fileStorageInfo.get(fileName).add(serverInfo);
-                if(serverStorageInfo.get(serverInfo) == null) {
-                    serverStorageInfo.put(serverInfo, new HashSet<>());
-                }
-                System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
-                serverStorageInfo.get(serverInfo).add(fileName);
+            if(serverInfo.getIpAddress().equals("")) {
+                continue;
             }
+            fileStorageInfo.get(fileName).add(serverInfo);
+            if(serverStorageInfo.get(serverInfo) == null) {
+                serverStorageInfo.put(serverInfo, new HashSet<>());
+            }
+            System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
+            serverStorageInfo.get(serverInfo).add(fileName);
         }
     }
 
