@@ -133,7 +133,7 @@ public class MasterReceiver extends Receiver {
             if(targetServers != null) {
                 switch(msgType) {
                     case MsgType.PRE_PUT_REQUEST:
-                        handlePrePutRequestWhileNoWrite(msgJson, currentStatus, targetServers);
+                        handlePrePutRequestWithTargetServers(msgJson, currentStatus, targetServers);
                         break;
                     case MsgType.PRE_DEL_REQUEST:
                         handlePreDelRequest(msgJson, currentStatus, targetServers);
@@ -146,7 +146,7 @@ public class MasterReceiver extends Receiver {
                 }
             } else {
                 if(msgType.equals(MsgType.PRE_PUT_REQUEST)) {
-                    handlePrePutRequestWhileWrite(msgJson);
+                    handlePrePutRequestWithNoTargetServers(msgJson);
                 } else {
                     handleFileNotFound(msgJson);
                 }
@@ -157,7 +157,7 @@ public class MasterReceiver extends Receiver {
         }
     }
 
-    private void handlePrePutRequestWhileNoWrite(JSONObject msgJson, Status currentStatus, Set<ServerInfo> targetServers) {
+    private void handlePrePutRequestWithTargetServers(JSONObject msgJson, Status currentStatus, Set<ServerInfo> targetServers) {
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         String targetIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int targetPort = msgJson.getInt(MsgKey.PORT);
@@ -207,7 +207,7 @@ public class MasterReceiver extends Receiver {
         }
     }
 
-    private void handlePrePutRequestWhileWrite(JSONObject msgJson) {
+    private void handlePrePutRequestWithNoTargetServers(JSONObject msgJson) {
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
         String targetIpAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int targetPort = msgJson.getInt(MsgKey.PORT);
@@ -271,7 +271,7 @@ public class MasterReceiver extends Receiver {
         if((!msgType.equals(MsgType.GET_ACK) || currentAckNum < numGetReq) && currentAckNum < Math.min(REPLICA_NUM, servers.size())) {
             return;
         }
-        
+
         // receive enough GET ACK
         getReqNum.remove(fileName);
         Set<ServerInfo> serversAck = ackResponse.get(fileName);
@@ -493,9 +493,7 @@ public class MasterReceiver extends Receiver {
                 System.out.println("REPLICATE FILE: WRITE IS AVAILABLE " + fileName + " " + targetServer.getIpAddress() + ":" + targetServer.getPort());
                 fileStatus.put(fileName, new Status(false,  false, true));
                 this.dataTransfer.send(replicateRequest.toJSON(), targetServer.getIpAddress(), targetServer.getPort());
-                if(this.ackResponse.get(fileName) == null) {
-                    this.ackResponse.put(fileName, new HashSet<>());
-                }
+                this.ackResponse.computeIfAbsent(fileName, k -> new HashSet<>());
                 // add fake ack response since number of replicate request is smaller than replica num
                 for(int i = REPLICA_NUM; i > replicaNum; i--) {
                     this.ackResponse.get(fileName).add(new ServerInfo("", i * -1));
@@ -532,18 +530,14 @@ public class MasterReceiver extends Receiver {
     }
 
     private void handlePutAck(String fileName, Set<ServerInfo> serversAck) {
-        if(fileStorageInfo.get(fileName) == null) {
-            fileStorageInfo.put(fileName, new HashSet<>());
-        }
+        fileStorageInfo.computeIfAbsent(fileName, k -> new HashSet<>());
         for(ServerInfo serverInfo : serversAck) {
             // check whether the ack is a fake ack
             if(serverInfo.getIpAddress().equals("")) {
                 continue;
             }
             fileStorageInfo.get(fileName).add(serverInfo);
-            if(serverStorageInfo.get(serverInfo) == null) {
-                serverStorageInfo.put(serverInfo, new HashSet<>());
-            }
+            serverStorageInfo.computeIfAbsent(serverInfo, k -> new HashSet<>());
             System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
             serverStorageInfo.get(serverInfo).add(fileName);
         }
@@ -569,7 +563,7 @@ public class MasterReceiver extends Receiver {
             System.out.println("get filename == null");
             Message errorMsg = new ErrorResponse(fileName);
             this.dataTransfer.send(errorMsg.toJSON(), targetIpAddress, targetPort);
-        }else{
+        } else{
             Set<ServerInfo> servers = this.fileStorageInfo.get(fileName);
             if(targetIpAddress.equals(MASTER_SDFS_IP_ADDRESS) && targetPort== MASTER_SDFS_PORT){
                 System.out.println("List all the servers stored the file " + fileName + ":");

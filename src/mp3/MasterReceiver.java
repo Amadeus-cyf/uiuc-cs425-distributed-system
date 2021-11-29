@@ -116,12 +116,8 @@ public class MasterReceiver extends Receiver {
         List<String> splitFiles = splitter.split(sourceName, mapleNum);
         System.out.println(splitFiles);
         ServerInfo[] serverInfos = randomPickNServers(mapleNum);
-        if(runningServers.get(sourceName) == null) {
-            runningServers.put(sourceName, new HashSet<>());
-        }
-        for(ServerInfo serverInfo : serverInfos) {
-            runningServers.get(sourceName).add(serverInfo);
-        }
+        Set<ServerInfo> set = runningServers.computeIfAbsent(sourceName, k -> new HashSet<>());
+        Collections.addAll(set, serverInfos);
         if(splitFiles != null) {
             for(int i = 0; i < splitFiles.size(); i++) {
                 String splitFileName = splitFiles.get(i);
@@ -259,15 +255,11 @@ public class MasterReceiver extends Receiver {
             juiceNum = Math.min(this.servers.size(), juiceNum);
             this.juiceRunningServers.put(destFileName, juiceNum);
             ServerInfo[] serverInfos = randomPickNServers(juiceNum);
-            for(int i = 0; i < serverInfos.length; i++) {
-                System.out.println("Server " + serverInfos[i].getIpAddress() + ":" + serverInfos[i].getPort() + " selected for juice");
-            }
-            if(runningServers.get(intermediatePrefix) == null) {
-                runningServers.put(intermediatePrefix, new HashSet<>());
-            }
             for(ServerInfo serverInfo : serverInfos) {
-                runningServers.get(intermediatePrefix).add(serverInfo);
+                System.out.println("Server " + serverInfo.getIpAddress() + ":" + serverInfo.getPort() + " selected for juice");
             }
+            Set<ServerInfo> set = runningServers.computeIfAbsent(intermediatePrefix, k -> new HashSet<>());
+            Collections.addAll(set, serverInfos);
             long numFilePerServer = files.length / juiceNum;
             int serverIdx = 0;
             for(int i = 0; i < files.length; i += numFilePerServer) {
