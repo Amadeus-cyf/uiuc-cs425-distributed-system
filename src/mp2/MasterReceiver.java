@@ -8,6 +8,8 @@ import org.json.JSONObject;
 
 import java.net.DatagramPacket;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -26,26 +28,23 @@ public class MasterReceiver extends Receiver {
 
     public MasterReceiver(String ipAddress, int port, DataTransfer socket) {
         super(ipAddress, port, socket);
-        this.messageMap = new HashMap<>();
-        this.fileStatus = new HashMap<>();
-        this.fileStorageInfo = new HashMap<>();
-        this.ackResponse = new HashMap<>();
-        this.servers = new HashSet<>();
-        this.serverStorageInfo = new HashMap<>();
-        this.getReqNum = new HashMap<>();
-        this.failServers = new HashSet<>();
+        this.messageMap = new ConcurrentHashMap<>();
+        this.fileStatus = new ConcurrentHashMap<>();
+        this.fileStorageInfo = new ConcurrentHashMap<>();
+        this.ackResponse = new ConcurrentHashMap<>();
+        this.servers = ConcurrentHashMap.newKeySet();
+        this.serverStorageInfo = new ConcurrentHashMap<>();
+        this.getReqNum = new ConcurrentHashMap<>();
+        this.failServers = ConcurrentHashMap.newKeySet();
         ExecutorService replicaThread = Executors.newSingleThreadExecutor();
-        replicaThread.execute(new Runnable() {
-            @Override
-            public void run() {
-                while(true) {
-                    try {
-                        Thread.sleep(6000);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    replicateFile();
+        replicaThread.execute(() -> {
+            while(true) {
+                try {
+                    Thread.sleep(6000);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
+                replicateFile();
             }
         });
     }
@@ -117,6 +116,8 @@ public class MasterReceiver extends Receiver {
             case(MsgType.FP_REJOIN_MSG):
                 receiveFPRejoinMsg(msgJson);
                 break;
+            default:
+                System.out.println("invalid message type");
         }
     }
 
@@ -215,7 +216,7 @@ public class MasterReceiver extends Receiver {
         fileStatus.put(fileName, new Status(false, true, false));
         int serverIdx = (hash(fileName) % servers.size());
         System.out.println("server Idx: " + serverIdx);
-        Set<ServerInfo> serversArranged = new HashSet<>();
+        Set<ServerInfo> serversArranged = ConcurrentHashMap.newKeySet();
         List<ServerInfo> serverInfos = new ArrayList<>(servers);
         if(serverIdx <= serverInfos.size() - REPLICA_NUM) {
             for(int i = serverIdx; i < serverIdx + REPLICA_NUM; i++) {
@@ -255,10 +256,7 @@ public class MasterReceiver extends Receiver {
      */
     private void receiveACK (JSONObject msgJson){
         String fileName = msgJson.getString(MsgKey.SDFS_FILE_NAME);
-        if(ackResponse.get(fileName) == null) {
-            Set<ServerInfo> receivedAck = new HashSet<>();
-            ackResponse.put(fileName, receivedAck);
-        }
+        ackResponse.computeIfAbsent(fileName, k -> ConcurrentHashMap.newKeySet());
         String ipAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int port = msgJson.getInt(MsgKey.PORT);
         ackResponse.get(fileName).add(new ServerInfo(ipAddress, port));
@@ -332,11 +330,7 @@ public class MasterReceiver extends Receiver {
             this.dataTransfer.send(preGetResponse.toJSON(), targetIpAddress, targetPort);
             break;
         }
-        if(getReqNum.get(fileName) == null) {
-            getReqNum.put(fileName, 1);
-        } else {
-            getReqNum.put(fileName, getReqNum.get(fileName) + 1);
-        }
+        getReqNum.merge(fileName, 1, Integer::sum);
         System.out.println("RECEIVE ACK : SEND PRE GET RESPONSE TO SERVER " + targetIpAddress + ":" + targetPort);
     }
 
@@ -398,9 +392,7 @@ public class MasterReceiver extends Receiver {
         messageQueue.poll();
         this.dataTransfer.send(json, targetIpAddress, targetPort);
         fileStatus.put(fileName, new Status(false, false, true));
-        if (this.ackResponse.get(fileName) == null) {
-            this.ackResponse.put(fileName, new HashSet<>());
-        }
+        this.ackResponse.computeIfAbsent(fileName, k -> ConcurrentHashMap.newKeySet());
         // the replicate ack response will receive ack < REPLICA NUM, thus, we need to add fake ack into the ack response
         JSONArray newServers = json.getJSONArray(MsgKey.TARGET_SERVERS);
         for (int i = REPLICA_NUM; i > newServers.length(); i--) {
@@ -417,7 +409,7 @@ public class MasterReceiver extends Receiver {
             ServerInfo serverInfo = new ServerInfo(ipAddress, port);
             if(!servers.contains(serverInfo)) {
                 servers.add(serverInfo);
-                this.serverStorageInfo.put(serverInfo, new HashSet<>());
+                this.serverStorageInfo.put(serverInfo, ConcurrentHashMap.newKeySet());
             }
         }
     }
@@ -454,11 +446,7 @@ public class MasterReceiver extends Receiver {
             serverStorageInfo.remove(failServerInfo);
             // get number of replica need for each file stored on fail servers
             for(String fileName : fileNames) {
-                if(fileReplicaNum.get(fileName) == null) {
-                    fileReplicaNum.put(fileName, 1);
-                } else {
-                    fileReplicaNum.put(fileName, fileReplicaNum.get(fileName) + 1);
-                }
+                fileReplicaNum.merge(fileName, 1, Integer::sum);
             }
         }
         for(Map.Entry<String, Integer> entry : fileReplicaNum.entrySet()) {
@@ -493,7 +481,7 @@ public class MasterReceiver extends Receiver {
                 System.out.println("REPLICATE FILE: WRITE IS AVAILABLE " + fileName + " " + targetServer.getIpAddress() + ":" + targetServer.getPort());
                 fileStatus.put(fileName, new Status(false,  false, true));
                 this.dataTransfer.send(replicateRequest.toJSON(), targetServer.getIpAddress(), targetServer.getPort());
-                this.ackResponse.computeIfAbsent(fileName, k -> new HashSet<>());
+                this.ackResponse.computeIfAbsent(fileName, k -> ConcurrentHashMap.newKeySet());
                 // add fake ack response since number of replicate request is smaller than replica num
                 for(int i = REPLICA_NUM; i > replicaNum; i--) {
                     this.ackResponse.get(fileName).add(new ServerInfo("", i * -1));
@@ -523,21 +511,21 @@ public class MasterReceiver extends Receiver {
     private void addRequestToQueue(String fileName, JSONObject msgJson) {
         // the target file is updating, wait for write finish
         if(messageMap.get(fileName) == null) {
-            Queue<JSONObject> queue = new LinkedList<>();
+            Queue<JSONObject> queue = new ConcurrentLinkedQueue<>();
             messageMap.put(fileName, queue);
         }
         messageMap.get(fileName).add(msgJson);
     }
 
     private void handlePutAck(String fileName, Set<ServerInfo> serversAck) {
-        fileStorageInfo.computeIfAbsent(fileName, k -> new HashSet<>());
+        fileStorageInfo.computeIfAbsent(fileName, k -> ConcurrentHashMap.newKeySet());
         for(ServerInfo serverInfo : serversAck) {
             // check whether the ack is a fake ack
             if(serverInfo.getIpAddress().equals("")) {
                 continue;
             }
             fileStorageInfo.get(fileName).add(serverInfo);
-            serverStorageInfo.computeIfAbsent(serverInfo, k -> new HashSet<>());
+            serverStorageInfo.computeIfAbsent(serverInfo, k -> ConcurrentHashMap.newKeySet());
             System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress() + ":" + serverInfo.getPort());
             serverStorageInfo.get(serverInfo).add(fileName);
         }

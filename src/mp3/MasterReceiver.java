@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.net.DatagramPacket;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,12 +28,12 @@ public class MasterReceiver extends Receiver {
 
     public MasterReceiver(DataTransfer dataTransfer) {
         super(MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT, dataTransfer);
-        this.mapleRunningServers = new HashMap<>();
-        this.juiceRunningServers = new HashMap<>();
-        this.destToIntermediate = new HashMap<>();
-        this.runningServers = new HashMap<>();
-        this.assignedTasks = new HashMap<>();
-        this.servers = new HashSet<>();
+        this.mapleRunningServers = new ConcurrentHashMap<>();
+        this.juiceRunningServers = new ConcurrentHashMap<>();
+        this.destToIntermediate = new ConcurrentHashMap<>();
+        this.runningServers = new ConcurrentHashMap<>();
+        this.assignedTasks = new ConcurrentHashMap<>();
+        this.servers = ConcurrentHashMap.newKeySet();
         this.servers.add(new ServerInfo(MasterInfo.Master_IP_ADDRESS, MasterInfo.MASTER_PORT));
     }
 
@@ -116,7 +117,7 @@ public class MasterReceiver extends Receiver {
         List<String> splitFiles = splitter.split(sourceName, mapleNum);
         System.out.println(splitFiles);
         ServerInfo[] serverInfos = randomPickNServers(mapleNum);
-        Set<ServerInfo> set = runningServers.computeIfAbsent(sourceName, k -> new HashSet<>());
+        Set<ServerInfo> set = runningServers.computeIfAbsent(sourceName, k -> ConcurrentHashMap.newKeySet());
         Collections.addAll(set, serverInfos);
         if(splitFiles != null) {
             for(int i = 0; i < splitFiles.size(); i++) {

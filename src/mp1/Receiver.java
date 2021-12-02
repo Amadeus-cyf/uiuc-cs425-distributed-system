@@ -16,7 +16,6 @@ public class Receiver {
     private String ipAddress;
     private int port;
     private UdpSocket socket;
-    private byte[] buffer = new byte[2048];
     private volatile StringBuilder modeBuilder;
     private volatile StringBuilder statusBuilder;
     private volatile String status;
@@ -41,6 +40,7 @@ public class Receiver {
     public void start() {
         ExecutorService service = Executors.newFixedThreadPool(5);
         while(true) {
+            byte[] buffer = new byte[2048];
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
             this.socket.receive(receivedPacket);
             service.execute(() -> {

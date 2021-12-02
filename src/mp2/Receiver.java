@@ -81,6 +81,8 @@ public class Receiver {
             case(MsgType.FP_REJOIN_MSG):
                 receiveFPReJoinMsg(msgJson);
                 break;
+            default:
+                System.out.println("invalid message type");
         }
     }
 
