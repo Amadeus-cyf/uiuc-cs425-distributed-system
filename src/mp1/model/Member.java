@@ -5,7 +5,7 @@ import mp1.Status;
 import java.sql.Timestamp;
 
 public class Member {
-    private String id;
+    private final String id;
 
     private String status;
 
@@ -13,7 +13,11 @@ public class Member {
 
     private long heartbeatCounter;
 
-    public Member(String id, Timestamp timestamp, long heartbeatCounter) {
+    public Member(
+        String id,
+        Timestamp timestamp,
+        long heartbeatCounter
+    ) {
         this.timestamp = timestamp;
         this.status = Status.RUNNING;
         this.id = id;
@@ -44,11 +48,11 @@ public class Member {
         return this.heartbeatCounter;
     }
 
-    public void incHeartbeatCounter() {
-        this.heartbeatCounter++;
-    }
-
     public void setHeartbeatCounter(long heartbeatCounter) {
         this.heartbeatCounter = heartbeatCounter;
+    }
+
+    public void incHeartbeatCounter() {
+        this.heartbeatCounter++;
     }
 }

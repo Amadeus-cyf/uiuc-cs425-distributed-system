@@ -5,12 +5,17 @@ import mp3.constant.MsgType;
 import org.json.JSONObject;
 
 public class MapleAck extends Message {
-    private String sourceFile;
-    private String intermediatePrefix;
-    private String ipAddress;
-    private int port;
+    private final String sourceFile;
+    private final String intermediatePrefix;
+    private final String ipAddress;
+    private final int port;
 
-    public MapleAck(String sourceFile, String intermediatePrefix, String ipAddress, int port) {
+    public MapleAck(
+        String sourceFile,
+        String intermediatePrefix,
+        String ipAddress,
+        int port
+    ) {
         super(MsgType.MAPLE_ACK);
         this.sourceFile = sourceFile;
         this.intermediatePrefix = intermediatePrefix;
@@ -21,11 +26,21 @@ public class MapleAck extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
-        jsonObject.put(MsgKey.SOURCE_FILE, sourceFile);
-        jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, intermediatePrefix);
-        jsonObject.put(MsgKey.IP_ADDRESS, this.ipAddress);
-        jsonObject.put(MsgKey.PORT, this.port);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            this.msgType
+        ).put(
+            MsgKey.SOURCE_FILE,
+            sourceFile
+        ).put(
+            MsgKey.INTERMEDIATE_PREFIX,
+            intermediatePrefix
+        ).put(
+            MsgKey.IP_ADDRESS,
+            this.ipAddress
+        ).put(
+            MsgKey.PORT,
+            this.port
+        );
     }
 }

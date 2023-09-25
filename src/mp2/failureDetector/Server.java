@@ -13,28 +13,33 @@ import static mp2.constant.MasterSdfsInfo.MASTER_SDFS_PORT;
 public class Server extends FailureDetector {
     public Sender sender;
     public Receiver receiver;
-    private Long heartbeatCounter = 0L;
     private TimeoutChecker checker;
 
-    public Server(String ipAddress, int port) {
-        super(ipAddress, port);
+    public Server(
+        String ipAddress,
+        int port
+    ) {
+        super(
+            ipAddress,
+            port
+        );
     }
 
     @Override
     public void run() {
         join();
-        ExecutorService sendThread= Executors.newSingleThreadExecutor();
+        ExecutorService sendThread = Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         ExecutorService checkerThread = Executors.newSingleThreadExecutor();
         sendThread.execute(new Runnable() {
             @Override
             public void run() {
-                while(true) {
+                while (true) {
                     sender.send();
                     try {
                         Thread.sleep(1000);
                     } catch (Exception e) {
-
+                        e.printStackTrace();
                     }
                 }
             }
@@ -45,7 +50,12 @@ public class Server extends FailureDetector {
                 receiver.start();
             }
         });
-        this.checker = new TimeoutChecker(membershipList, modeBuilder, id, this.socket);
+        this.checker = new TimeoutChecker(
+            membershipList,
+            modeBuilder,
+            id,
+            this.socket
+        );
         checkerThread.execute(this.checker);
     }
 
@@ -53,9 +63,29 @@ public class Server extends FailureDetector {
         this.status = Status.RUNNING;
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
-        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.statusBuilder, this.socket, this.heartbeatCounter);
-        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.statusBuilder, this.socket, this.heartbeatCounter);
-        Member member = new Member(this.id, this.startingTime,this.heartbeatCounter);
+        this.sender = new Sender(
+            this.id,
+            this.ipAddress,
+            this.port,
+            this.membershipList,
+            this.modeBuilder,
+            this.statusBuilder,
+            this.socket
+        );
+        this.receiver = new Receiver(
+            this.id,
+            this.ipAddress,
+            this.port,
+            this.membershipList,
+            this.modeBuilder,
+            this.statusBuilder,
+            this.socket
+        );
+        Member member = new Member(
+            this.id,
+            this.startingTime,
+            0L
+        );
         this.membershipList.add(member);
         // sender send a message to the ip address and port of the introducer
         this.sender.sendJoinRequest();
@@ -66,9 +96,20 @@ public class Server extends FailureDetector {
         this.statusBuilder.append(Status.RUNNING);
         this.join();
         this.checker.resetId(this.id);
-        FPRejoinMessage fpRejoinMessage = new FPRejoinMessage(this.ipAddress, this.port);
-        this.socket.send(fpRejoinMessage.toJSON(), MASTER_SDFS_IP_ADDRESS, MASTER_SDFS_PORT);
-        this.socket.send(fpRejoinMessage.toJSON(), this.ipAddress, this.port-1);
+        FPRejoinMessage fpRejoinMessage = new FPRejoinMessage(
+            this.ipAddress,
+            this.port
+        );
+        this.socket.send(
+            fpRejoinMessage.toJSON(),
+            MASTER_SDFS_IP_ADDRESS,
+            MASTER_SDFS_PORT
+        );
+        this.socket.send(
+            fpRejoinMessage.toJSON(),
+            this.ipAddress,
+            this.port - 1
+        );
     }
 
     @Override

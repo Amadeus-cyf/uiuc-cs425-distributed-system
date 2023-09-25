@@ -8,13 +8,17 @@ import org.json.JSONObject;
 import java.util.Set;
 
 public class ReplicateRequest extends Message {
-    private String fileName;
-    private Set<ServerInfo> newReplicaServers;
-    private String ipAddress;
-    private int port;
+    private final String fileName;
+    private final Set<ServerInfo> newReplicaServers;
+    private final String ipAddress;
+    private final int port;
 
-
-    public ReplicateRequest(String fileName, Set<ServerInfo> newReplicaServers, String ipAddress, int port) {
+    public ReplicateRequest(
+        String fileName,
+        Set<ServerInfo> newReplicaServers,
+        String ipAddress,
+        int port
+    ) {
         super(MsgType.REPLICATE_REQUEST);
         this.fileName = fileName;
         this.newReplicaServers = newReplicaServers;
@@ -25,11 +29,21 @@ public class ReplicateRequest extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
-        jsonObject.put(MsgKey.SDFS_FILE_NAME, fileName);
-        jsonObject.put(MsgKey.TARGET_SERVERS, newReplicaServers);
-        jsonObject.put(MsgKey.IP_ADDRESS, ipAddress);
-        jsonObject.put(MsgKey.PORT, port);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            this.msgType
+        ).put(
+            MsgKey.SDFS_FILE_NAME,
+            fileName
+        ).put(
+            MsgKey.TARGET_SERVERS,
+            newReplicaServers
+        ).put(
+            MsgKey.IP_ADDRESS,
+            ipAddress
+        ).put(
+            MsgKey.PORT,
+            port
+        );
     }
 }

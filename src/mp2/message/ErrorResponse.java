@@ -6,7 +6,7 @@ import mp2.constant.MsgType;
 import org.json.JSONObject;
 
 public class ErrorResponse extends Message {
-    private String fileName;
+    private final String fileName;
 
     public ErrorResponse(String fileName) {
         super(MsgType.ERROR_RESPONSE);
@@ -15,9 +15,15 @@ public class ErrorResponse extends Message {
 
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, msgType);
-        jsonObject.put(MsgKey.ERROR, MsgContent.FILE_NOT_FOUND);
-        jsonObject.put(MsgKey.SDFS_FILE_NAME, this.fileName);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            msgType
+        ).put(
+            MsgKey.ERROR,
+            MsgContent.FILE_NOT_FOUND
+        ).put(
+            MsgKey.SDFS_FILE_NAME,
+            this.fileName
+        );
     }
 }

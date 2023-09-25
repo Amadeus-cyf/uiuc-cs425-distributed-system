@@ -15,7 +15,10 @@ public class VotingCompare extends MapleJuice<String, Object> {
         String[] infoList = line.split(" "); // name1, name2 (n1 dominates n2)
         String A = infoList[0];
         String B = infoList[1];
-        mapleOutput.add(new Pair<>(A,B));
+        mapleOutput.add(new Pair<>(
+            A,
+            B
+        ));
     }
 
     @Override
@@ -26,39 +29,54 @@ public class VotingCompare extends MapleJuice<String, Object> {
             fIn = new BufferedReader(new FileReader(filePath));
             String line = fIn.readLine();
             String key = line.split(" ")[0];
-            compare.put(key, 1);
-            while((line = fIn.readLine()) != null) {
+            compare.put(
+                key,
+                1
+            );
+            while ((line = fIn.readLine()) != null) {
                 key = line.split(" ")[0];
-                if(compare.containsKey(key)) {
+                if (compare.containsKey(key)) {
                     int curVote = compare.get(key);
-                    compare.put(key, curVote+1);
+                    compare.put(
+                        key,
+                        curVote + 1
+                    );
                 } else {
-                    compare.put(key, 1);
+                    compare.put(
+                        key,
+                        1
+                    );
                 }
             }
             int numCandidate = compare.size();
             int maxVote = 0;
             int val;
-            for(Map.Entry<String, Integer> entry : compare.entrySet()) {
+            for (Map.Entry<String, Integer> entry : compare.entrySet()) {
                 key = entry.getKey();
                 val = entry.getValue();
-                if(val == numCandidate - 1) {
-                    juiceOutput.add(new Pair<>(key, "Condorcet winner!"));
+                if (val == numCandidate - 1) {
+                    juiceOutput.add(new Pair<>(
+                        key,
+                        "Condorcet winner!"
+                    ));
                     return;
                 }
-                if(val > maxVote) {
+                if (val > maxVote) {
                     maxVote = val;
                 }
             }
             List<String> highest = new ArrayList<String>();
-            for(Map.Entry<String, Integer> entry : compare.entrySet()) {
+            for (Map.Entry<String, Integer> entry : compare.entrySet()) {
                 key = entry.getKey();
                 val = entry.getValue();
-                if(val == maxVote) {
+                if (val == maxVote) {
                     highest.add(key);
                 }
             }
-            juiceOutput.add(new Pair<>(highest.toString(), "No Condorcet winner, Highest Condorcet counts"));
+            juiceOutput.add(new Pair<>(
+                highest.toString(),
+                "No Condorcet winner, Highest Condorcet counts"
+            ));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {

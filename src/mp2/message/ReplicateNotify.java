@@ -15,8 +15,12 @@ public class ReplicateNotify extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
-        jsonObject.put(MsgKey.SDFS_FILE_NAME, this.sdfsFileName);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            this.msgType
+        ).put(
+            MsgKey.SDFS_FILE_NAME,
+            this.sdfsFileName
+        );
     }
 }

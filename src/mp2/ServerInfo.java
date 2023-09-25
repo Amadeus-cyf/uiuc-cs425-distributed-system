@@ -1,10 +1,13 @@
 package mp2;
 
 public class ServerInfo {
-    private String ipAddress;
-    private int port;
+    private final String ipAddress;
+    private final int port;
 
-    public ServerInfo(String ipAddress, int port) {
+    public ServerInfo(
+        String ipAddress,
+        int port
+    ) {
         this.ipAddress = ipAddress;
         this.port = port;
     }
@@ -19,13 +22,13 @@ public class ServerInfo {
 
     @Override
     public boolean equals(Object obj) {
-        if(this == obj) {
+        if (this == obj) {
             return true;
         }
-        if(!(obj instanceof ServerInfo)) {
+        if (!(obj instanceof ServerInfo)) {
             return false;
         }
-        return this.ipAddress.equals(((ServerInfo)obj).ipAddress) && (this.port == ((ServerInfo) obj).port);
+        return this.ipAddress.equals(((ServerInfo) obj).ipAddress) && (this.port == ((ServerInfo) obj).port);
     }
 
     @Override

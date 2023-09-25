@@ -3,14 +3,19 @@ package mp2;
 import mp2.constant.UserInfo;
 import org.json.JSONObject;
 
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class DataTransfer {
+    private final String ipAddress;
+    private final int port;
     private DatagramSocket socket;
-    private String ipAddress;
-    private int port;
 
-    public DataTransfer(String ipAddress, int port) {
+    public DataTransfer(
+        String ipAddress,
+        int port
+    ) {
         this.ipAddress = ipAddress;
         this.port = port;
         bind();
@@ -22,7 +27,10 @@ public class DataTransfer {
     public void bind() {
         try {
             InetAddress address = InetAddress.getByName(ipAddress);
-            this.socket = new DatagramSocket(port, address);
+            this.socket = new DatagramSocket(
+                port,
+                address
+            );
         } catch (Exception exception) {
             exception.printStackTrace();
         }
@@ -31,34 +39,56 @@ public class DataTransfer {
     /*
      * send message to the target ip address and port
      */
-    public void send(JSONObject msg, String targetIpAddress, int targetPort) {
-        if(msg == null) {
+    public void send(
+        JSONObject msg,
+        String targetIpAddress,
+        int targetPort
+    ) {
+        if (msg == null) {
             return;
         }
         byte[] buffer = msg.toString().getBytes();
         try {
             InetAddress targetAddress = InetAddress.getByName(targetIpAddress);
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, targetAddress, targetPort);
+            DatagramPacket packet = new DatagramPacket(
+                buffer,
+                buffer.length,
+                targetAddress,
+                targetPort
+            );
             this.socket.send(packet);
         } catch (Exception exception) {
             exception.printStackTrace();
         }
     }
 
-
     /*
      * send local file to remote server, update the sdfs file. Used for PUT
      */
-    public int sendFile(String localFile, String sdfsFile, String ipAddress) {
+    public int sendFile(
+        String localFile,
+        String sdfsFile,
+        String ipAddress
+    ) {
         System.out.println("send file");
         int idx = ipAddress.indexOf(".cs.illinois.edu");
         String hostName = ipAddress;
-        if(idx >= 0) {
-            hostName = ipAddress.substring(0, idx);
+        if (idx >= 0) {
+            hostName = ipAddress.substring(
+                0,
+                idx
+            );
         }
         System.out.println("HostName " + hostName);
         StringBuilder sb = new StringBuilder();
-        sb.append("scp ").append(localFile).append(" ").append(UserInfo.username).append("@").append(hostName).append(":").append(sdfsFile);
+        sb.append("scp ")
+          .append(localFile)
+          .append(" ")
+          .append(UserInfo.username)
+          .append("@")
+          .append(hostName)
+          .append(":")
+          .append(sdfsFile);
         String command = sb.toString();
         return executeCommand(command);
     }
@@ -66,7 +96,7 @@ public class DataTransfer {
     public void receive(DatagramPacket receivedPacket) {
         try {
             this.socket.receive(receivedPacket);
-        } catch(Exception exception) {
+        } catch (Exception exception) {
             exception.printStackTrace();
         }
     }
@@ -74,15 +104,29 @@ public class DataTransfer {
     /*
      * download sdfs file from remote servers into the local file. Used for GET
      */
-    public int receiveFile(String localFile, String sdfsFile, String ipAddress) {
+    public int receiveFile(
+        String localFile,
+        String sdfsFile,
+        String ipAddress
+    ) {
         System.out.println("Receive File");
         String hostName = ipAddress;
         int idx = ipAddress.indexOf(".cs.illinois.edu");
-        if(idx >= 0) {
-            hostName = ipAddress.substring(0, idx);
+        if (idx >= 0) {
+            hostName = ipAddress.substring(
+                0,
+                idx
+            );
         }
         StringBuilder sb = new StringBuilder();
-        sb.append("scp ").append(UserInfo.username).append("@").append(hostName).append(":").append(sdfsFile).append(" ").append(localFile);
+        sb.append("scp ")
+          .append(UserInfo.username)
+          .append("@")
+          .append(hostName)
+          .append(":")
+          .append(sdfsFile)
+          .append(" ")
+          .append(localFile);
         String command = sb.toString();
         return executeCommand(command);
     }

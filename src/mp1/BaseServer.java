@@ -17,10 +17,16 @@ public abstract class BaseServer {
     protected volatile StringBuilder statusBuilder;
     protected String status = Status.RUNNING;
 
-    protected BaseServer(String ipAddress, int port) {
+    protected BaseServer(
+        String ipAddress,
+        int port
+    ) {
         this.ipAddress = ipAddress;
         this.port = port;
-        this.socket = new UdpSocket(ipAddress, port);
+        this.socket = new UdpSocket(
+            ipAddress,
+            port
+        );
         this.membershipList = new ArrayList<>();
         this.modeBuilder = new StringBuilder();
         this.modeBuilder.append(Mode.GOSSIP);

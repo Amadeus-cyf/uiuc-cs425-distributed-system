@@ -5,13 +5,19 @@ import mp3.constant.MsgType;
 import org.json.JSONObject;
 
 public class MapleCompleteMsg extends Message {
-    private String ipAddress;
-    private int port;
-    private String sourceFile;
-    private String mapleIntermediateFile;
-    private String intermediatePrefix;
+    private final String ipAddress;
+    private final int port;
+    private final String sourceFile;
+    private final String mapleIntermediateFile;
+    private final String intermediatePrefix;
 
-    public MapleCompleteMsg(String ipAddress, int port, String sourceFile, String mapleIntermediateFile, String intermediatePrefix) {
+    public MapleCompleteMsg(
+        String ipAddress,
+        int port,
+        String sourceFile,
+        String mapleIntermediateFile,
+        String intermediatePrefix
+    ) {
         super(MsgType.MAPLE_COMPLETE_MSG);
         this.ipAddress = ipAddress;
         this.port = port;
@@ -23,12 +29,24 @@ public class MapleCompleteMsg extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
-        jsonObject.put(MsgKey.IP_ADDRESS, this.ipAddress);
-        jsonObject.put(MsgKey.PORT, this.port);
-        jsonObject.put(MsgKey.SOURCE_FILE, this.sourceFile);
-        jsonObject.put(MsgKey.MAPLE_INTERMEDIATE_FILE, this.mapleIntermediateFile);
-        jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, this.intermediatePrefix);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            this.msgType
+        ).put(
+            MsgKey.IP_ADDRESS,
+            this.ipAddress
+        ).put(
+            MsgKey.PORT,
+            this.port
+        ).put(
+            MsgKey.SOURCE_FILE,
+            this.sourceFile
+        ).put(
+            MsgKey.MAPLE_INTERMEDIATE_FILE,
+            this.mapleIntermediateFile
+        ).put(
+            MsgKey.INTERMEDIATE_PREFIX,
+            this.intermediatePrefix
+        );
     }
 }

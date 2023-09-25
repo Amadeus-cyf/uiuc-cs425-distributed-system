@@ -8,10 +8,13 @@ import org.json.JSONObject;
  * false positive or rejoin message
  */
 public class FPRejoinMessage extends Message {
-    private String ipAddress;
-    private int port;
+    private final String ipAddress;
+    private final int port;
 
-    public FPRejoinMessage(String ipAddress, int port) {
+    public FPRejoinMessage(
+        String ipAddress,
+        int port
+    ) {
         super(MsgType.FP_REJOIN_MSG);
         this.ipAddress = ipAddress;
         this.port = port - 1;               // file server port is one less the fd port number
@@ -20,9 +23,15 @@ public class FPRejoinMessage extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
-        jsonObject.put(MsgKey.IP_ADDRESS, ipAddress);
-        jsonObject.put(MsgKey.PORT, port);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            this.msgType
+        ).put(
+            MsgKey.IP_ADDRESS,
+            ipAddress
+        ).put(
+            MsgKey.PORT,
+            port
+        );
     }
 }

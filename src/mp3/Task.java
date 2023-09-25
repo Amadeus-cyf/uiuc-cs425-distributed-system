@@ -3,14 +3,21 @@ package mp3;
 import java.util.List;
 
 public class Task {
-    private List<String> assignedFiles;
-    private String type;                            // either maple or juice
-    private String inputFileName;
-    private String outputFileName;
-    private String exeFunc;
-    private int isDelete;                       // only for juice
+    private final List<String> assignedFiles;
+    private final String type;                            // either maple or juice
+    private final String inputFileName;
+    private final String outputFileName;
+    private final String exeFunc;
+    private final int isDelete;                       // only for juice
 
-    public Task(String inputFileName, String outputFileName,  List<String> assignedFiles, String execFunc, String type, int isDelete) {
+    public Task(
+        String inputFileName,
+        String outputFileName,
+        List<String> assignedFiles,
+        String execFunc,
+        String type,
+        int isDelete
+    ) {
         this.inputFileName = inputFileName;
         this.outputFileName = outputFileName;
         this.assignedFiles = assignedFiles;

@@ -7,34 +7,60 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Introducer extends FailureDetector {
-    private volatile String mode = Mode.GOSSIP;
-    private Sender sender;
-    private Receiver receiver;
-    private Long heartbeatCounter = 0L;
+    private final String mode = Mode.GOSSIP;
+    private final Sender sender;
+    private final Receiver receiver;
 
-    public Introducer(String ipAddress, int port) {
-        super(ipAddress, port);
+    public Introducer(
+        String ipAddress,
+        int port
+    ) {
+        super(
+            ipAddress,
+            port
+        );
         this.startingTime = new Timestamp(System.currentTimeMillis());
         this.id = createId();
-        this.sender = new Sender(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.statusBuilder, this.socket, this.heartbeatCounter);
-        this.receiver = new Receiver(this.id, this.ipAddress, this.port, this.membershipList, this.modeBuilder, this.statusBuilder, this.socket, this.heartbeatCounter);
-        this.membershipList.add(new Member(this.id, this.startingTime, this.heartbeatCounter));
+        long heartbeatCounter = 0L;
+        this.sender = new Sender(
+            this.id,
+            this.ipAddress,
+            this.port,
+            this.membershipList,
+            this.modeBuilder,
+            this.statusBuilder,
+            this.socket
+        );
+        this.receiver = new Receiver(
+            this.id,
+            this.ipAddress,
+            this.port,
+            this.membershipList,
+            this.modeBuilder,
+            this.statusBuilder,
+            this.socket
+        );
+        this.membershipList.add(new Member(
+            this.id,
+            this.startingTime,
+            heartbeatCounter
+        ));
     }
 
     @Override
     public void run() {
-        ExecutorService sendThread= Executors.newSingleThreadExecutor();
+        ExecutorService sendThread = Executors.newSingleThreadExecutor();
         ExecutorService receiveThread = Executors.newSingleThreadExecutor();
         ExecutorService checkerThread = Executors.newSingleThreadExecutor();
         sendThread.execute(new Runnable() {
             @Override
             public void run() {
-                while(true) {
+                while (true) {
                     sender.send();
                     try {
                         Thread.sleep(1000);
                     } catch (Exception e) {
-
+                        e.printStackTrace();
                     }
                 }
             }
@@ -45,7 +71,12 @@ public class Introducer extends FailureDetector {
                 receiver.start();
             }
         });
-        checkerThread.execute(new TimeoutChecker(this.membershipList, this.modeBuilder, this.id, this.socket));
+        checkerThread.execute(new TimeoutChecker(
+            this.membershipList,
+            this.modeBuilder,
+            this.id,
+            this.socket
+        ));
     }
 
     @Override

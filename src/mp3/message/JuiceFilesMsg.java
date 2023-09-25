@@ -7,13 +7,19 @@ import org.json.JSONObject;
 import java.util.List;
 
 public class JuiceFilesMsg extends Message {
-    private List<String> filesToJuice;
-    private String intermediatePrefix;
-    private String destFileName;
-    private String juiceExe;
-    private int isDelete;
+    private final List<String> filesToJuice;
+    private final String intermediatePrefix;
+    private final String destFileName;
+    private final String juiceExe;
+    private final int isDelete;
 
-    public JuiceFilesMsg(List<String> filesToJuice, String intermediatePrefix, String destFileName, String juiceExe, int isDelete) {
+    public JuiceFilesMsg(
+        List<String> filesToJuice,
+        String intermediatePrefix,
+        String destFileName,
+        String juiceExe,
+        int isDelete
+    ) {
         super(MsgType.JUICE_FILES_MSG);
         this.filesToJuice = filesToJuice;
         this.intermediatePrefix = intermediatePrefix;
@@ -25,12 +31,24 @@ public class JuiceFilesMsg extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
-        jsonObject.put(MsgKey.FILES_TO_JUICE, this.filesToJuice);
-        jsonObject.put(MsgKey.INTERMEDIATE_PREFIX, this.intermediatePrefix);
-        jsonObject.put(MsgKey.JUICE_EXE, this.juiceExe);
-        jsonObject.put(MsgKey.DEST_FILE, this.destFileName);
-        jsonObject.put(MsgKey.IS_DELETE, this.isDelete);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            this.msgType
+        ).put(
+            MsgKey.FILES_TO_JUICE,
+            this.filesToJuice
+        ).put(
+            MsgKey.INTERMEDIATE_PREFIX,
+            this.intermediatePrefix
+        ).put(
+            MsgKey.JUICE_EXE,
+            this.juiceExe
+        ).put(
+            MsgKey.DEST_FILE,
+            this.destFileName
+        ).put(
+            MsgKey.IS_DELETE,
+            this.isDelete
+        );
     }
 }

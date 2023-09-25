@@ -9,11 +9,15 @@ import org.json.JSONObject;
 import java.util.Set;
 
 public class PrePutResponse extends Message {
-    private Set<ServerInfo> servers;
-    private String sdfsFileName;
-    private String localFileName;
+    private final Set<ServerInfo> servers;
+    private final String sdfsFileName;
+    private final String localFileName;
 
-    public PrePutResponse(String sdfsFileName, String localFileName, Set<ServerInfo> servers) {
+    public PrePutResponse(
+        String sdfsFileName,
+        String localFileName,
+        Set<ServerInfo> servers
+    ) {
         super(MsgType.PRE_PUT_RESPONSE);
         this.servers = servers;
         this.sdfsFileName = sdfsFileName;
@@ -23,11 +27,18 @@ public class PrePutResponse extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, msgType);
-        JSONArray jsonArray = new JSONArray(servers);
-        jsonObject.put(MsgKey.TARGET_SERVERS, jsonArray);
-        jsonObject.put(MsgKey.SDFS_FILE_NAME, sdfsFileName);
-        jsonObject.put(MsgKey.LOCAL_FILE_NAME, localFileName);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            msgType
+        ).put(
+            MsgKey.TARGET_SERVERS,
+            new JSONArray(servers)
+        ).put(
+            MsgKey.SDFS_FILE_NAME,
+            sdfsFileName
+        ).put(
+            MsgKey.LOCAL_FILE_NAME,
+            localFileName
+        );
     }
 }

@@ -8,11 +8,14 @@ import org.json.JSONObject;
 
 import java.util.Set;
 
-public class LsResponse extends Message{
-    private Set<ServerInfo> servers;
-    private String fileName;
+public class LsResponse extends Message {
+    private final Set<ServerInfo> servers;
+    private final String fileName;
 
-    public LsResponse(Set<ServerInfo> servers, String fileName) {
+    public LsResponse(
+        Set<ServerInfo> servers,
+        String fileName
+    ) {
         super(MsgType.LS_RESPONSE);
         this.servers = servers;
         this.fileName = fileName;
@@ -21,10 +24,15 @@ public class LsResponse extends Message{
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, msgType);
-        JSONArray jsonArray = new JSONArray(servers);
-        jsonObject.put(MsgKey.TARGET_SERVERS, jsonArray);
-        jsonObject.put(MsgKey.SDFS_FILE_NAME, fileName);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            msgType
+        ).put(
+            MsgKey.TARGET_SERVERS,
+            new JSONArray(servers)
+        ).put(
+            MsgKey.SDFS_FILE_NAME,
+            fileName
+        );
     }
 }

@@ -7,8 +7,11 @@ public class WordCount extends MapleJuice<String, Long> {
     @Override
     public void maple(String line) {
         String[] infoList = line.split(" ");
-        for(String info : infoList) {
-            mapleOutput.add(new Pair<>(info, 1L));
+        for (String info : infoList) {
+            mapleOutput.add(new Pair<>(
+                info,
+                1L
+            ));
         }
     }
 
@@ -20,11 +23,14 @@ public class WordCount extends MapleJuice<String, Long> {
             String line = fIn.readLine();
             String key = line.split(" ")[0];
             long count = 1;
-            while((line = fIn.readLine()) != null) {
+            while ((line = fIn.readLine()) != null) {
                 count++;
             }
-            if(key != null) {
-                    juiceOutput.add(new Pair<>(key, count));
+            if (key != null) {
+                juiceOutput.add(new Pair<>(
+                    key,
+                    count
+                ));
             }
         } catch (Exception e) {
             e.printStackTrace();

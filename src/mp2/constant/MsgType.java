@@ -27,7 +27,7 @@ public class MsgType {
     public static final String JOIN_REQUEST = "JOIN_REQUEST";
 
     // message send from master to server requesting the server to send replica of file to another server
-    public static final String REPLICATE_REQUEST =  "REPLICATE_REQUEST";
+    public static final String REPLICATE_REQUEST = "REPLICATE_REQUEST";
 
     // message send when a server fails
     public static final String SERVER_FAIL = "SERVER_FAIL";

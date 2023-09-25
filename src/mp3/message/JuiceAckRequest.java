@@ -5,10 +5,13 @@ import mp3.constant.MsgType;
 import org.json.JSONObject;
 
 public class JuiceAckRequest extends Message {
-    private String destFileName;
-    private int isDelete;
+    private final String destFileName;
+    private final int isDelete;
 
-    public JuiceAckRequest(String destFileName, int isDelete) {
+    public JuiceAckRequest(
+        String destFileName,
+        int isDelete
+    ) {
         super(MsgType.JUICE_ACK_REQUEST);
         this.destFileName = destFileName;
         this.isDelete = isDelete;
@@ -17,9 +20,15 @@ public class JuiceAckRequest extends Message {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put(MsgKey.MSG_TYPE, this.msgType);
-        jsonObject.put(MsgKey.DEST_FILE, this.destFileName);
-        jsonObject.put(MsgKey.IS_DELETE, this.isDelete);
-        return jsonObject;
+        return jsonObject.put(
+            MsgKey.MSG_TYPE,
+            this.msgType
+        ).put(
+            MsgKey.DEST_FILE,
+            this.destFileName
+        ).put(
+            MsgKey.IS_DELETE,
+            this.isDelete
+        );
     }
 }

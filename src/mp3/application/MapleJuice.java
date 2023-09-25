@@ -25,19 +25,19 @@ public abstract class MapleJuice<K, V> {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if(outputStream == null) {
+        if (outputStream == null) {
             return;
         }
         String space = " ";
-        String newline= "\n";
-        for(Pair pair : mapleOutput) {
+        String newline = "\n";
+        for (Pair pair : mapleOutput) {
             StringBuilder sb = new StringBuilder();
             String line = sb.append(pair.key.toString()).append(space).append(pair.val.toString()).toString();
             try {
                 outputStream.write(line.getBytes());
                 outputStream.write(newline.getBytes());
             } catch (Exception e) {
-                e.printStackTrace();;
+                e.printStackTrace();
             }
         }
         try {
@@ -50,16 +50,16 @@ public abstract class MapleJuice<K, V> {
     public void writeJuiceOutputToFile(String filePath) {
         FileOutputStream fOut = null;
         String space = " ";
-        String newline= "\n";
+        String newline = "\n";
         try {
             fOut = new FileOutputStream(filePath);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        if(fOut == null) {
+        if (fOut == null) {
             return;
         }
-        for(Pair<K, V>  pair : juiceOutput) {
+        for (Pair<K, V> pair : juiceOutput) {
             StringBuilder sb = new StringBuilder();
             String line = sb.append(pair.key.toString()).append(space).append(pair.val.toString()).toString();
             try {

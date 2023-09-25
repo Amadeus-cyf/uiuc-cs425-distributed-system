@@ -7,10 +7,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AgreeJoinHeartBeat extends HeartBeat {
-    private List<Member> membershipList;
-    private String mode;
+    private final List<Member> membershipList;
+    private final String mode;
 
-    public AgreeJoinHeartBeat(String mode, List<Member> membershipList) {
+    public AgreeJoinHeartBeat(
+        String mode,
+        List<Member> membershipList
+    ) {
         super(MsgType.AGREE_JOIN);
         this.membershipList = new ArrayList<>(membershipList);              // to avoid concurrent modification exception
         this.mode = mode;
@@ -19,9 +22,15 @@ public class AgreeJoinHeartBeat extends HeartBeat {
     @Override
     public JSONObject toJSON() {
         JSONObject jsonObject = new JSONObject();
-        jsonObject.put("msgType", this.msgType);
-        jsonObject.put("membership", this.membershipList);
-        jsonObject.put("mode", this.mode);
-        return jsonObject;
+        return jsonObject.put(
+            "msgType",
+            this.msgType
+        ).put(
+            "membership",
+            this.membershipList
+        ).put(
+            "mode",
+            this.mode
+        );
     }
 }
