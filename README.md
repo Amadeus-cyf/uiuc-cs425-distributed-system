@@ -4,7 +4,7 @@ A collection of code and reports for CS425, Fall 2020, UIUC.
 
 Instructor: [Indranil Gupta](http://indy.cs.illinois.edu/)
 
-## Repos
+## MPs
 
 ### MP1 - [Distributed Group Membership](https://github.com/Amadeus-cyf/uiuc-cs425-distributed-system/tree/master/src/mp1)
 
