@@ -80,16 +80,14 @@ public class DataTransfer {
             );
         }
         System.out.println("HostName " + hostName);
-        StringBuilder sb = new StringBuilder();
-        sb.append("scp ")
-          .append(localFile)
-          .append(" ")
-          .append(UserInfo.username)
-          .append("@")
-          .append(hostName)
-          .append(":")
-          .append(sdfsFile);
-        String command = sb.toString();
+        String command = "scp " +
+            localFile +
+            " " +
+            UserInfo.username +
+            "@" +
+            hostName +
+            ":" +
+            sdfsFile;
         return executeCommand(command);
     }
 
@@ -118,16 +116,14 @@ public class DataTransfer {
                 idx
             );
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append("scp ")
-          .append(UserInfo.username)
-          .append("@")
-          .append(hostName)
-          .append(":")
-          .append(sdfsFile)
-          .append(" ")
-          .append(localFile);
-        String command = sb.toString();
+        String command = "scp " +
+            UserInfo.username +
+            "@" +
+            hostName +
+            ":" +
+            sdfsFile +
+            " " +
+            localFile;
         return executeCommand(command);
     }
 

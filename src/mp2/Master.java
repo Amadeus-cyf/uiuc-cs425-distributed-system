@@ -19,7 +19,7 @@ public class Master {
         this.port = MASTER_SDFS_PORT;
     }
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         Master server = new Master();
         server.run();
     }

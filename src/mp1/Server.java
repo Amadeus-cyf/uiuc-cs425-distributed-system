@@ -22,7 +22,7 @@ public class Server extends BaseServer {
         );
     }
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         Server server = new Server(
             args[0],
             3000

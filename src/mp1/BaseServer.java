@@ -35,13 +35,12 @@ public abstract class BaseServer {
     }
 
     protected String createId() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.ipAddress);
-        sb.append("_");
-        sb.append(this.port);
-        sb.append("_");
-        sb.append(this.startingTime.toString());
-        return sb.toString();
+        String sb = this.ipAddress +
+            "_" +
+            this.port +
+            "_" +
+            this.startingTime.toString();
+        return sb;
     }
 
     protected StringBuilder getModeBuilder() {

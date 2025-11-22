@@ -79,7 +79,8 @@ Check if datanode started on VM6, VM7, VM8, VM9, VM10: `jps`
 **Condorcet Voting**: `hadoop jar MapReduce/vc1.jar VotingCount /home/enyij2/vc/input/voting.txt /home/enyij2/vc/output`
 
 **
-Building**: `hadoop jar MapReduce/b.jar Building /home/enyij2/building/input/building_NYC.txt /home/enyij2/building/output`
+Building**:
+`hadoop jar MapReduce/b.jar Building /home/enyij2/building/input/building_NYC.txt /home/enyij2/building/output`
 
 ### Check the Output
 

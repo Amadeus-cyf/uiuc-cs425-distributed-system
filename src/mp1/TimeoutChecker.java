@@ -91,8 +91,8 @@ public class TimeoutChecker implements Runnable {
                 // go through the membershiplist, delete the member
                 delList.add(member);
             } else if ((timestamp.getTime() - member.getTimestamp()
-                                                    .getTime()) >= GOSSIP_FAIL_TIME_LIMIT && (!member.getStatus()
-                                                                                                     .equals(Status.FAIL))) {
+                .getTime()) >= GOSSIP_FAIL_TIME_LIMIT && (!member.getStatus()
+                .equals(Status.FAIL))) {
                 member.setStatus(Status.FAIL);
                 logger.warning("GOSSIP LEAVE/FAIL  " + member.getId());
             }

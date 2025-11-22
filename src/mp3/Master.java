@@ -12,7 +12,7 @@ public class Master extends Server {
         );
     }
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         Master master = new Master();
         master.run();
     }

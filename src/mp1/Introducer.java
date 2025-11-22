@@ -47,7 +47,7 @@ public class Introducer extends BaseServer {
         ));
     }
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         Introducer server = new Introducer();
         server.sender.start();
         server.receiver.start();

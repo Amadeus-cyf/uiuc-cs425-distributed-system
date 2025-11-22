@@ -76,11 +76,11 @@ public class MasterReceiver extends Receiver {
                 buffer.length
             );
             this.dataTransfer.receive(receivedPacket);
+            String msg = readBytes(
+                buffer,
+                receivedPacket.getLength()
+            );
             service.execute(() -> {
-                String msg = readBytes(
-                    buffer,
-                    receivedPacket.getLength()
-                );
                 receive(msg);
             });
         }
@@ -166,11 +166,11 @@ public class MasterReceiver extends Receiver {
                     )
                 );
                 System.out.println("Send " + splitFiles.get(i) + " to " +
-                                       serverInfos[i].getIpAddress() + ":" + serverInfos[i].getPort());
+                    serverInfos[i].ipAddress() + ":" + serverInfos[i].port());
                 dataTransfer.send(
                     mapleFileMsg.toJSON(),
-                    serverInfos[i].getIpAddress(),
-                    serverInfos[i].getPort()
+                    serverInfos[i].ipAddress(),
+                    serverInfos[i].port()
                 );
             }
         }
@@ -234,7 +234,7 @@ public class MasterReceiver extends Receiver {
             senderPort
         );
         System.out.println("Server " + senderIpAddress + ":" + senderPort +
-                               " complete maple tasks: " + assignedTasks.get(serverInfo));
+            " complete maple tasks: " + assignedTasks.get(serverInfo));
         this.assignedTasks.remove(serverInfo);
         System.out.println("Server " + senderIpAddress + ":" + senderPort + " finish");
         mapleRunningServers.put(
@@ -356,8 +356,8 @@ public class MasterReceiver extends Receiver {
             );
             ServerInfo[] serverInfos = randomPickNServers(juiceNum);
             for (ServerInfo serverInfo : serverInfos) {
-                System.out.println("Server " + serverInfo.getIpAddress() + ":"
-                                       + serverInfo.getPort() + " selected for juice");
+                System.out.println("Server " + serverInfo.ipAddress() + ":"
+                    + serverInfo.port() + " selected for juice");
             }
             Set<ServerInfo> set = runningServers.computeIfAbsent(
                 intermediatePrefix,
@@ -386,8 +386,8 @@ public class MasterReceiver extends Receiver {
                         isDelete
                     )
                 );
-                System.out.println(serverInfos[serverIdx].getIpAddress() + ":"
-                                       + serverInfos[serverIdx].getPort() + " has " + filesAssigned);
+                System.out.println(serverInfos[serverIdx].ipAddress() + ":"
+                    + serverInfos[serverIdx].port() + " has " + filesAssigned);
                 Message juiceFilesMsg = new JuiceFilesMsg(
                     filesAssigned,
                     intermediatePrefix,
@@ -397,8 +397,8 @@ public class MasterReceiver extends Receiver {
                 );
                 this.dataTransfer.send(
                     juiceFilesMsg.toJSON(),
-                    serverInfos[serverIdx].getIpAddress(),
-                    serverInfos[serverIdx].getPort()
+                    serverInfos[serverIdx].ipAddress(),
+                    serverInfos[serverIdx].port()
                 );
                 serverIdx++;
                 if (serverIdx >= juiceNum) {
@@ -498,7 +498,7 @@ public class MasterReceiver extends Receiver {
             senderPort
         );
         System.out.println("Server " + senderIpAddress + ":" + senderPort
-                               + " completes juice tasks: " + assignedTasks.get(serverInfo));
+            + " completes juice tasks: " + assignedTasks.get(serverInfo));
         this.assignedTasks.remove(serverInfo);
         System.out.println("Server " + senderIpAddress + ":" + senderPort + " finish");
         juiceRunningServers.put(
@@ -574,46 +574,46 @@ public class MasterReceiver extends Receiver {
             System.out.println("Reassign tasks");
             // reassign the task to a free server
             ServerInfo server = findFreeServer();
-            System.out.println("Select free server " + server.getIpAddress() + ":" + server.getPort());
-            String inputFileName = task.getInputFileName();
+            System.out.println("Select free server " + server.ipAddress() + ":" + server.port());
+            String inputFileName = task.inputFileName();
             this.runningServers.get(inputFileName).add(server);
             this.assignedTasks.put(
                 server,
                 task
             );
-            String type = task.getType();
+            String type = task.type();
             System.out.println("Task type: " + type);
             if (type.equals(MAPLE)) {
-                System.out.println("Assign " + task.getAssignedFiles().get(0) + " to "
-                                       + server.getIpAddress() + ":" + server.getPort());
+                System.out.println("Assign " + task.assignedFiles().get(0) + " to "
+                    + server.ipAddress() + ":" + server.port());
                 // currently at maple stage
                 System.out.println("Assign maple tasks to newly selected server "
-                                       + server.getIpAddress() + ":" + server.getPort());
+                    + server.ipAddress() + ":" + server.port());
                 MapleFileMsg mapleFileMsg = new MapleFileMsg(
                     inputFileName,
-                    task.getAssignedFiles().get(0),
-                    task.getOutputFileName(),
-                    task.getExeFunc()
+                    task.assignedFiles().get(0),
+                    task.outputFileName(),
+                    task.exeFunc()
                 );
                 this.dataTransfer.send(
                     mapleFileMsg.toJSON(),
-                    server.getIpAddress(),
-                    server.getPort()
+                    server.ipAddress(),
+                    server.port()
                 );
             } else if (type.equals(JUICE)) {
                 System.out.println("Assign juice tasks to newly selected server "
-                                       + server.getIpAddress() + ":" + server.getPort());
+                    + server.ipAddress() + ":" + server.port());
                 JuiceFilesMsg juiceFilesMsg = new JuiceFilesMsg(
-                    task.getAssignedFiles(),
+                    task.assignedFiles(),
                     inputFileName,
-                    task.getOutputFileName(),
-                    task.getExeFunc(),
-                    task.getIsDelete()
+                    task.outputFileName(),
+                    task.exeFunc(),
+                    task.isDelete()
                 );
                 this.dataTransfer.send(
                     juiceFilesMsg.toJSON(),
-                    server.getIpAddress(),
-                    server.getPort()
+                    server.ipAddress(),
+                    server.port()
                 );
             } else {
                 System.out.println("Invalid task type");
@@ -681,46 +681,42 @@ public class MasterReceiver extends Receiver {
         String intermediatePrefix,
         String destFileName
     ) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.INTERMEDIATE_PATH)
-                 .append(sourceFileName)
-                 .append("_")
-                 .append(intermediatePrefix)
-                 .append("_maple_out/")
-                 .append(destFileName)
-                 .toString();
+        String sb = FilePath.INTERMEDIATE_PATH +
+            sourceFileName +
+            "_" +
+            intermediatePrefix +
+            "_maple_out/" +
+            destFileName;
+        return sb;
     }
 
     private String getMapleOutputDir(
         String sourceFileName,
         String intermediatePrefix
     ) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.INTERMEDIATE_PATH)
-                 .append(sourceFileName)
-                 .append("_")
-                 .append(intermediatePrefix)
-                 .append("_maple_out/")
-                 .toString();
+        String sb = FilePath.INTERMEDIATE_PATH +
+            sourceFileName +
+            "_" +
+            intermediatePrefix +
+            "_maple_out/";
+        return sb;
     }
 
     private String getJuiceInputPath(
         String intermediatePrefix,
         String key
     ) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT)
-                 .append(intermediatePrefix)
-                 .append("/")
-                 .append(intermediatePrefix)
-                 .append("_")
-                 .append(key)
-                 .toString();
+        String sb = FilePath.ROOT +
+            intermediatePrefix +
+            "/" +
+            intermediatePrefix +
+            "_" +
+            key;
+        return sb;
     }
 
     private String getJuiceInputDir(String intermediatePrefix) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT).append(intermediatePrefix).toString();
+        return FilePath.ROOT + intermediatePrefix;
     }
 
     private String getJuiceOutputTmpPath(
@@ -728,21 +724,19 @@ public class MasterReceiver extends Receiver {
         String senderIp,
         int senderPort
     ) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.INTERMEDIATE_PATH)
-                 .append(destFile)
-                 .append("_")
-                 .append(senderIp)
-                 .append("_")
-                 .append(senderPort)
-                 .append("_tmp")
-                 .toString();
+        String sb = FilePath.INTERMEDIATE_PATH +
+            destFile +
+            "_" +
+            senderIp +
+            "_" +
+            senderPort +
+            "_tmp";
+        return sb;
     }
 
     private String getJuiceOutputRemotePath(String destFileName) {
-        StringBuilder sb = new StringBuilder();
-        return sb.append(FilePath.ROOT)
-                 .append(destFileName)
-                 .toString();
+        String sb = FilePath.ROOT +
+            destFileName;
+        return sb;
     }
 }

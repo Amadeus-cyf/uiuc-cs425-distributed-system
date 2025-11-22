@@ -212,7 +212,7 @@ public class Sender {
                     Integer.parseInt(idInfo[1])
                 );
                 logger.warning("Mode changed sends to " + idInfo[0] + ":"
-                                   + idInfo[1] + switchModeHeartBeat.toJSON().toString());
+                    + idInfo[1] + switchModeHeartBeat.toJSON().toString());
             }
         }
     }

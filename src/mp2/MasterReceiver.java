@@ -83,11 +83,11 @@ public class MasterReceiver extends Receiver {
                 buffer.length
             );
             this.dataTransfer.receive(receivedPacket);
+            String msg = readBytes(
+                buffer,
+                receivedPacket.getLength()
+            );
             service.execute(() -> {
-                String msg = readBytes(
-                    buffer,
-                    receivedPacket.getLength()
-                );
                 receive(msg);
             });
         }
@@ -264,8 +264,8 @@ public class MasterReceiver extends Receiver {
                 PreGetResponse preGetResponse = new PreGetResponse(
                     fileName,
                     localFileName,
-                    server.getIpAddress(),
-                    server.getPort()
+                    server.ipAddress(),
+                    server.port()
                 );
                 this.dataTransfer.send(
                     preGetResponse.toJSON(),
@@ -316,7 +316,7 @@ public class MasterReceiver extends Receiver {
         }
         for (ServerInfo serverInfo : serversArranged) {
             System.out.println(
-                "Master: ASSIGN FILE: " + fileName + " TO " + serverInfo.getIpAddress() + ":" + serverInfo.getPort()
+                "Master: ASSIGN FILE: " + fileName + " TO " + serverInfo.ipAddress() + ":" + serverInfo.port()
             );
         }
         String localFileName = msgJson.getString(MsgKey.LOCAL_FILE_NAME);
@@ -358,10 +358,10 @@ public class MasterReceiver extends Receiver {
         String ipAddress = msgJson.getString(MsgKey.IP_ADDRESS);
         int port = msgJson.getInt(MsgKey.PORT);
         ackResponse.get(fileName)
-                   .add(new ServerInfo(
-                       ipAddress,
-                       port
-                   ));
+            .add(new ServerInfo(
+                ipAddress,
+                port
+            ));
         String msgType = msgJson.getString(MsgKey.MSG_TYPE);
         System.out.println("Receive " + msgType + " ACK Response from Server " + ipAddress + ":" + port);
         int numGetReq = getReqNum.get(fileName) == null ? 0 : getReqNum.get(fileName);
@@ -455,8 +455,8 @@ public class MasterReceiver extends Receiver {
             PreGetResponse preGetResponse = new PreGetResponse(
                 sdfsFileName,
                 localFileName,
-                server.getIpAddress(),
-                server.getPort()
+                server.ipAddress(),
+                server.port()
             );
             this.dataTransfer.send(
                 preGetResponse.toJSON(),
@@ -508,8 +508,8 @@ public class MasterReceiver extends Receiver {
             );
             for (ServerInfo serverInfo : targetServers) {
                 System.out.println(
-                    "RECEIVE ACK: SEND PRE PUT RESPONSE TO " + serverInfo.getIpAddress() + ":"
-                        + serverInfo.getPort()
+                    "RECEIVE ACK: SEND PRE PUT RESPONSE TO " + serverInfo.ipAddress() + ":"
+                        + serverInfo.port()
                 );
             }
         }
@@ -547,8 +547,8 @@ public class MasterReceiver extends Receiver {
             );
             for (ServerInfo serverInfo : targetServers) {
                 System.out.println(
-                    "RECEIVE ACK: SEND PRE DEL RESPONSE TO Server " + serverInfo.getIpAddress() +
-                        ":" + serverInfo.getPort()
+                    "RECEIVE ACK: SEND PRE DEL RESPONSE TO Server " + serverInfo.ipAddress() +
+                        ":" + serverInfo.port()
                 );
             }
         }
@@ -585,10 +585,10 @@ public class MasterReceiver extends Receiver {
         JSONArray newServers = json.getJSONArray(MsgKey.TARGET_SERVERS);
         for (int i = REPLICA_NUM; i > newServers.length(); i--) {
             this.ackResponse.get(fileName)
-                            .add(new ServerInfo(
-                                "",
-                                i * -1
-                            ));
+                .add(new ServerInfo(
+                    "",
+                    i * -1
+                ));
         }
     }
 
@@ -622,7 +622,7 @@ public class MasterReceiver extends Receiver {
         );
         if (servers.contains(failServerInfo) && !failServers.contains(failServerInfo)) {
             System.out.println(
-                "receiveFail: fail server " + failServerInfo.getIpAddress() + ":" + failServerInfo.getPort()
+                "receiveFail: fail server " + failServerInfo.ipAddress() + ":" + failServerInfo.port()
             );
             servers.remove(failServerInfo);
             failServers.add(failServerInfo);
@@ -637,7 +637,7 @@ public class MasterReceiver extends Receiver {
             return;
         }
         for (ServerInfo failServer : failServers) {
-            System.out.println("REPLICATE FILE: Fail of " + failServer.getIpAddress() + ":" + failServer.getPort());
+            System.out.println("REPLICATE FILE: Fail of " + failServer.ipAddress() + ":" + failServer.port());
         }
         System.out.println("CURRENT SERVERS: " + servers);
         // map file name to number of replica needed
@@ -684,8 +684,8 @@ public class MasterReceiver extends Receiver {
             ReplicateRequest replicateRequest = new ReplicateRequest(
                 fileName,
                 assignedServers,
-                targetServer.getIpAddress(),
-                targetServer.getPort()
+                targetServer.ipAddress(),
+                targetServer.port()
             );
             System.out.println("replicate Request: " + replicateRequest.toJSON().toString());
             // check whether we could do replicate immediately
@@ -693,7 +693,7 @@ public class MasterReceiver extends Receiver {
                 // the file is currently not writing
                 System.out.println(
                     "REPLICATE FILE: WRITE IS AVAILABLE " + fileName + " " +
-                        targetServer.getIpAddress() + ":" + targetServer.getPort()
+                        targetServer.ipAddress() + ":" + targetServer.port()
                 );
                 fileStatus.put(
                     fileName,
@@ -705,8 +705,8 @@ public class MasterReceiver extends Receiver {
                 );
                 this.dataTransfer.send(
                     replicateRequest.toJSON(),
-                    targetServer.getIpAddress(),
-                    targetServer.getPort()
+                    targetServer.ipAddress(),
+                    targetServer.port()
                 );
                 this.ackResponse.computeIfAbsent(
                     fileName,
@@ -715,10 +715,10 @@ public class MasterReceiver extends Receiver {
                 // add fake ack response since number of replicate request is smaller than replica num
                 for (int i = REPLICA_NUM; i > replicaNum; i--) {
                     this.ackResponse.get(fileName)
-                                    .add(new ServerInfo(
-                                        "",
-                                        i * -1
-                                    ));
+                        .add(new ServerInfo(
+                            "",
+                            i * -1
+                        ));
                 }
             } else {
                 // the file is currently writing
@@ -726,10 +726,10 @@ public class MasterReceiver extends Receiver {
                 System.out.println("REPLICATE FILE: WRITE IS NOT AVAILABLE " + fileName);
                 for (int i = 0; i < replicaNum; i++) {
                     ackResponse.get(fileName)
-                               .add(new ServerInfo(
-                                   "",
-                                   i
-                               ));
+                        .add(new ServerInfo(
+                            "",
+                            i
+                        ));
                 }
                 // add the replicate request to message queue
                 addRequestToQueue(
@@ -773,7 +773,7 @@ public class MasterReceiver extends Receiver {
         );
         for (ServerInfo serverInfo : serversAck) {
             // check whether the ack is a fake ack
-            if (serverInfo.getIpAddress().equals("")) {
+            if (serverInfo.ipAddress().equals("")) {
                 continue;
             }
             fileStorageInfo.get(fileName).add(serverInfo);
@@ -781,8 +781,8 @@ public class MasterReceiver extends Receiver {
                 serverInfo,
                 k -> ConcurrentHashMap.newKeySet()
             );
-            System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.getIpAddress()
-                                   + ":" + serverInfo.getPort()
+            System.out.println("ReceiveAck PUT_ACK serverInfo: " + serverInfo.ipAddress()
+                + ":" + serverInfo.port()
             );
             serverStorageInfo.get(serverInfo).add(fileName);
         }
@@ -820,8 +820,8 @@ public class MasterReceiver extends Receiver {
             if (targetIpAddress.equals(MASTER_SDFS_IP_ADDRESS) && targetPort == MASTER_SDFS_PORT) {
                 System.out.println("List all the servers stored the file " + fileName + ":");
                 for (ServerInfo server : servers) {
-                    String replicaIpAddress = server.getIpAddress();
-                    int replicaPort = server.getPort();
+                    String replicaIpAddress = server.ipAddress();
+                    int replicaPort = server.port();
                     System.out.println(replicaIpAddress + ":" + replicaPort);
                 }
                 return;

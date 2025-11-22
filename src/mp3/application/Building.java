@@ -43,7 +43,7 @@ public class Building extends MapleJuice<Integer, Long> {
             while (fIn.readLine() != null) {
                 count++;
             }
-            System.out.println(new StringBuilder().append("count: ").append(count));
+            System.out.println("count: " + count);
             if (key != null) {
                 int k = Integer.parseInt(key);
                 juiceOutput.add(new Pair<>(

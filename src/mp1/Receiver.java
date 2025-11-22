@@ -54,11 +54,11 @@ public class Receiver {
                 buffer.length
             );
             this.socket.receive(receivedPacket);
+            String msg = readBytes(
+                buffer,
+                receivedPacket.getLength()
+            );
             service.execute(() -> {
-                String msg = readBytes(
-                    buffer,
-                    receivedPacket.getLength()
-                );
                 receive(msg);
             });
         }
